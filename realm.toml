@@ -7,7 +7,7 @@ tier = "standard"            # standard | assured (DESIGN.md §3). Change it onl
 kit_commit = "f2fa812feda7"              # the Secret Realm commit this project started from
 
 [trace]
-since = ""                   # the scaffold commit: every non-merge commit after it names a task
+since = "a4a3ab5d5d462f66b9fd06d26affe335f8c14646"                   # the scaffold commit: every non-merge commit after it names a task
 
 [protection]
 branch_protection = "available"       # available | unavailable, as setup found it
