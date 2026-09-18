@@ -1,0 +1,80 @@
+# realm-promote: the second half of a release (DESIGN.md §5.2). Started by hand once the release
+# record's UAT sign-off is merged: it deploys the release to production, watches the service
+# level objectives, and rolls back by itself (opening an incident) if one breaks. Either way it
+# opens a PR with the updated record.
+#
+# Secrets: RAILWAY_API_TOKEN on the railway platform. On the aws platform the job signs in by
+# OIDC as the promote role, from the repository variables AWS_REGION and AWS_PROMOTE_ROLE
+# (DESIGN.md §14.4). The logic is in scripts/realm/release.sh.
+name: realm-promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The release to promote, e.g. v1.4.0"
+        required: true
+      emergency:
+        description: "Only during a release freeze: why this can't wait"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: realm-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write        # the updated record's branch
+      pull-requests: write   # its PR
+      id-token: write        # the aws platform: the promote role, by OIDC
+    env:
+      VERSION: ${{ inputs.version }}
+      EMERGENCY: ${{ inputs.emergency }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4  # v10.1.0
+
+      - name: Sign in to AWS (the aws platform only)
+        if: vars.AWS_REGION != ''
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c  # v6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_PROMOTE_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 3600   # the job's own limit is an hour
+
+      - name: Promote, then watch
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+        run: |
+          if [ -n "$EMERGENCY" ]; then
+            bash scripts/realm/release.sh promote "$VERSION" --emergency "$EMERGENCY"
+          else
+            bash scripts/realm/release.sh promote "$VERSION"
+          fi
+
+      - name: Open a PR with the updated record (and any incident)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git add docs/releases docs/ops/incidents 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git config user.name "realm-promote"
+          git config user.email "realm-promote@users.noreply.github.com"
+          state="$(sed -n 's/^- State: //p' "docs/releases/$VERSION.md")"
+          git switch -c "release/$VERSION-$(echo "$state" | tr ' ' '-')"
+          git commit -m "release: $VERSION $state"
+          git push origin HEAD
+          gh pr create --base main --title "release: $VERSION $state" \
+            --body "The promotion of $VERSION: the record's new state, and the incident if it was rolled back."

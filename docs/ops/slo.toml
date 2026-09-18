@@ -1,0 +1,30 @@
+# docs/ops/slo.toml: what each service promises its users (DESIGN.md §7.6).
+#
+# The release's watch window measures these after every promotion: for [watch] minutes it sends
+# steady traffic to each objective's path in production, and if one breaks, the previous release
+# goes back in automatically and an incident opens. Every web [[service]] in realm.toml needs
+# one. Workers have no URL to watch: set the objective on the web service in front of them.
+
+error_budget_policy = """
+When a window's error budget is spent, feature work stops and the next tasks are corrective or
+preventive until the budget recovers (AGENTS.md, Secret Realm rules)."""
+
+[watch]
+minutes = 10               # how long production is watched after a promotion
+rate = 5                   # requests per second, per objective
+
+[[slo]]
+service = "<service>"      # a [[service]] name from realm.toml
+name = "availability"
+sli = "share of requests not answered with a 5xx"
+path = "/health"           # what the watch window calls
+objective_percent = 99.5
+window = "28d"
+
+[[slo]]
+service = "<service>"
+name = "latency"
+sli = "p95 latency of GET <path>"
+path = "/"
+p95_ms = 300
+window = "28d"

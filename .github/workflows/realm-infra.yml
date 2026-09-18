@@ -1,0 +1,94 @@
+# realm-infra: the infrastructure's workflow, on the aws platform (DESIGN.md §14.7).
+#
+#   a PR touching infra/         plans staging and production, without taking the lock, and puts
+#                                both plans in the job summary: the plan is what gets reviewed
+#   a merge touching infra/      applies staging
+#   by hand, choosing production plans and applies production
+#
+# The bootstrap (infra/bootstrap) is never applied here: it creates the roles this workflow uses
+# (scripts/realm/aws-bootstrap.sh). Each job signs in to AWS by OIDC with its own role, from the
+# repository variables AWS_REGION, AWS_PLAN_ROLE and AWS_APPLY_ROLE, and only these jobs may ask
+# for a token (id-token: write). Terraform is tools.sh's pinned, checked copy.
+name: realm-infra
+
+on:
+  pull_request:
+    paths: ["infra/**"]
+  push:
+    branches: [main]
+    paths: ["infra/**"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Plan and apply this environment"
+        type: choice
+        options: [production, staging]
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write   # the plan role: read-only, and no data or secret values
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [staging, production]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c  # v6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Plan ${{ matrix.environment }}
+        env:
+          ENVIRONMENT: ${{ matrix.environment }}
+          TF_IN_AUTOMATION: "1"
+        run: |
+          tf="$(bash scripts/realm/tools.sh terraform)"
+          dir="infra/envs/$ENVIRONMENT"
+          "$tf" -chdir="$dir" init -input=false -backend-config=backend.hcl
+          # Without the lock: a plan changes nothing, and must not block an apply.
+          "$tf" -chdir="$dir" plan -input=false -lock=false -no-color > plan.txt 2>&1 \
+            && result=0 || result=$?
+          { echo "## $ENVIRONMENT"; echo; echo '```'; cat plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat plan.txt
+          exit "$result"
+
+  apply:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write   # the apply role: only main can assume it
+    concurrency:
+      group: realm-infra-apply
+      cancel-in-progress: false
+    env:
+      ENVIRONMENT: ${{ github.event_name == 'push' && 'staging' || inputs.environment }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c  # v6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Apply ${{ env.ENVIRONMENT }}
+        env:
+          TF_IN_AUTOMATION: "1"
+        run: |
+          tf="$(bash scripts/realm/tools.sh terraform)"
+          dir="infra/envs/$ENVIRONMENT"
+          "$tf" -chdir="$dir" init -input=false -backend-config=backend.hcl
+          "$tf" -chdir="$dir" plan -input=false -no-color -out=tfplan
+          "$tf" -chdir="$dir" apply -input=false -no-color tfplan

@@ -1,0 +1,16 @@
+# Secrets never go in git
+.env
+.env.*
+!.env.example
+# Environments, builds, and what the realm tools generate
+.venv/
+node_modules/
+__pycache__/
+dist/
+.realm/
+docs/rtm.md
+# Terraform's working files; the bootstrap's state is local only until it's in its bucket
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan

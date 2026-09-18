@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# realm: Secret Realm's checks. Run  scripts/realm/realm --help  for the commands.
+#
+# The work is done by realm.py, which needs Python 3.11+ (for tomllib). When the system Python is
+# older, uv fetches a suitable one; the first run may download it.
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null; then
+  exec python3 "$here/realm.py" "$@"
+elif command -v uv >/dev/null 2>&1; then
+  exec uv run --quiet --no-project --python '>=3.11' "$here/realm.py" "$@"
+fi
+echo "realm: needs Python 3.11 or newer, or uv to fetch one (https://docs.astral.sh/uv/)" >&2
+exit 1

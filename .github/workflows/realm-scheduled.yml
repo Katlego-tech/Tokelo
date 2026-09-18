@@ -1,0 +1,81 @@
+# realm-scheduled: what keeps a quiet project safe (DESIGN.md §3 rows 13 and 14).
+# Weekly: the whole gate again on main, so a newly published advisory against a pinned
+# dependency surfaces even when nobody pushes, and the runtimes' end-of-life dates.
+# Monthly: the delivery and maintenance metrics, into docs/ops/metrics.md by PR.
+# A failed run is the notification: GitHub emails whoever owns the workflow.
+name: realm-scheduled
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"    # weekly, Monday 05:17 UTC
+    - cron: "37 5 1 * *"    # monthly, on the 1st
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  weekly:
+    if: github.event.schedule != '37 5 1 * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: main
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4  # v10.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Tools the gate expects (pinned, checked)
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          ln -sf "$(bash scripts/realm/tools.sh osv-scanner)" "$HOME/.local/bin/osv-scanner"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: The gate, again (new advisories against the pinned dependencies)
+        run: |
+          corepack enable
+          bash scripts/gate.sh --install-deps
+          bash scripts/gate.sh
+
+      - name: Runtimes' end of life
+        if: always()
+        run: scripts/realm/realm eol
+
+  monthly:
+    if: github.event.schedule == '37 5 1 * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4  # v10.1.0
+
+      - name: Delivery and maintenance metrics
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          scripts/realm/realm dora --write
+          git add docs/ops/metrics.md
+          git diff --cached --quiet && exit 0
+          month="$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)"
+          git config user.name "realm-scheduled"
+          git config user.email "realm-scheduled@users.noreply.github.com"
+          git switch -c "metrics/$month"
+          git commit -m "docs: metrics for $month"
+          git push origin "metrics/$month"
+          gh pr create --base main --title "docs: metrics for $month" \
+            --body "The month's delivery and maintenance numbers (realm dora)."

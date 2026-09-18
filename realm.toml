@@ -1,0 +1,36 @@
+# realm.toml: this is a Secret Realm project. The realm checks run only where this file exists,
+# and the gate fails if REQUIREMENTS.md is here without it. setup-realm.sh writes it.
+
+[realm]
+name = "tokelo"      # lowercase, for image names
+tier = "standard"            # standard | assured (DESIGN.md §3). Change it only with a PLAN.md decision.
+kit_commit = "f2fa812feda7"              # the Secret Realm commit this project started from
+
+[trace]
+since = ""                   # the scaffold commit: every non-merge commit after it names a task
+
+[protection]
+branch_protection = "available"       # available | unavailable, as setup found it
+fallback = ""                # standard tier without protection: what enforces the rules instead
+
+[deploy]                     # DESIGN.md §5.2
+platform = "aws"         # railway | aws (ECS or Lambda, DESIGN.md §14) | compose (local Docker)
+mode = "image"              # railway: source (any plan: Railway builds the release's commit)
+                             #          image (Pro plan: the signed image, by digest; assured requires it)
+registry = ""                # where CI archives the release images, e.g. ghcr.io/<owner>/<repo>
+                             # (aws: the ECR repository; aws-bootstrap.sh writes it)
+region = "eu-west-1"        # the AWS region, which an ADR decides
+
+# One [[service]] per deployable container.
+# [[service]]
+# name = "api"
+# kind = "web"               # web (the default) | worker: no URL (a queue consumer), so no
+#                            #   port, health or ui; the platform's health check watches it
+# context = "api"            # the docker build context
+# dockerfile = "Dockerfile"  # relative to the context
+# port = 8000                # the port the container listens on
+# health = "/health"         # answers 200 when the service is up
+# ui = false                 # true: the release's accessibility check runs against it
+# runtime = "ecs"            # aws only: ecs (Fargate) | lambda
+# staging_url = ""           # railway and aws, web services: its https:// address in staging
+# production_url = ""        #   and in production

@@ -1,0 +1,25 @@
+# setup-realm.sh copies this to .github/dependabot.yml, with one entry per ecosystem the project
+# uses. Every update's commit names T000, the project's standing maintenance task, so realm trace
+# accepts it (DESIGN.md §7.3), and its "chore(deps)" type counts as adaptive maintenance (§7.8).
+# The cooldown waits a week after a release before proposing it: most malicious versions are
+# caught and pulled within days of being published.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}
+    cooldown: {default-days: 7}
+    commit-message: {prefix: "chore(deps): T000"}
+  # One entry per manifest folder (each with the same cooldown), e.g.:
+  # - package-ecosystem: uv          # pyproject.toml + uv.lock
+  #   directory: /api
+  #   schedule: {interval: weekly}
+  #   commit-message: {prefix: "chore(deps): T000"}
+  # - package-ecosystem: npm
+  #   directory: /web
+  #   schedule: {interval: weekly}
+  #   commit-message: {prefix: "chore(deps): T000"}
+  # - package-ecosystem: docker      # base images in the Dockerfile
+  #   directory: /api
+  #   schedule: {interval: weekly}
+  #   commit-message: {prefix: "chore(deps): T000"}

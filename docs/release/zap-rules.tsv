@@ -1,0 +1,6 @@
+# docs/release/zap-rules.tsv: the ZAP baseline scan's warnings this project has decided about.
+# A warning blocks the release unless its rule is here. Columns, separated by tabs:
+#   rule id    action (IGNORE, WARN, FAIL, INFO)    rule name    why
+# IGNORE needs a real reason: this file is the answer to "why did you accept that?"
+#
+# 10049	IGNORE	Non-Storable Content	responses are deliberately not cached: they're per-user and change every request

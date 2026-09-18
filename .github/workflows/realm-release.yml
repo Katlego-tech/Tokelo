@@ -1,0 +1,124 @@
+# realm-release: the first half of a release (DESIGN.md §5.2). On a version tag it builds the
+# release, archives its images, stages it, runs the release checks, publishes the evidence as a
+# draft GitHub release, and opens a PR with the release record for the UAT sign-off.
+# Promotion is the second half: realm-promote.yml, started by hand after the sign-off.
+#
+# v0.0.0 is the seed (the aws platform, DESIGN.md §14.3): it's built, signed and archived, so the
+# infrastructure can create each service from it, then the run stops. It's never staged, and gets
+# no record and no GitHub release.
+#
+# Secrets: COSIGN_PRIVATE_KEY and COSIGN_PASSWORD (the project's signing key; cosign.pub is
+# committed), RAILWAY_API_TOKEN on the railway platform, and optionally PERF_ENV (KEY=value lines
+# for the performance tests, docs/release/README.md). On the aws platform there's no secret: the
+# job signs in by OIDC as the release role, from the repository variables AWS_REGION and
+# AWS_RELEASE_ROLE (DESIGN.md §14.4). Every step calls
+# scripts/realm/release.sh or realm: this file only orders them, so it can't drift from them.
+name: realm-release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: realm-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write        # the draft GitHub release, and the record's branch
+      pull-requests: write   # the record's PR
+      packages: write        # the image archive in GHCR
+      id-token: write        # the aws platform: the release role, by OIDC
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0       # the record lists the tasks shipped since the last release
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4  # v10.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 24     # pa11y, for the accessibility check
+          package-manager-cache: false
+
+      - name: Build (two reproducible builds, SBOMs, signed provenance)
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: bash scripts/realm/release.sh build "$VERSION"
+
+      - name: Sign in to AWS (the aws platform only)
+        if: vars.AWS_REGION != ''
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c  # v6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_RELEASE_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 5400   # the job can run past an hour; the role allows two
+
+      - name: Archive the images (by digest)
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$(scripts/realm/realm release config deploy.registry)" ]; then
+            bash scripts/realm/release.sh publish "$VERSION"
+          else
+            echo "[deploy] registry is empty: the images stay in the workflow's artifacts only"
+          fi
+
+      - name: Stage, and run the release checks
+        id: stage
+        if: env.VERSION != 'v0.0.0'
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+          PERF_ENV: ${{ secrets.PERF_ENV }}
+        run: bash scripts/realm/release.sh stage "$VERSION"
+
+      - name: Traceability matrix
+        if: always() && env.VERSION != 'v0.0.0'
+        run: scripts/realm/realm trace --write || true
+
+      - name: Keep the evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: release-${{ github.ref_name }}
+          path: |
+            dist/${{ github.ref_name }}/
+            docs/rtm.md
+          retention-days: 90
+
+      - name: Draft GitHub release with the evidence
+        if: always() && env.VERSION != 'v0.0.0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          files=(dist/"$VERSION"/release.json dist/"$VERSION"/release.bundle dist/"$VERSION"/*.cdx.json)
+          [ -f docs/rtm.md ] && files+=(docs/rtm.md)
+          notes="docs/releases/$VERSION.md"
+          [ -f "$notes" ] || { echo "The release didn't get as far as its record." > /tmp/notes.md; notes=/tmp/notes.md; }
+          gh release create "$VERSION" --draft --title "$VERSION" --notes-file "$notes" "${files[@]}"
+
+      - name: Open the release record's PR (UAT signs off there)
+        if: always() && env.VERSION != 'v0.0.0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f "docs/releases/$VERSION.md" ] || exit 0
+          git config user.name "realm-release"
+          git config user.email "realm-release@users.noreply.github.com"
+          git switch -c "release/$VERSION"
+          git add "docs/releases/$VERSION.md"
+          state="$(sed -n 's/^- State: //p' "docs/releases/$VERSION.md")"
+          git commit -m "release: $VERSION $state"
+          git push origin "release/$VERSION"
+          gh pr create --base main --head "release/$VERSION" --title "release: $VERSION $state" \
+            --body "The release record for $VERSION. If it's staged: run UAT on staging, fill in the sign-off and the exploratory-testing notes in this PR, merge it, then start realm-promote for $VERSION."
