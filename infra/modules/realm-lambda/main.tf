@@ -34,6 +34,8 @@ data "aws_ecr_image" "initial" {
   image_tag       = var.initial_image_tag
 }
 
+# For Semgrep, the same reason as CKV_AWS_158 below: CloudWatch encrypts logs at rest already.
+# nosemgrep: terraform.aws.security.aws-cloudwatch-log-group-unencrypted.aws-cloudwatch-log-group-unencrypted
 resource "aws_cloudwatch_log_group" "this" {
   #checkov:skip=CKV_AWS_338:30 days by default (DESIGN.md §14.9); a year of logs is a cost each project decides
   #checkov:skip=CKV_AWS_158:CloudWatch encrypts logs at rest already; a customer key costs a dollar a month each
@@ -71,6 +73,8 @@ resource "aws_iam_role_policy_attachment" "more" {
   policy_arn = each.value
 }
 
+# For Semgrep, the same reason as CKV_AWS_50 below: traces go out by OpenTelemetry, not X-Ray.
+# nosemgrep: terraform.aws.security.aws-lambda-x-ray-tracing-not-active.aws-lambda-x-ray-tracing-not-active
 resource "aws_lambda_function" "this" {
   #checkov:skip=CKV_AWS_50:traces go out by OpenTelemetry to the project's endpoint (DESIGN.md §9), not X-Ray
   #checkov:skip=CKV_AWS_116:a queue's own dead-letter queue catches what fails; asynchronous calls aren't used

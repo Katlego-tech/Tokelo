@@ -35,6 +35,8 @@ data "aws_ecr_image" "initial" {
   image_tag       = var.initial_image_tag
 }
 
+# For Semgrep, the same reason as CKV_AWS_158 below: CloudWatch encrypts logs at rest already.
+# nosemgrep: terraform.aws.security.aws-cloudwatch-log-group-unencrypted.aws-cloudwatch-log-group-unencrypted
 resource "aws_cloudwatch_log_group" "this" {
   #checkov:skip=CKV_AWS_338:30 days by default (DESIGN.md §14.9); a year of logs is a cost each project decides
   #checkov:skip=CKV_AWS_158:CloudWatch encrypts logs at rest already; a customer key costs a dollar a month each
