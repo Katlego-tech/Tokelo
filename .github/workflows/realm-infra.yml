@@ -8,7 +8,8 @@
 # The bootstrap (infra/bootstrap) is never applied here: it creates the roles this workflow uses
 # (scripts/realm/aws-bootstrap.sh). Each job signs in to AWS by OIDC with its own role, from the
 # repository variables AWS_REGION, AWS_PLAN_ROLE and AWS_APPLY_ROLE, and only these jobs may ask
-# for a token (id-token: write). Terraform is tools.sh's pinned, checked copy.
+# for a token (id-token: write). Terraform is tools.sh's pinned, checked copy. Until the bootstrap
+# has set AWS_REGION, both jobs skip: a new project's first push adds all of infra/.
 name: realm-infra
 
 on:
@@ -30,7 +31,7 @@ permissions:
 
 jobs:
   plan:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && vars.AWS_REGION != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -64,7 +65,7 @@ jobs:
           exit "$result"
 
   apply:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.AWS_REGION != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
