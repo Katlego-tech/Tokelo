@@ -1,6 +1,6 @@
 # Design — the `dossier` lane
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T008, then T041–T044 · **Spec:**
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T008, then T041–T044 · **Spec:**
 [SPEC.md](../../SPEC.md) US3
 
 ---

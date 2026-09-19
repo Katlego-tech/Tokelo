@@ -1,6 +1,6 @@
 # Design — the `ocr` lane
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T006, then T028–T033, T036 ·
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T006, then T028–T033, T036 ·
 **Spec:** [SPEC.md](../../SPEC.md) US1
 
 ---

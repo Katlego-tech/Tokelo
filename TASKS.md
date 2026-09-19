@@ -138,18 +138,18 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  `design-check` passes; the deployment diagram shows no route to the internet from
                the private subnets (ADR-0003)
       Done:    every resource T019–T021 create is named, with its settings and its cost line
-- [ ] T006 [P] [DSN] Design the `ocr` lane: text layer, OCR, clause splitting, the rule catalogue
+- [x] T006 [P] [DSN] Design the `ocr` lane: text layer, OCR, clause splitting, the rule catalogue
       Req:     none — design documentation
       Files:   docs/design/ocr.md
       Verify:  `design-check` passes, with STRIDE threats (a malicious PDF included)
       Done:    the rule catalogue's file format is fixed: a match, an explanation and a section
                per rule; the page-per-message fan-out is drawn
-- [ ] T007 [P] [DSN] Design the `evidence` lane: digests, EXIF, verification, the audit log
+- [x] T007 [P] [DSN] Design the `evidence` lane: digests, EXIF, verification, the audit log
       Req:     none — design documentation
       Files:   docs/design/evidence.md
       Verify:  `design-check` passes, with STRIDE threats
       Done:    when the digest is taken and how verification reads the file are drawn
-- [ ] T008 [P] [DSN] Design the `dossier` lane: the PDF's structure and the timeline
+- [x] T008 [P] [DSN] Design the `dossier` lane: the PDF's structure and the timeline
       Req:     none — design documentation
       Files:   docs/design/dossier.md
       Verify:  `design-check` passes, with STRIDE threats

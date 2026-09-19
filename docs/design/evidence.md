@@ -1,6 +1,6 @@
 # Design — the `evidence` lane
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T007, then T037–T040, T041 (the timeline
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T007, then T037–T040, T041 (the timeline
 entries) · **Spec:** [SPEC.md](../../SPEC.md) US2, US3
 
 ---
