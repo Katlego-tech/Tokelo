@@ -1,0 +1,34 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='390' height='884' viewBox='0 0 390 884'>
+<title>evidence with its capture details, digest and verification (T040)</title>
+<g transform='translate(0,0)'>
+<rect x='0.5' y='0.5' width='389' height='843' rx='28' fill='white' stroke='#cbd2d9'/>
+<rect x='0' y='0' width='390' height='56' rx='28' fill='#1f2933'/>
+<rect x='0' y='28' width='390' height='28' fill='#1f2933'/>
+<text x='20' y='36' font-family='Inter, Arial, sans-serif' font-size='18' fill='white' font-weight='bold'>Tokelo</text>
+<text x='310' y='36' font-family='Inter, Arial, sans-serif' font-size='14' fill='white' font-weight='normal'>Menu ≡</text>
+<text x='20' y='92' font-family='Inter, Arial, sans-serif' font-size='22' fill='#1f2933' font-weight='bold'>Evidence</text>
+<rect x='20' y='118' width='350' height='44' rx='8' fill='#2563eb' stroke='#2563eb'/>
+<text x='94.2' y='146' font-family='Inter, Arial, sans-serif' font-size='15' fill='white' font-weight='bold'>Add photos, notices or chats</text>
+<rect x='20' y='174' width='68' height='68' rx='8' fill='#f5f7fa' stroke='#cbd2d9'/>
+<path d='M30 228 l16 -20 l12 12 l8 -8 l12 16 z' fill='#cbd2d9'/>
+<rect x='20' y='254' width='350' height='114' rx='10' fill='#f5f7fa' stroke='#cbd2d9'/>
+<rect x='20' y='254' width='5' height='114' rx='2' fill='#cbd2d9'/>
+<text x='36' y='276' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Kitchen wall · photo</text>
+<text x='36' y='298' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Captured: 2026-09-01 10:14 SAST</text>
+<text x='36' y='318' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Device: phone model from EXIF</text>
+<text x='36' y='338' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Location: recorded</text>
+<text x='36' y='358' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>SHA-256: 3f9a…c21e · stored 10:16</text>
+<rect x='20' y='380' width='350' height='44' rx='8' fill='white' stroke='#2563eb'/>
+<text x='137.4' y='408' font-family='Inter, Arial, sans-serif' font-size='15' fill='#2563eb' font-weight='bold'>Verify this file</text>
+<rect x='20' y='436' width='350' height='38' rx='8' fill='white' stroke='#15803d'/>
+<text x='32' y='460' font-family='Inter, Arial, sans-serif' font-size='13' fill='#15803d' font-weight='bold'>Unchanged: matches its stored digest</text>
+<rect x='20' y='486' width='350' height='114' rx='10' fill='#f5f7fa' stroke='#cbd2d9'/>
+<rect x='20' y='486' width='5' height='114' rx='2' fill='#cbd2d9'/>
+<text x='36' y='508' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Bathroom · photo</text>
+<text x='36' y='530' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Captured: not recorded</text>
+<text x='36' y='550' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Device: not recorded</text>
+<text x='36' y='570' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Location: not recorded</text>
+<text x='36' y='590' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>SHA-256: 8b01…77d0 · stored 10:17</text>
+<text x='20' y='820' font-family='Inter, Arial, sans-serif' font-size='11' fill='#616e7c' font-weight='normal'>Legal information, not legal advice · English only</text>
+</g>
+</svg>

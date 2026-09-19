@@ -15,5 +15,5 @@ assistant can read and write them.
 | `ocr` | [ocr.md](ocr.md) | agreed | text layer, OCR, clauses, the rule catalogue |
 | `evidence` | [evidence.md](evidence.md) | agreed | digests, EXIF, verification |
 | `dossier` | [dossier.md](dossier.md) | agreed | the PDF, the timeline |
-| navigator | navigator.md | to be written (T009) | the curated topics |
-| web | web.md | to be written (T010) | screens, flows, the reference images |
+| navigator | [navigator.md](navigator.md) | agreed | the curated topics |
+| web | [web.md](web.md) | agreed | screens, flows, the reference images |

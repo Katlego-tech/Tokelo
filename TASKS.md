@@ -154,12 +154,12 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Files:   docs/design/dossier.md
       Verify:  `design-check` passes, with STRIDE threats
       Done:    the PDF's sections and the timeline's ordering rules are fixed; the PDF library is chosen
-- [ ] T009 [P] [DSN] Design the navigator: the curated topics and how a question finds one
+- [x] T009 [P] [DSN] Design the navigator: the curated topics and how a question finds one
       Req:     none — design documentation
       Files:   docs/design/navigator.md
       Verify:  `design-check` passes, with STRIDE threats
       Done:    the topic file format, the matching rule and the "outside what Tokelo covers" reply are fixed
-- [ ] T010 [P] [DSN] Design the web app: screens, flows, the privacy notice, the wait while the database resumes
+- [x] T010 [P] [DSN] Design the web app: screens, flows, the privacy notice, the wait while the database resumes
       Req:     none — design documentation
       Files:   docs/design/web.md, docs/design/web/*.svg (one reference per screen)
       Verify:  `design-check` passes, with STRIDE threats; each screen T028, T036, T041, T045 and
@@ -191,14 +191,17 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 - [ ] T013 [SET] Declare the four services in realm.toml
       Req:     none — deployment configuration (ADR-0002)
       Files:   realm.toml
-      Verify:  `scripts/realm/realm release services` prints four rows: `api` web, the rest workers, all `runtime = "lambda"`
+      Verify:  `scripts/realm/realm release services` prints four rows: `api` web with `ui = true`
+               (ADR-0010), the rest workers, all `runtime = "lambda"`
       Done:    `realm release names` prints api, ocr, evidence, dossier: the bootstrap's input
 - [ ] T014 [P] [SET] Create the web app skeleton, built and tested in the gate
       Req:     none — setup
       Design:  docs/design/web.md
-      Files:   web/ (package.json and its lock file, the pinned toolchain)
+      Files:   web/ (package.json and its lock file, the pinned toolchain), services/api/Dockerfile (a Node
+               stage), src/tokelo/api/static.py
       Verify:  `bash scripts/gate.sh` lints, tests and builds web/, across 2 projects
-      Done:    an empty app builds; no page is built yet (T028 builds the first)
+      Done:    an empty app builds, and the `api` image serves it at `/` with its security headers and
+               `/config.json` (ADR-0010); no page is built yet (T027 builds the first)
 - [ ] T015 [SET] Require the `gate` check on `main` (branch protection, step 2)
       Req:     none — repository settings
       Verify:  `gh api repos/Katlego-tech/Tokelo/branches/main/protection --jq .required_status_checks.contexts` prints ["gate"]
@@ -274,7 +277,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-002, NFR-006
       Design:  docs/design/api.md
       Files:   src/tokelo/api/uploads.py, tests/api/test_presign.py
-      Contract:POST /uploads {kind, content_type, size} → {url, key, expires_at} (docs/design/api.md)
+      Contract:POST /api/uploads {kind, content_type, size} → {url, key, expires_at} (docs/design/api.md)
       Verify:  the test is written first and fails; then the URL allows one key, one content type
                and at most the stated size, and expires within 15 minutes
       Done:    the API never receives a file's bytes
@@ -289,7 +292,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-015, REQ-001, NFR-009
       Design:  docs/design/web.md, docs/design/web/sign-up.svg, docs/design/web/upload.svg
       Files:   web/src/…
-      Verify:  the tests are written first and fail; then pa11y reports 0 errors, and the notice
+      Verify:  the tests are written first and fail; then axe reports 0 violations, and the notice
                states where data is stored and the POPIA section 72 basis
       Done:    a signed-in tenant uploads a file straight to S3 on staging
 
@@ -345,14 +348,14 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-005, REQ-006, REQ-007
       Design:  docs/design/api.md
       Files:   src/tokelo/api/leases.py, tests/api/test_flags.py
-      Contract:GET /leases/{id}/flags → the flags, each with its explanation, section and the legal-information notice
+      Contract:GET /api/leases/{id}/flags → the flags, each with its explanation, section and the legal-information notice
       Verify:  the tests are written first and fail; then they pass
       Done:    only the lease's own tenant can read them (REQ-001)
 - [ ] T035 [US1] Web: upload a lease and read its flags
       Req:     REQ-003, REQ-005, NFR-009
       Design:  docs/design/web.md, docs/design/web/lease.svg
       Files:   web/src/…
-      Verify:  the tests are written first and fail; then pa11y reports 0 errors on the screen
+      Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
       Done:    matches the reference, with live data from staging
 - [ ] T036 [US1] Time a lease end to end on staging
       Req:     NFR-003, NFR-004
@@ -384,14 +387,14 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-010, REQ-011
       Design:  docs/design/evidence.md, docs/design/api.md
       Files:   src/tokelo/api/evidence.py, tests/api/test_verify.py
-      Contract:POST /evidence/{id}/verify → {matches, recorded_digest, computed_digest}
+      Contract:POST /api/evidence/{id}/verify → {matches, recorded_digest, computed_digest}
       Verify:  the tests are written first and fail; then an unchanged file matches and a changed one doesn't
       Done:    each verification is an audit entry
 - [ ] T040 [US2] Web: upload evidence, see its metadata, and verify it
       Req:     REQ-008, REQ-009, REQ-010, NFR-009
       Design:  docs/design/web.md, docs/design/web/evidence.svg
       Files:   web/src/…
-      Verify:  the tests are written first and fail; then pa11y reports 0 errors on the screen
+      Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
       Done:    matches the reference, with live data from staging
 
 **Checkpoint:** US2 is independently demoable on staging.
@@ -411,7 +414,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-013
       Design:  docs/design/api.md
       Files:   src/tokelo/api/dossiers.py, tests/api/test_dossier_request.py
-      Contract:POST /dossiers {record_ids} → 202 {dossier_id}; the job request is an object in S3 (ADR-0003)
+      Contract:POST /api/dossiers {record_ids} → 202 {dossier_id}; the job request is an object in S3 (ADR-0003)
       Verify:  the tests are written first and fail; then an empty selection, or one of more than
                150 documents, is refused with its reason
       Done:    the request reaches the `dossier` queue
@@ -426,7 +429,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-013, NFR-009
       Design:  docs/design/web.md, docs/design/web/dossier.svg
       Files:   web/src/…
-      Verify:  the tests are written first and fail; then pa11y reports 0 errors on the screen
+      Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
       Done:    matches the reference, with live data from staging
 
 **Checkpoint:** US3 is independently demoable on staging.
@@ -446,7 +449,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-014
       Design:  docs/design/navigator.md, docs/design/api.md
       Files:   src/tokelo/api/navigator.py, tests/api/test_navigator.py
-      Contract:POST /navigator {question} → {topic, answer, sections} or {outside: true, refer_to}
+      Contract:POST /api/navigator {question} → {topic, answer, sections} or {outside: true, refer_to}
       Verify:  the tests are written first and fail; then curated questions get their topic, and
                others are told plainly and pointed to the Rental Housing Tribunal
       Done:    no answer cites case law
@@ -454,7 +457,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     REQ-014, NFR-009
       Design:  docs/design/web.md, docs/design/web/navigator.svg
       Files:   web/src/…
-      Verify:  the tests are written first and fail; then pa11y reports 0 errors on the screen
+      Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
       Done:    matches the reference, with live data from staging
 
 **Checkpoint:** US4 is independently demoable on staging.
@@ -465,7 +468,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 - [ ] T048 [POL] Delete an account and everything in it
       Req:     REQ-016
-      Design:  docs/design/api.md, docs/design/web.md
+      Design:  docs/design/api.md, docs/design/web.md, docs/design/web/account.svg
       Files:   src/tokelo/api/account.py, tests/api/test_delete_account.py, web/src/…
       Verify:  the tests are written first and fail; then the tenant's files and records are gone,
                and the audit log keeps its entries without the tenant's identity

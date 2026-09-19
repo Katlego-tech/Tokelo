@@ -63,7 +63,7 @@ sequenceDiagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> requested: POST /dossiers
+    [*] --> requested: POST /api/dossiers
     requested --> compiling: worker starts
     requested --> failed: the job object couldn't be written
     compiling --> ready: PDF stored

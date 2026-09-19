@@ -171,7 +171,7 @@ sequenceDiagram
     participant S as S3
     participant W as worker (ocr or evidence)
     participant D as Database
-    T->>A: POST /uploads (kind, type, size)
+    T->>A: POST /api/uploads (kind, type, size)
     A->>D: INSERT Document (requested)
     A-->>T: pre-signed POST
     T->>S: upload the file

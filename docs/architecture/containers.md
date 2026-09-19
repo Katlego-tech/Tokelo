@@ -9,9 +9,9 @@ C4Container
     title Containers: tokelo
     Person(tenant, "Tenant")
     System_Boundary(tokelo, "Tokelo, AWS eu-west-1") {
-        Container(web, "Web app", "React, shadcn/ui; static files on S3 behind CloudFront", "The tenant's interface")
+        Container(web, "Web app", "React, shadcn/ui; served by the api function (ADR-0010)", "The tenant's interface")
         Container(auth, "User pool", "Amazon Cognito", "Accounts, MFA, tokens")
-        Container(gw, "API", "API Gateway (HTTP API), JWT authorizer", "One entry point: TLS, throttling, CORS")
+        Container(gw, "API", "API Gateway (HTTP API), JWT authorizer", "One entry point for the app and /api/: TLS, throttling")
         Container(api, "api", "Python 3.14 on Lambda, container image", "Upload URLs, leases, evidence, dossiers, the rights navigator")
         ContainerDb(files, "Documents bucket", "Amazon S3, SSE-KMS, private", "Uploads as received, job requests, generated dossiers")
         ContainerQueue(queues, "Job queues", "EventBridge to SQS standard queues, each with a dead-letter queue (ADR-0007)", "Lease, evidence and dossier jobs")

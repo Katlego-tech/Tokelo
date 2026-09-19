@@ -1,0 +1,27 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='390' height='884' viewBox='0 0 390 884'>
+<title>the account screen and deleting everything (T048)</title>
+<g transform='translate(0,0)'>
+<rect x='0.5' y='0.5' width='389' height='843' rx='28' fill='white' stroke='#cbd2d9'/>
+<rect x='0' y='0' width='390' height='56' rx='28' fill='#1f2933'/>
+<rect x='0' y='28' width='390' height='28' fill='#1f2933'/>
+<text x='20' y='36' font-family='Inter, Arial, sans-serif' font-size='18' fill='white' font-weight='bold'>Tokelo</text>
+<text x='310' y='36' font-family='Inter, Arial, sans-serif' font-size='14' fill='white' font-weight='normal'>Menu ≡</text>
+<text x='20' y='92' font-family='Inter, Arial, sans-serif' font-size='22' fill='#1f2933' font-weight='bold'>Your account</text>
+<text x='20' y='132' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>Signed in as tenant@example.com</text>
+<text x='20' y='160' font-family='Inter, Arial, sans-serif' font-size='14' fill='#2563eb' font-weight='normal'>Privacy notice</text>
+<rect x='20' y='174' width='350' height='44' rx='8' fill='white' stroke='#2563eb'/>
+<text x='166.2' y='202' font-family='Inter, Arial, sans-serif' font-size='15' fill='#2563eb' font-weight='bold'>Sign out</text>
+<rect x='20' y='242' width='350' height='94' rx='10' fill='#f5f7fa' stroke='#b91c1c'/>
+<rect x='20' y='242' width='5' height='94' rx='2' fill='#b91c1c'/>
+<text x='36' y='264' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Delete my account</text>
+<text x='36' y='286' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Deletes your files, leases, evidence and</text>
+<text x='36' y='306' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>dossiers. The audit log keeps its entries,</text>
+<text x='36' y='326' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>without your identity. This can&#x27;t be undone.</text>
+<text x='20' y='360' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Type DELETE to confirm</text>
+<rect x='20' y='366' width='350' height='40' rx='8' fill='white' stroke='#cbd2d9'/>
+<text x='32' y='391' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>DELETE</text>
+<rect x='20' y='418' width='350' height='44' rx='8' fill='#b91c1c' stroke='#b91c1c'/>
+<text x='133.8' y='446' font-family='Inter, Arial, sans-serif' font-size='15' fill='white' font-weight='bold'>Delete my account</text>
+<text x='20' y='820' font-family='Inter, Arial, sans-serif' font-size='11' fill='#616e7c' font-weight='normal'>Legal information, not legal advice · English only</text>
+</g>
+</svg>

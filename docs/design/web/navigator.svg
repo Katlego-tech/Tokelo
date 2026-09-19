@@ -1,0 +1,36 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='390' height='884' viewBox='0 0 390 884'>
+<title>a curated answer, and a question outside the topics (T047)</title>
+<g transform='translate(0,0)'>
+<rect x='0.5' y='0.5' width='389' height='843' rx='28' fill='white' stroke='#cbd2d9'/>
+<rect x='0' y='0' width='390' height='56' rx='28' fill='#1f2933'/>
+<rect x='0' y='28' width='390' height='28' fill='#1f2933'/>
+<text x='20' y='36' font-family='Inter, Arial, sans-serif' font-size='18' fill='white' font-weight='bold'>Tokelo</text>
+<text x='310' y='36' font-family='Inter, Arial, sans-serif' font-size='14' fill='white' font-weight='normal'>Menu ≡</text>
+<text x='20' y='92' font-family='Inter, Arial, sans-serif' font-size='22' fill='#1f2933' font-weight='bold'>Ask a question</text>
+<text x='20' y='130' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Your question</text>
+<rect x='20' y='136' width='350' height='40' rx='8' fill='white' stroke='#cbd2d9'/>
+<text x='32' y='161' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>Can my landlord cut off my water?</text>
+<rect x='20' y='188' width='350' height='44' rx='8' fill='#2563eb' stroke='#2563eb'/>
+<text x='184.2' y='216' font-family='Inter, Arial, sans-serif' font-size='15' fill='white' font-weight='bold'>Ask</text>
+<rect x='20' y='244' width='350' height='74' rx='10' fill='#f5f7fa' stroke='#2563eb'/>
+<rect x='20' y='244' width='5' height='74' rx='2' fill='#2563eb'/>
+<text x='36' y='266' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Services and lock-outs</text>
+<text x='36' y='288' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>The written answer for this topic, from the</text>
+<text x='36' y='308' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>curated sources, and nothing beyond them.</text>
+<rect x='20' y='330' width='91' height='24' rx='12' fill='white' stroke='#2563eb'/>
+<text x='27' y='346' font-family='Inter, Arial, sans-serif' font-size='12' fill='#2563eb' font-weight='normal'>Section ref</text>
+<rect x='119' y='330' width='91' height='24' rx='12' fill='white' stroke='#2563eb'/>
+<text x='126' y='346' font-family='Inter, Arial, sans-serif' font-size='12' fill='#2563eb' font-weight='normal'>Section ref</text>
+<rect x='20' y='364' width='350' height='38' rx='8' fill='white' stroke='#2563eb'/>
+<text x='32' y='388' font-family='Inter, Arial, sans-serif' font-size='13' fill='#2563eb' font-weight='bold'>This is legal information, not legal advice</text>
+<text x='20' y='426' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Your question</text>
+<rect x='20' y='432' width='350' height='40' rx='8' fill='white' stroke='#cbd2d9'/>
+<text x='32' y='457' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>Can I sublet my flat on Airbnb?</text>
+<rect x='20' y='484' width='350' height='74' rx='10' fill='#f5f7fa' stroke='#b45309'/>
+<rect x='20' y='484' width='5' height='74' rx='2' fill='#b45309'/>
+<text x='36' y='506' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Outside what Tokelo covers</text>
+<text x='36' y='528' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Tokelo can&#x27;t answer this. The Rental Housing</text>
+<text x='36' y='548' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Tribunal can help with it.</text>
+<text x='20' y='820' font-family='Inter, Arial, sans-serif' font-size='11' fill='#616e7c' font-weight='normal'>Legal information, not legal advice · English only</text>
+</g>
+</svg>

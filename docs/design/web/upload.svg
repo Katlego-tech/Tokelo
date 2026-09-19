@@ -1,0 +1,40 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='390' height='884' viewBox='0 0 390 884'>
+<title>the upload widget: choosing, combining photos into one PDF, uploading, processing (T027)</title>
+<g transform='translate(0,0)'>
+<rect x='0.5' y='0.5' width='389' height='843' rx='28' fill='white' stroke='#cbd2d9'/>
+<rect x='0' y='0' width='390' height='56' rx='28' fill='#1f2933'/>
+<rect x='0' y='28' width='390' height='28' fill='#1f2933'/>
+<text x='20' y='36' font-family='Inter, Arial, sans-serif' font-size='18' fill='white' font-weight='bold'>Tokelo</text>
+<text x='310' y='36' font-family='Inter, Arial, sans-serif' font-size='14' fill='white' font-weight='normal'>Menu ≡</text>
+<text x='20' y='92' font-family='Inter, Arial, sans-serif' font-size='22' fill='#1f2933' font-weight='bold'>Upload a lease</text>
+<text x='20' y='132' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>A PDF, or photos of each page. Photos</text>
+<text x='20' y='152' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>are joined into one PDF before upload</text>
+<text x='20' y='172' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>(at most 30 pages and 20 MB).</text>
+<rect x='20' y='186' width='350' height='44' rx='8' fill='white' stroke='#2563eb'/>
+<text x='151.8' y='214' font-family='Inter, Arial, sans-serif' font-size='15' fill='#2563eb' font-weight='bold'>Choose a PDF</text>
+<rect x='20' y='242' width='350' height='44' rx='8' fill='white' stroke='#2563eb'/>
+<text x='119.39999999999999' y='270' font-family='Inter, Arial, sans-serif' font-size='15' fill='#2563eb' font-weight='bold'>Take or choose photos</text>
+<rect x='20' y='298' width='68' height='68' rx='8' fill='#f5f7fa' stroke='#cbd2d9'/>
+<path d='M30 352 l16 -20 l12 12 l8 -8 l12 16 z' fill='#cbd2d9'/>
+<rect x='96' y='298' width='68' height='68' rx='8' fill='#f5f7fa' stroke='#cbd2d9'/>
+<path d='M106 352 l16 -20 l12 12 l8 -8 l12 16 z' fill='#cbd2d9'/>
+<rect x='172' y='298' width='68' height='68' rx='8' fill='#f5f7fa' stroke='#cbd2d9'/>
+<path d='M182 352 l16 -20 l12 12 l8 -8 l12 16 z' fill='#cbd2d9'/>
+<rect x='248' y='298' width='68' height='68' rx='8' fill='#f5f7fa' stroke='#cbd2d9'/>
+<path d='M258 352 l16 -20 l12 12 l8 -8 l12 16 z' fill='#cbd2d9'/>
+<text x='20' y='392' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>4 photos → one PDF, 3.8 MB</text>
+<text x='20' y='418' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Uploading straight to storage: 62%</text>
+<rect x='20' y='426' width='350' height='10' rx='5' fill='#cbd2d9'/>
+<rect x='20' y='426' width='217' height='10' rx='5' fill='#2563eb'/>
+<rect x='20' y='450' width='350' height='54' rx='10' fill='#f5f7fa' stroke='#2563eb'/>
+<rect x='20' y='450' width='5' height='54' rx='2' fill='#2563eb'/>
+<text x='36' y='472' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Processing</text>
+<text x='36' y='494' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Reading 4 pages. You can leave this page.</text>
+<rect x='20' y='516' width='350' height='74' rx='10' fill='#f5f7fa' stroke='#b91c1c'/>
+<rect x='20' y='516' width='5' height='74' rx='2' fill='#b91c1c'/>
+<text x='36' y='538' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Refused</text>
+<text x='36' y='560' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Word documents aren&#x27;t accepted: upload a PDF</text>
+<text x='36' y='580' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>or photos of the pages.</text>
+<text x='20' y='820' font-family='Inter, Arial, sans-serif' font-size='11' fill='#616e7c' font-weight='normal'>Legal information, not legal advice · English only</text>
+</g>
+</svg>
