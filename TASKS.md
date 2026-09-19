@@ -194,7 +194,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  `scripts/realm/realm release services` prints four rows: `api` web with `ui = true`
                (ADR-0010), the rest workers, all `runtime = "lambda"`
       Done:    `realm release names` prints api, ocr, evidence, dossier: the bootstrap's input
-- [ ] T014 [P] [SET] Create the web app skeleton, built and tested in the gate
+- [x] T014 [P] [SET] Create the web app skeleton, built and tested in the gate
       Req:     none — setup
       Design:  docs/design/web.md
       Files:   web/ (package.json and its lock file, the pinned toolchain), services/api/Dockerfile (a Node
