@@ -14,7 +14,7 @@ C4Container
         Container(gw, "API", "API Gateway (HTTP API), JWT authorizer", "One entry point: TLS, throttling, CORS")
         Container(api, "api", "Python 3.14 on Lambda, container image", "Upload URLs, leases, evidence, dossiers, the rights navigator")
         ContainerDb(files, "Documents bucket", "Amazon S3, SSE-KMS, private", "Uploads as received, job requests, generated dossiers")
-        ContainerQueue(queues, "Job queues", "EventBridge to SQS FIFO, each with a dead-letter queue", "Lease, evidence and dossier jobs")
+        ContainerQueue(queues, "Job queues", "EventBridge to SQS standard queues, each with a dead-letter queue (ADR-0007)", "Lease, evidence and dossier jobs")
         Container(ocr, "ocr", "Python 3.14 on Lambda; pypdf, Tesseract 5", "Page text, clause rules, explanations")
         Container(evidence, "evidence", "Python 3.14 on Lambda", "SHA-256 digests, EXIF metadata")
         Container(dossier, "dossier", "Python 3.14 on Lambda", "The indexed dispute PDF")

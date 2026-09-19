@@ -100,14 +100,14 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 > Merged before Phase 2 implementation starts. Cheap, markdown-only, and the thing that decides
 > whether everything after it is built to a shape or to a guess.
 
-- [ ] T001 [DSN] Design the domain model: the core entities and their relations
+- [x] T001 [DSN] Design the domain model: the core entities and their relations
       Req:     none — design documentation
       Files:   docs/design/domain-model.md
       Verify:  `scripts/realm/realm design-check` passes; the class diagram names every entity
                REQUIREMENTS.md uses (tenant, lease, page, clause, rule, flag, evidence file,
                timeline entry, dossier, audit entry, topic)
       Done:    each entity has its fields, keys and owner, and the audit log's append-only rule
-- [ ] T002 [P] [DSN] Design the `api` lane: endpoints, authorization, pre-signed URLs, job requests
+- [x] T002 [P] [DSN] Design the `api` lane: endpoints, authorization, pre-signed URLs, job requests
       Req:     none — design documentation
       Files:   docs/design/api.md
       Verify:  `design-check` passes, with the lane's STRIDE threats each mitigated
@@ -132,7 +132,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Files:   TASKS.md, PLAN.md (the build phases)
       Verify:  `scripts/realm/realm trace` has 0 broken links, and every REQ- and NFR- is named by at least one task
       Done:    phases 0–7 from design to release, each ending at a demoable checkpoint
-- [ ] T005 [P] [DSN] Design the infrastructure: VPC, subnets, security groups, S3, events, queues, Aurora, Cognito
+- [x] T005 [P] [DSN] Design the infrastructure: VPC, subnets, security groups, S3, events, queues, Aurora, Cognito
       Req:     none — design documentation
       Files:   docs/design/infrastructure.md
       Verify:  `design-check` passes; the deployment diagram shows no route to the internet from
@@ -259,10 +259,11 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 - [ ] T023 [FND] Create the schema, and keep the audit log append-only
       Req:     REQ-011
       Design:  docs/design/domain-model.md
-      Files:   migrations/0001_*.sql, src/tokelo/api/migrate.py, tests/integration/test_schema.py
+      Files:   infra/db/migrations/0001_*.sql, scripts/migrate.py, .github/workflows/realm-infra.yml, tests/integration/test_schema.py
       Verify:  the test is written first and fails; then, against PostgreSQL 16 in Docker, the
                application role can INSERT into the audit log but UPDATE and DELETE are refused
-      Done:    the migration runs as a function inside the VPC, started by the pipeline (ADR-0002)
+      Done:    `realm-infra`'s apply job runs the migrations through the RDS Data API after `terraform
+               apply` (ADR-0008), and the functions connect only as the application user
 - [ ] T024 [FND] Serve each tenant only their own records
       Req:     REQ-001
       Design:  docs/design/api.md

@@ -13,7 +13,7 @@ Tokelo is serverless and event-driven, on AWS in `eu-west-1`, built with the Sec
 - A React web app signs tenants in with Cognito, and calls an HTTP API whose `api` function runs
   on Lambda.
 - Files go straight to S3 through pre-signed URLs. Every job, whether an upload or a request the
-  API writes, starts as an object in S3. EventBridge carries it to an SQS FIFO queue with a
+  API writes, starts as an object in S3. EventBridge carries it to an SQS standard queue (ADR-0007) with a
   dead-letter queue, and a worker function takes it from there: `ocr`, `evidence` or `dossier`.
 - The functions that touch the database, and the database itself, are in private subnets with no
   way to the internet. The database is Aurora PostgreSQL Serverless v2, which pauses when idle.
@@ -58,7 +58,7 @@ hard constraints:** the grounding rule, POPIA, the free plan, and a deadline bef
 | --- | --- |
 | **Language(s) + versions** | Python 3.14, the newest Lambda runtime that isn't in preview (AWS's Lambda runtimes page, checked 2026-09-19); the web app's toolchain is pinned in its design doc |
 | **Architecture** | Event-driven and serverless: an HTTP API on Lambda, and worker functions fed by SQS. Every service is a Lambda container image (ADR-0002). This replaces setup's first answer, an API on ECS Fargate |
-| **Messaging / async** | EventBridge to Amazon SQS FIFO, each queue with a dead-letter queue after 3 failures. Jobs start as objects in S3 (ADR-0003) |
+| **Messaging / async** | EventBridge to Amazon SQS standard queues, each with a dead-letter queue after 3 failures, and idempotent workers (ADR-0007). Jobs start as objects in S3 (ADR-0003) |
 | **Frontend** | React + shadcn/ui (Radix + Tailwind + CVA), static files on S3 behind CloudFront |
 | **Containerization** | One container image per service, built, scanned, signed and deployed by digest by the kit's release pipeline. Local development runs them with Docker |
 | **Runtime/deploy target** | AWS Lambda in `eu-west-1`, in a staging and a production environment in one account, deployed by the kit's `aws` adapter through GitHub OIDC roles |
