@@ -188,7 +188,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Contract:invoked with {"realm":"health"} → {"ok": true}
       Verify:  the tests are written first and fail; then `pytest tests/unit/test_health.py` passes
       Done:    all four images build
-- [ ] T013 [SET] Declare the four services in realm.toml
+- [x] T013 [SET] Declare the four services in realm.toml
       Req:     none — deployment configuration (ADR-0002)
       Files:   realm.toml
       Verify:  `scripts/realm/realm release services` prints four rows: `api` web with `ui = true`

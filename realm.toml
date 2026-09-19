@@ -34,3 +34,40 @@ region = "eu-west-1"        # the AWS region, which an ADR decides
 # runtime = "ecs"            # aws only: ecs (Fargate) | lambda
 # staging_url = ""           # railway and aws, web services: its https:// address in staging
 # production_url = ""        #   and in production
+
+# Tokelo's four: every one a Lambda function from its own image (ADR-0002), each built from the
+# repository's root with its own Dockerfile. tests/unit/test_realm_services.py holds this list.
+
+[[service]]
+name = "api"
+kind = "web"
+context = "."
+dockerfile = "services/api/Dockerfile"
+port = 8080                  # the kit asks every web service for one; a Lambda has none, and
+                             #   8080 is where Lambda's runtime emulator listens for local runs
+health = "/health"
+ui = true                    # it serves the web app, so pa11y and ZAP check it (ADR-0010)
+runtime = "lambda"
+staging_url = ""             # the HTTP API's URL: set when staging exists (T020)
+production_url = ""          #   and when production does (T053)
+
+[[service]]
+name = "ocr"
+kind = "worker"
+context = "."
+dockerfile = "services/ocr/Dockerfile"
+runtime = "lambda"
+
+[[service]]
+name = "evidence"
+kind = "worker"
+context = "."
+dockerfile = "services/evidence/Dockerfile"
+runtime = "lambda"
+
+[[service]]
+name = "dossier"
+kind = "worker"
+context = "."
+dockerfile = "services/dossier/Dockerfile"
+runtime = "lambda"
