@@ -173,7 +173,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 1 — Setup
 
-- [ ] T011 [SET] Create the Python project with its first behaviour: the `api` answers its health check
+- [x] T011 [SET] Create the Python project with its first behaviour: the `api` answers its health check
       Req:     none — setup (the gate's first project manifest)
       Design:  docs/design/api.md
       Files:   pyproject.toml, src/tokelo/api/handler.py, services/api/Dockerfile, tests/unit/test_health.py

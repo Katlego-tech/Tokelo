@@ -1,0 +1,38 @@
+[project]
+name = "tokelo"
+version = "0.1.0"
+description = "Tokelo: lease checks, tamper-evident evidence and dispute dossiers for South African tenants"
+requires-python = ">=3.14"
+dependencies = []
+
+[tool.uv]
+package = false   # the functions' images copy src/tokelo; nothing is installed as a package
+exclude-newer = "7 days"   # a cooldown: a package version is used only once it's a week old
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+# The kit's own tools run on Python 3.11+ and are linted and tested in the kit (SecretRealm).
+# Formatting them for 3.14 would break them: PEP 758's unparenthesised `except A, B:`.
+extend-exclude = ["scripts/realm"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pyright]
+include = ["src", "tests"]
+extraPaths = ["src"]
+pythonVersion = "3.14"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--strict-markers"
+markers = ["req(*ids): the requirements this test verifies"]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "ruff>=0.16.7",
+]
