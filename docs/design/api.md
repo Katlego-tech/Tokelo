@@ -125,7 +125,7 @@ Every endpoint except `/health` needs a valid token. Every response is JSON.
 | `GET /leases/{id}/flags` | none | `200 LeaseFlags` | `404`; `409` still reading | REQ-004 to REQ-007 |
 | `POST /evidence/{id}/verify` | none | `200 Verification` | `404`; `409` not stored yet | REQ-010 |
 | `GET /timeline` | none | `200 {"entries": [TimelineEntryView]}` | none | REQ-012 |
-| `POST /dossiers` | `{"document_ids": [uuid]}` | `202 {"dossier_id"}` | `422` empty, or an ID not the tenant's or not stored | REQ-013 |
+| `POST /dossiers` | `{"document_ids": [uuid]}` | `202 {"dossier_id"}` | `422` empty, more than 150 documents, or an ID not the tenant's or not stored | REQ-013 |
 | `GET /dossiers/{id}` | none | `200 {"status", "download_url"?, "expires_at"?}` | `404` | REQ-013 |
 | `POST /navigator` | `{"question"}` | `200 Answer` or `200 Outside` | `422` empty | REQ-014 |
 | `DELETE /account` | none | `202` | none | REQ-016 |
