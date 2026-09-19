@@ -1,0 +1,4 @@
+# The images are built from the repository's root. Only what a Dockerfile copies goes in: the
+# rest (the git history, .venv, .realm, the docs) never reaches the build.
+*
+!src/
