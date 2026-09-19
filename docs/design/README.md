@@ -12,8 +12,8 @@ assistant can read and write them.
 | domain model | [domain-model.md](domain-model.md) | agreed | the entities and their rules (class, sequence, state) |
 | `api` | [api.md](api.md) | agreed | the endpoints, identity, pre-signed uploads, the key layout, job requests (sequence, contracts) |
 | infrastructure | [infrastructure.md](infrastructure.md) | agreed | the VPC, database, buckets, events, queues, functions, identity, hosting, alarms, costs (deployment, contracts) |
-| `ocr` | ocr.md | to be written (T006) | text layer, OCR, clauses, the rule catalogue |
-| `evidence` | evidence.md | to be written (T007) | digests, EXIF, verification |
-| `dossier` | dossier.md | to be written (T008) | the PDF, the timeline |
+| `ocr` | [ocr.md](ocr.md) | agreed | text layer, OCR, clauses, the rule catalogue |
+| `evidence` | [evidence.md](evidence.md) | agreed | digests, EXIF, verification |
+| `dossier` | [dossier.md](dossier.md) | agreed | the PDF, the timeline |
 | navigator | navigator.md | to be written (T009) | the curated topics |
 | web | web.md | to be written (T010) | screens, flows, the reference images |

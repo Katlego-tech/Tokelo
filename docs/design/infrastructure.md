@@ -161,10 +161,10 @@ paused and active states are Aurora's own (ADR-0004).
 
   | Function | S3 | Database | SQS |
   |---|---|---|---|
-  | `api` | `PutObject` on `uploads/*` (to sign the POSTs) and `jobs/dossier/*`; `GetObject` on `uploads/*` and `dossiers/*`; `ListBucketVersions`, `DeleteObject` and `DeleteObjectVersion` under `uploads/`, `dossiers/` (account deletion) | `rds-db:connect` as the application user | none |
-  | `ocr` | `GetObject` on `uploads/*/lease/*` and `jobs/page/*`; `PutObject` on `jobs/page/*` | the same | receive and delete on its two queues |
+  | `api` | `PutObject` on `uploads/*` (to sign the POSTs) and `jobs/dossier/*`; `GetObject` and `GetObjectVersion` on `uploads/*`, `GetObject` on `dossiers/*`; `ListBucketVersions`, `DeleteObject` and `DeleteObjectVersion` under `uploads/`, `dossiers/` (account deletion) | `rds-db:connect` as the application user | none |
+  | `ocr` | `GetObject` and `GetObjectVersion` on `uploads/*/lease/*`, `GetObject` on `jobs/page/*`; `PutObject` on `jobs/page/*` | the same | receive and delete on its two queues |
   | `evidence` | `GetObject` and `GetObjectVersion` on `uploads/*` | the same | receive and delete on its queue |
-  | `dossier` | `GetObject` on `uploads/*` and `jobs/dossier/*`; `PutObject` on `dossiers/*` | the same | receive and delete on its queue |
+  | `dossier` | `GetObject` and `GetObjectVersion` on `uploads/*`, `GetObject` on `jobs/dossier/*`; `PutObject` on `dossiers/*` | the same | receive and delete on its queue |
 
   Every role is named `tokelo-<env>-…` under the `/tokelo/` path, with the bootstrap's
   permissions boundary.

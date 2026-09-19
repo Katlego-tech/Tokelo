@@ -63,7 +63,7 @@ hard constraints:** the grounding rule, POPIA, the free plan, and a deadline bef
 | **Containerization** | One container image per service, built, scanned, signed and deployed by digest by the kit's release pipeline. Local development runs them with Docker |
 | **Runtime/deploy target** | AWS Lambda in `eu-west-1`, in a staging and a production environment in one account, deployed by the kit's `aws` adapter through GitHub OIDC roles |
 | **Data layer** | Aurora PostgreSQL Serverless v2, engine 16, 0 to 2 ACU, pausing after 10 minutes idle, IAM authentication (ADR-0004); S3 for documents (private, SSE-KMS) |
-| **Key external services/models** | Amazon Cognito, API Gateway (HTTP API), EventBridge, SQS, S3, CloudFront. OCR with pypdf and Tesseract 5 (ADR-0005). No Textract, and no language model in phases 1–5 (ADR-0006) |
+| **Key external services/models** | Amazon Cognito, API Gateway (HTTP API), EventBridge, SQS, S3, CloudFront. OCR with pypdf and Tesseract 5, English only (ADR-0009). No Textract, and no language model in phases 1–5 (ADR-0006) |
 | **Testing** | pytest, with `@pytest.mark.req`; ruff, pyright; in the release pipeline, k6 (performance), pa11y (accessibility) and ZAP (DAST) |
 | **Perf/cost goals** | NFR-001 to NFR-009 in [REQUIREMENTS.md](REQUIREMENTS.md). In short: an upload URL at p95 < 500 ms warm; the first request after a pause within 30 s; a digital lease's flags within 2 minutes; at most USD 20 a month |
 | **Constraints** | The AWS free plan (no Organizations; it ends 2027-02-26). `eu-west-1`, with the POPIA section 72 transfer stated in the privacy notice (ADR-0001). No NAT, so nothing inside the VPC calls the internet or other AWS APIs (ADR-0003). The grounding rule |

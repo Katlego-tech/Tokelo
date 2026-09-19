@@ -138,18 +138,18 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  `design-check` passes; the deployment diagram shows no route to the internet from
                the private subnets (ADR-0003)
       Done:    every resource T019–T021 create is named, with its settings and its cost line
-- [ ] T006 [P] [DSN] Design the `ocr` lane: text layer, OCR, clause splitting, the rule catalogue
+- [x] T006 [P] [DSN] Design the `ocr` lane: text layer, OCR, clause splitting, the rule catalogue
       Req:     none — design documentation
       Files:   docs/design/ocr.md
       Verify:  `design-check` passes, with STRIDE threats (a malicious PDF included)
       Done:    the rule catalogue's file format is fixed: a match, an explanation and a section
                per rule; the page-per-message fan-out is drawn
-- [ ] T007 [P] [DSN] Design the `evidence` lane: digests, EXIF, verification, the audit log
+- [x] T007 [P] [DSN] Design the `evidence` lane: digests, EXIF, verification, the audit log
       Req:     none — design documentation
       Files:   docs/design/evidence.md
       Verify:  `design-check` passes, with STRIDE threats
       Done:    when the digest is taken and how verification reads the file are drawn
-- [ ] T008 [P] [DSN] Design the `dossier` lane: the PDF's structure and the timeline
+- [x] T008 [P] [DSN] Design the `dossier` lane: the PDF's structure and the timeline
       Req:     none — design documentation
       Files:   docs/design/dossier.md
       Verify:  `design-check` passes, with STRIDE threats
@@ -299,10 +299,10 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 3 — US1 Check a lease against the statutes
 
-- [ ] T028 [US1] Build the synthetic sample leases and the OCR accuracy test (ADR-0005's measurement)
+- [ ] T028 [US1] Build the synthetic sample leases and the OCR accuracy test (ADR-0009's measurement)
       Req:     NFR-005, NFR-004
       Design:  docs/design/ocr.md
-      Files:   tests/fixtures/leases/ (digital, scanned, phone photo, Afrikaans scan, each with its known text), tests/ocr/test_accuracy.py
+      Files:   tests/fixtures/leases/ (English only: digital, scanned, phone photo, each with its known text), tests/ocr/test_accuracy.py
       Verify:  the test runs and fails because no OCR exists yet
       Done:    it measures the character error rate and the time per page for each form
 - [ ] T029 [US1] Read every page, and say which couldn't be read
@@ -412,12 +412,13 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Design:  docs/design/api.md
       Files:   src/tokelo/api/dossiers.py, tests/api/test_dossier_request.py
       Contract:POST /dossiers {record_ids} → 202 {dossier_id}; the job request is an object in S3 (ADR-0003)
-      Verify:  the tests are written first and fail; then an empty selection is refused with its reason
+      Verify:  the tests are written first and fail; then an empty selection, or one of more than
+               150 documents, is refused with its reason
       Done:    the request reaches the `dossier` queue
 - [ ] T043 [US3] Compile the dossier PDF
       Req:     REQ-013, REQ-011
       Design:  docs/design/dossier.md
-      Files:   src/tokelo/dossier/pdf.py, tests/dossier/test_pdf.py
+      Files:   src/tokelo/dossier/pdf.py, src/tokelo/dossier/sanitize.py, tests/dossier/test_pdf.py, tests/dossier/test_sanitize.py
       Verify:  the tests are written first and fail; then the PDF has its index, the records in time
                order, each file's metadata and digest, and the cited sections
       Done:    stored in S3 for the tenant to download, with an audit entry

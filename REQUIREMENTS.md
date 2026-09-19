@@ -305,7 +305,7 @@ curated sources (the grounding rule, [AGENTS.md](AGENTS.md)).
 - Characteristic (ISO/IEC 25010): performance efficiency · Parent: REQ-004 · State: proposed
 - Target: p95 < 30 s per scanned page in the `ocr` function
 - Verify by: test (performance)
-- Measured by: the ADR-0005 measurement, then tests/e2e/test_lease_timing.py on staging
+- Measured by: the ADR-0009 measurement, then tests/e2e/test_lease_timing.py on staging
 
 ### NFR-005 — OCR reads accurately enough to check clauses
 - Characteristic (ISO/IEC 25010): functional suitability · Parent: REQ-004 · State: proposed

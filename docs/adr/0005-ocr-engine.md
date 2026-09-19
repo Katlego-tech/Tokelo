@@ -1,6 +1,6 @@
 # ADR-0005 — Leases are read from their text layer first, and OCR'd with Tesseract only where there's none
 
-- Status: accepted
+- Status: superseded by ADR-0009
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context

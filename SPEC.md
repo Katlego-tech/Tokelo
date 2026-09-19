@@ -35,8 +35,8 @@ It runs on AWS, event-driven and serverless (ADR-0001 to ADR-0006).
 - **Landlord accounts** or features for landlords and agents.
 - **A native mobile app.** The web app works on phones.
 - **A generated, conversational chatbot** in phases 1–5 (ADR-0006).
-- Payments, e-signatures, and languages other than English in the interface. Afrikaans leases
-  are still read (ADR-0005).
+- Payments and e-signatures.
+- **Any language but English,** in the interface or in the leases Tokelo reads (ADR-0009).
 
 ---
 
