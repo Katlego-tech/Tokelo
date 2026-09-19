@@ -2,4 +2,4 @@
 name              = "tokelo"
 region            = "eu-west-1"
 github_repository = "Katlego-tech/Tokelo"
-services          = []
+services          = ["api", "ocr", "evidence", "dossier"]

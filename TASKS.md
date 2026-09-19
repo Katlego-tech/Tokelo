@@ -206,7 +206,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     none — repository settings
       Verify:  `gh api repos/Katlego-tech/Tokelo/branches/main/protection --jq .required_status_checks.contexts` prints ["gate"]
       Done:    a PR can't merge with a red gate. It waits for T011, so no push run is red for want of a manifest
-- [ ] T016 [SET] Bootstrap AWS: the state bucket, the roles, the image repositories and the budget (with Katlego's go-ahead)
+- [x] T016 [SET] Bootstrap AWS: the state bucket, the roles, the image repositories and the budget (with Katlego's go-ahead)
       Req:     REQ-019, NFR-008
       Files:   infra/*/backend.hcl, infra/bootstrap/terraform.tfvars, realm.toml ([deploy] registry)
       Verify:  Katlego runs `aws login --profile tokelo` and `TF_VAR_budget_email=… bash scripts/realm/aws-bootstrap.sh`.
