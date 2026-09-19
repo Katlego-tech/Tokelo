@@ -104,7 +104,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     none — design documentation
 - [ ] T002 [P] [DSN] `<docs/design/<lane>.md — one design doc per non-trivial lane>`
       Req:     none — design documentation
-- [ ] T003 [DSN] Decide the architecture: ADR-0001 to ADR-0006 in docs/adr/
+- [x] T003 [DSN] Decide the architecture: ADR-0001 to ADR-0006 in docs/adr/
       Req:     none — design documentation (the decisions the requirements and designs rest on)
       Files:   docs/adr/0001-region.md … docs/adr/0006-language-model.md
       Verify:  `scripts/realm/realm adr-check` passes, and each ADR's Status is Katlego's decision

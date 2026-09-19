@@ -1,6 +1,6 @@
 # ADR-0005 — Leases are read from their text layer first, and OCR'd with Tesseract only where there's none
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -32,18 +32,18 @@ What matters here:
 1. **Do nothing: OCR every page with one engine.** This wastes time and accuracy on digital PDFs,
    whose text is already in the file.
 2. **Text layer first, then Tesseract for pages without one, with preprocessing** (deskew,
-   threshold and denoise, with Pillow or OpenCV) (proposed).
+   threshold and denoise, with Pillow or OpenCV) (chosen).
 3. **Text layer first, then PaddleOCR.** It's more accurate on photos, but at several times the
    size and memory.
 4. **Textract, by upgrading to the paid plan.** That's rejected by the free-plan decision.
 
 ## Decision
 
-Proposed: **the `ocr` worker reads each page's text layer first (`pypdf`), and runs Tesseract 5
+**The `ocr` worker reads each page's text layer first (`pypdf`), and runs Tesseract 5
 (`eng` and `afr`), after preprocessing, only on pages without one.** PaddleOCR is the fallback,
 through a new ADR, if Tesseract misses the accuracy NFR on the photo samples.
 
-The choice is confirmed by a measurement before this ADR is accepted:
+A measurement confirms the choice before the `ocr` worker is built on it:
 
 - **The samples:** synthetic leases only, in the four forms. Real tenant documents never go into
   the repository.

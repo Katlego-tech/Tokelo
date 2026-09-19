@@ -1,6 +1,6 @@
 # ADR-0002 — Every service is a Lambda function, running a container image
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -29,14 +29,14 @@ web service may run on Lambda.
    networking, and $88 or more with the NAT gateways. That uses the whole budget in the first month.
 2. **Everything on ECS Fargate.** This costs the most while idle, and long OCR jobs gain nothing
    from it.
-3. **Everything on Lambda, from container images** (proposed). Idle costs nothing. The functions
+3. **Everything on Lambda, from container images** (chosen). Idle costs nothing. The functions
    are the same Python, packaged as container images in ECR, so they're still containers the
    release pipeline builds, scans, signs and deploys by digest. The limits: 15 minutes per
    invocation, 10 GB per image, 10,240 MB of memory, and a cold start after idle.
 
 ## Decision
 
-Proposed: **every service is a Lambda function running a container image**, deployed by the kit's
+**Every service is a Lambda function running a container image**, deployed by the kit's
 `aws` adapter (`runtime = "lambda"`):
 
 | Service | Kind | What it does | Module |

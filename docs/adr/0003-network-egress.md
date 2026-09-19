@@ -1,6 +1,6 @@
 # ADR-0003 — Private subnets with no NAT: only the free S3 gateway endpoint
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -29,7 +29,7 @@ The account is on AWS's free plan: USD 100 of credits, until 2027-02-26 at the l
    failure, and it still costs money every hour.
 3. **Interface endpoints.** These cost $8 or more per endpoint per AZ, and the list grows with
    every AWS service the code calls.
-4. **No way out** (proposed). This works because of ADR-0002: with every service on Lambda, none
+4. **No way out** (chosen). This works because of ADR-0002: with every service on Lambda, none
    of the usual reasons for a private subnet to reach out apply.
 
    | What would need to leave the subnet | What happens instead |
@@ -44,13 +44,13 @@ The account is on AWS's free plan: USD 100 of credits, until 2027-02-26 at the l
 
 ## Decision
 
-Proposed: **no NAT and no interface endpoints.** One VPC per environment, with private subnets in
+**No NAT and no interface endpoints.** One VPC per environment, with private subnets in
 two AZs (Aurora needs a subnet group in at least two), no internet gateway route from them, and
 the free S3 gateway endpoint. The functions that touch the database run in the private subnets.
 Their security group allows outbound traffic only to the database's security group and to S3's
 prefix list. The database's security group allows inbound traffic only from the functions'.
 
-The whole budget, as proposed across ADR-0002 to ADR-0006, for two environments:
+The whole budget, as decided across ADR-0002 to ADR-0006, for two environments:
 
 | Item | Per month |
 |---|---|

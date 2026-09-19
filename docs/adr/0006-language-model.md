@@ -1,6 +1,6 @@
 # ADR-0006 — No language model in phases 1–5: explanations and answers are written, not generated
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -29,7 +29,7 @@ What's available on this account (checked 2026-09-18 and 2026-09-19, with no mod
 
 ## Options considered
 
-1. **Do nothing: no model** (proposed for phases 1–5).
+1. **Do nothing: no model** (chosen for phases 1–5).
    - **Module A:** each rule in the rules engine carries its own explanation, written once from
      the curated source it enforces, with that source's section.
    - **Module D:** answers come from a curated set of question topics, each written from and
@@ -48,7 +48,7 @@ What's available on this account (checked 2026-09-18 and 2026-09-19, with no mod
 
 ## Decision
 
-Proposed: **option 1 for phases 1–5.** Explanations and navigator answers are written by hand from
+**Option 1 for phases 1–5.** Explanations and navigator answers are written by hand from
 the curated sources, and each cites its section. A language model can be added later through a
 new ADR, once:
 

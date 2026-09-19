@@ -1,6 +1,6 @@
 # ADR-0001 — Tokelo runs in eu-west-1 (Ireland)
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -39,13 +39,14 @@ notice and the threat model, not legal advice.
    (ADR-0006) that need no Marketplace agreement. The cost is the cross-border transfer, which the
    privacy notice must state, and the distance.
 2. **Move to `af-south-1`.** The data stays in South Africa and requests stay local. The
-   costs: 14–35% higher per hour (Aurora +14%, RDS +24%, Fargate +35%), no Nova models, and Anthropic's models only through a
-   Marketplace agreement the free plan may not allow, mostly routed globally. The region can
+   costs: 14–35% higher per hour (Aurora +14%, RDS +24%, Fargate +35%), no Nova models, and
+   Anthropic's models only through a Marketplace agreement the free plan may not allow, mostly
+   routed globally. The region can
    change freely until the AWS bootstrap runs (four files); after it, a move means a new bootstrap.
 
 ## Decision
 
-Proposed: **`eu-west-1`**. The free plan makes cost the binding constraint, and ADR-0006 may need a
+**`eu-west-1`**. The free plan makes cost the binding constraint, and ADR-0006 may need a
 language model that runs without a Marketplace agreement. The transfer out of South Africa is
 stated in the privacy notice, and it gets its own entry in the threat model.
 
