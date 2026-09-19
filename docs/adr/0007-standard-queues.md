@@ -1,6 +1,6 @@
 # ADR-0007 — Jobs use standard SQS queues, and every worker is idempotent
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -28,14 +28,14 @@ the records' own dates. What does matter is that a job delivered twice does no h
 2. **FIFO queues fed by something that sets the group per tenant,** such as a Lambda between
    EventBridge and SQS. It's ordering nobody needs, at the price of one more function, and a
    function inside the VPC can't call SQS (ADR-0003).
-3. **Standard queues, with idempotent workers** (proposed). Each job runs in parallel up to its
+3. **Standard queues, with idempotent workers** (chosen). Each job runs in parallel up to its
    trigger's maximum concurrency, with at-least-once delivery and a dead-letter queue after 3
    failed receives. Each worker keys its work on the S3 object's key and version, so a second
    delivery finds the work done and stops.
 
 ## Decision
 
-Proposed: **standard SQS queues, one per job type, each with a dead-letter queue after 3
+**Standard SQS queues, one per job type, each with a dead-letter queue after 3
 receives.** Every worker is **idempotent on the S3 object's key and version ID:** a unique
 constraint in the database makes a repeated job a no-op.
 

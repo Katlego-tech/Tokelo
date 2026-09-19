@@ -1,6 +1,6 @@
 # Design — the `api` lane
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T002, then T011, T024, T025, T030, T034,
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T002, then T011, T024, T025, T030, T034,
 T039, T042, T046, T048 · **Spec:** [SPEC.md](../../SPEC.md) US1–US4
 
 ---

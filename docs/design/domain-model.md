@@ -1,6 +1,6 @@
 # Design — the domain model
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T001, then T023
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T001, then T023
 and every task that reads or writes these tables · **Spec:** [SPEC.md](../../SPEC.md) US1–US4
 
 ---

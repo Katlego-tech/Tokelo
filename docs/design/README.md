@@ -9,9 +9,9 @@ assistant can read and write them.
 
 | Lane | Doc | Status | Covers |
 | --- | --- | --- | --- |
-| domain model | [domain-model.md](domain-model.md) | draft | the entities and their rules (class, sequence, state) |
-| `api` | [api.md](api.md) | draft | the endpoints, identity, pre-signed uploads, the key layout, job requests (sequence, contracts) |
-| infrastructure | [infrastructure.md](infrastructure.md) | draft | the VPC, database, buckets, events, queues, functions, identity, hosting, alarms, costs (deployment, contracts) |
+| domain model | [domain-model.md](domain-model.md) | agreed | the entities and their rules (class, sequence, state) |
+| `api` | [api.md](api.md) | agreed | the endpoints, identity, pre-signed uploads, the key layout, job requests (sequence, contracts) |
+| infrastructure | [infrastructure.md](infrastructure.md) | agreed | the VPC, database, buckets, events, queues, functions, identity, hosting, alarms, costs (deployment, contracts) |
 | `ocr` | ocr.md | to be written (T006) | text layer, OCR, clauses, the rule catalogue |
 | `evidence` | evidence.md | to be written (T007) | digests, EXIF, verification |
 | `dossier` | dossier.md | to be written (T008) | the PDF, the timeline |

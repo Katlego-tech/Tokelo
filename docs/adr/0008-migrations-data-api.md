@@ -1,6 +1,6 @@
 # ADR-0008 — Schema migrations run through the RDS Data API, from the infrastructure workflow
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -37,14 +37,14 @@ Lambda, stands.
 3. **The `api` connects, when migrating, as a database role that owns the schema.** It works
    without the secret, but every request to the `api` then runs in a function that can drop the
    schema.
-4. **The RDS Data API, from the `realm-infra` workflow's apply job** (proposed). This runs
+4. **The RDS Data API, from the `realm-infra` workflow's apply job** (chosen). This runs
    outside the VPC, with the apply role, which already has broad rights (`PowerUserAccess`), and
    the managed secret. Migrations live under `infra/`, so the workflow already runs on them, and
    they're reviewed with the plan like any other infrastructure change.
 
 ## Decision
 
-Proposed: **migrations are SQL files in `infra/db/migrations/`, applied in order through the RDS
+**Migrations are SQL files in `infra/db/migrations/`, applied in order through the RDS
 Data API (`aws rds-data execute-statement` in a transaction), as the master user, by the
 `realm-infra` apply job after `terraform apply`.** The staging apply runs on merge, and the
 production apply runs by hand, as it already does.

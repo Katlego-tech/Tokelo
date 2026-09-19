@@ -1,6 +1,6 @@
 # Design — the infrastructure
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T005, then T016–T021, T023 (migrations),
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T005, then T016–T021, T023 (migrations),
 T026, T051 · **Spec:** [SPEC.md](../../SPEC.md), the evaluator's four competencies
 
 ---
