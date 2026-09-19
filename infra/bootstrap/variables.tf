@@ -22,6 +22,23 @@ variable "github_repository" {
   }
 }
 
+variable "github_subject_prefix" {
+  description = <<-EOT
+    The start of the `sub` claim in the repo's GitHub OIDC tokens, before `:pull_request` or
+    `:ref:...`. Repositories created after 2026-07-15 have immutable subjects,
+    `repo:OWNER@OWNER_ID/REPO@REPO_ID`; aws-bootstrap.sh reads the repo's own from GitHub's API.
+    Empty: the older `repo:OWNER/REPO`, from github_repository.
+  EOT
+  type        = string
+  default     = ""
+  validation {
+    condition = var.github_subject_prefix == "" || can(regex(
+      "^repo:[A-Za-z0-9._-]+(@[0-9]+)?/[A-Za-z0-9._-]+(@[0-9]+)?$", var.github_subject_prefix
+    ))
+    error_message = "github_subject_prefix: repo:owner/repo, or repo:owner@id/repo@id."
+  }
+}
+
 variable "services" {
   description = "realm.toml's [[service]] names: an ECR repository <name>/<service> each."
   type        = list(string)

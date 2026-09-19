@@ -8,7 +8,9 @@
 #   promote  main                read images; deploy to <name>-production-*
 
 locals {
-  subject = "repo:${var.github_repository}"
+  # The repo's own subject prefix: GitHub's immutable form for newer repos (it names the owner's
+  # and the repo's IDs, so a repo that later takes this one's name can't assume these roles).
+  subject = var.github_subject_prefix != "" ? var.github_subject_prefix : "repo:${var.github_repository}"
   roles = {
     plan    = "${local.subject}:pull_request"
     apply   = "${local.subject}:ref:refs/heads/main"
