@@ -1,6 +1,6 @@
 # Design — the navigator
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T009, then T045–T047 · **Spec:**
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T009, then T045–T047 · **Spec:**
 [SPEC.md](../../SPEC.md) US4
 
 ---

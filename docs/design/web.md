@@ -1,6 +1,6 @@
 # Design — the web app
 
-**Status:** draft · **Owner:** Katlego · **Tasks:** T010, then T014, T027, T035, T040, T044,
+**Status:** agreed · **Owner:** Katlego · **Tasks:** T010, then T014, T027, T035, T040, T044,
 T047, T048 · **Spec:** [SPEC.md](../../SPEC.md) US1–US4
 
 ---

@@ -154,12 +154,12 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Files:   docs/design/dossier.md
       Verify:  `design-check` passes, with STRIDE threats
       Done:    the PDF's sections and the timeline's ordering rules are fixed; the PDF library is chosen
-- [ ] T009 [P] [DSN] Design the navigator: the curated topics and how a question finds one
+- [x] T009 [P] [DSN] Design the navigator: the curated topics and how a question finds one
       Req:     none — design documentation
       Files:   docs/design/navigator.md
       Verify:  `design-check` passes, with STRIDE threats
       Done:    the topic file format, the matching rule and the "outside what Tokelo covers" reply are fixed
-- [ ] T010 [P] [DSN] Design the web app: screens, flows, the privacy notice, the wait while the database resumes
+- [x] T010 [P] [DSN] Design the web app: screens, flows, the privacy notice, the wait while the database resumes
       Req:     none — design documentation
       Files:   docs/design/web.md, docs/design/web/*.svg (one reference per screen)
       Verify:  `design-check` passes, with STRIDE threats; each screen T028, T036, T041, T045 and

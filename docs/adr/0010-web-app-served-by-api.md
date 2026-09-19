@@ -1,6 +1,6 @@
 # ADR-0010 — The web app is served by the `api` function, from its image
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context
@@ -28,7 +28,7 @@ The `api` already runs behind API Gateway on its own HTTPS URL.
    problems above remain.
 2. **Amplify Hosting.** That's another service with its own build pipeline and bill, and the
    same three problems.
-3. **The `api` function serves the web app** (proposed). The app is built in the `api` image's
+3. **The `api` function serves the web app** (chosen). The app is built in the `api` image's
    first stage (Node), and its files are copied into the Python stage.
    - The function answers `GET /` and any path outside `/api/` with those files.
    - The API moves under `/api/`, and `/health` stays for the kit.
@@ -37,7 +37,7 @@ The `api` already runs behind API Gateway on its own HTTPS URL.
 
 ## Decision
 
-Proposed: **the web app is served by the `api` function from its own image, at the root of the
+**The web app is served by the `api` function from its own image, at the root of the
 HTTP API's URL. The API's routes move under `/api/`, and `realm.toml` marks the `api` service
 `ui = true`.**
 
