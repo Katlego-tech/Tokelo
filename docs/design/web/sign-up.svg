@@ -1,0 +1,55 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='884' viewBox='0 0 820 884'>
+<title>sign-up with the privacy notice first, then sign-in (T027)</title>
+<g transform='translate(0,0)'>
+<rect x='0.5' y='0.5' width='389' height='843' rx='28' fill='white' stroke='#cbd2d9'/>
+<rect x='0' y='0' width='390' height='56' rx='28' fill='#1f2933'/>
+<rect x='0' y='28' width='390' height='28' fill='#1f2933'/>
+<text x='20' y='36' font-family='Inter, Arial, sans-serif' font-size='18' fill='white' font-weight='bold'>Tokelo</text>
+<text x='310' y='36' font-family='Inter, Arial, sans-serif' font-size='14' fill='white' font-weight='normal'>Menu ≡</text>
+<text x='20' y='92' font-family='Inter, Arial, sans-serif' font-size='22' fill='#1f2933' font-weight='bold'>Create your account</text>
+<rect x='20' y='118' width='350' height='114' rx='10' fill='#f5f7fa' stroke='#2563eb'/>
+<rect x='20' y='118' width='5' height='114' rx='2' fill='#2563eb'/>
+<text x='36' y='140' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='bold'>Privacy notice</text>
+<text x='36' y='162' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>Stored by AWS in Ireland (EU), which takes</text>
+<text x='36' y='182' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>your documents out of South Africa under</text>
+<text x='36' y='202' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>POPIA section 72. Only you can see them,</text>
+<text x='36' y='222' font-family='Inter, Arial, sans-serif' font-size='13' fill='#616e7c' font-weight='normal'>and you can delete everything at any time.</text>
+<text x='20' y='258' font-family='Inter, Arial, sans-serif' font-size='14' fill='#2563eb' font-weight='normal'>Read the full privacy notice</text>
+<rect x='20' y='272' width='20' height='20' rx='4' fill='#2563eb' stroke='#2563eb'/>
+<path d='M25 282 l4 4 l7 -8' stroke='white' stroke-width='2' fill='none'/>
+<text x='50' y='287' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>I have read the privacy notice</text>
+<text x='20' y='316' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Email</text>
+<rect x='20' y='322' width='350' height='40' rx='8' fill='white' stroke='#cbd2d9'/>
+<text x='32' y='347' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>tenant@example.com</text>
+<text x='20' y='386' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Password (at least 12 characters)</text>
+<rect x='20' y='392' width='350' height='40' rx='8' fill='white' stroke='#cbd2d9'/>
+<text x='32' y='417' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>••••••••••••</text>
+<rect x='20' y='444' width='350' height='44' rx='8' fill='#2563eb' stroke='#2563eb'/>
+<text x='144.6' y='472' font-family='Inter, Arial, sans-serif' font-size='15' fill='white' font-weight='bold'>Create account</text>
+<text x='20' y='514' font-family='Inter, Arial, sans-serif' font-size='14' fill='#2563eb' font-weight='normal'>Already have an account? Sign in</text>
+<text x='20' y='820' font-family='Inter, Arial, sans-serif' font-size='11' fill='#616e7c' font-weight='normal'>Legal information, not legal advice · English only</text>
+</g>
+<g transform='translate(430,0)'>
+<rect x='0.5' y='0.5' width='389' height='843' rx='28' fill='white' stroke='#cbd2d9'/>
+<rect x='0' y='0' width='390' height='56' rx='28' fill='#1f2933'/>
+<rect x='0' y='28' width='390' height='28' fill='#1f2933'/>
+<text x='20' y='36' font-family='Inter, Arial, sans-serif' font-size='18' fill='white' font-weight='bold'>Tokelo</text>
+<text x='310' y='36' font-family='Inter, Arial, sans-serif' font-size='14' fill='white' font-weight='normal'>Menu ≡</text>
+<text x='20' y='92' font-family='Inter, Arial, sans-serif' font-size='22' fill='#1f2933' font-weight='bold'>Sign in</text>
+<text x='20' y='130' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Email</text>
+<rect x='20' y='136' width='350' height='40' rx='8' fill='white' stroke='#cbd2d9'/>
+<text x='32' y='161' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>tenant@example.com</text>
+<text x='20' y='200' font-family='Inter, Arial, sans-serif' font-size='12' fill='#616e7c' font-weight='normal'>Password</text>
+<rect x='20' y='206' width='350' height='40' rx='8' fill='white' stroke='#cbd2d9'/>
+<text x='32' y='231' font-family='Inter, Arial, sans-serif' font-size='14' fill='#1f2933' font-weight='normal'>••••••••••••</text>
+<rect x='20' y='258' width='350' height='44' rx='8' fill='#2563eb' stroke='#2563eb'/>
+<text x='169.8' y='286' font-family='Inter, Arial, sans-serif' font-size='15' fill='white' font-weight='bold'>Sign in</text>
+<text x='20' y='328' font-family='Inter, Arial, sans-serif' font-size='14' fill='#2563eb' font-weight='normal'>Create an account</text>
+<rect x='20' y='354' width='350' height='38' rx='8' fill='white' stroke='#2563eb'/>
+<text x='32' y='378' font-family='Inter, Arial, sans-serif' font-size='13' fill='#2563eb' font-weight='bold'>Waking up the database: about 15 seconds</text>
+<text x='20' y='418' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>Shown only while the database resumes</text>
+<text x='20' y='438' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>(the API answers 503 database_resuming).</text>
+<text x='20' y='458' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>The app retries by itself after Retry-After.</text>
+<text x='20' y='820' font-family='Inter, Arial, sans-serif' font-size='11' fill='#616e7c' font-weight='normal'>Legal information, not legal advice · English only</text>
+</g>
+</svg>

@@ -10,7 +10,7 @@ T026, T051 · **Spec:** [SPEC.md](../../SPEC.md), the evaluator's four competenc
 Every AWS resource Tokelo runs on in one environment:
 - the network, the database and the documents bucket
 - the event rules, the queues and the functions' settings
-- the user pool, the HTTP API and the web app's hosting
+- the user pool, and the HTTP API, which also serves the web app (ADR-0010)
 - the alarms, and what each resource costs
 
 Staging and production are the same design with different values (§6).
@@ -42,7 +42,6 @@ model.
 flowchart LR
     tenant([Tenant's browser])
     subgraph edge[Public AWS endpoints]
-        cf[CloudFront<br/>web app]
         gw[API Gateway<br/>HTTP API + JWT authorizer]
         cog[Cognito<br/>user pool]
         s3[(S3 documents bucket<br/>private, SSE-KMS, versioned)]
@@ -61,10 +60,8 @@ flowchart LR
         end
         gwe[S3 gateway endpoint]
     end
-    webb[(S3 web bucket<br/>private, OAC)]
-    tenant --> cf --> webb
     tenant --> cog
-    tenant --> gw --> api
+    tenant -- web app and /api/ --> gw --> api
     tenant -- pre-signed POST --> s3
     s3 --> eb --> q
     q -- event source mappings --> ocr & ev & dos
@@ -126,7 +123,7 @@ paused and active states are Aurora's own (ADR-0004).
 | Encryption | SSE-KMS with the AWS-managed `aws/s3` key and a bucket key: no USD 1-a-month customer key |
 | Versioning | on. Earlier versions expire after 30 days; account deletion removes every version (T048) |
 | Lifecycle | `jobs/` objects expire after 7 days; uploads and dossiers stay until the tenant deletes them |
-| CORS | `POST` from the web app's CloudFront origin only |
+| CORS | `POST` from the HTTP API's own origin only, where the web app is served (ADR-0010) |
 | Events | EventBridge notifications on |
 
 ### Events and queues (ADR-0007)
@@ -175,14 +172,12 @@ paused and active states are Aurora's own (ADR-0004).
 |---|---|
 | Cognito user pool | sign-in by email; self sign-up with email verification (Cognito's own sender); MFA optional (TOTP); passwords of at least 12 characters; the Lite feature plan |
 | Its app client | the web app's: public, no secret, SRP sign-in; access tokens last 1 hour, refresh tokens 30 days |
-| HTTP API | [api.md](api.md) §6's routes; a JWT authorizer (the pool as issuer, the app client as audience); Lambda proxy integration, payload 2.0; the default route throttled to 10 requests a second, bursting to 20; CORS for the web app's origin; access logs kept 30 days |
+| HTTP API | [api.md](api.md) §6's routes: `/api/*` behind a JWT authorizer (the pool as issuer, the app client as audience); `/health`, `/config.json` and the web app's files open (ADR-0010). Lambda proxy integration, payload 2.0; the default route throttled to 10 requests a second, bursting to 20; no CORS, because the app and the API share an origin; access logs kept 30 days |
 
-### The web app's hosting
+### The web app
 
-| Resource | Settings |
-|---|---|
-| Web bucket | `tokelo-<env>-web-<account id>`: private, Block Public Access, read only by CloudFront through origin access control |
-| CloudFront | the bucket as its origin; HTTPS only, on its default `*.cloudfront.net` certificate (no domain to buy); `index.html` for any unknown path; a response headers policy with HSTS and a content security policy |
+Served by the `api` function from its own image, at the HTTP API's URL (ADR-0010,
+[web.md](web.md)). There's no web bucket and no CloudFront.
 
 ### Alarms
 
@@ -198,7 +193,7 @@ paused and active states are Aurora's own (ADR-0004).
 | VPC, subnets, route tables, security groups, S3 gateway endpoint | $0 | $0 |
 | Aurora | storage only, $0.11 per GB | $0.14 per ACU-hour, plus I/O |
 | The master secret | $0.40 a month | the same |
-| Lambda, API Gateway, SQS, EventBridge, S3, CloudFront, Cognito | $0 | cents at this scale; Lambda within its always-free allowance |
+| Lambda, API Gateway, SQS, EventBridge, S3, Cognito | $0 | cents at this scale; Lambda within its always-free allowance |
 | CloudWatch logs and alarms, SNS email | $0 | cents |
 
 ## 7. Structure
@@ -220,7 +215,7 @@ paused and active states are Aurora's own (ADR-0004).
 | An internet gateway | **none at all** | one for "later": nothing in the VPC needs it, and its absence is the proof of REQ-018 |
 | Keys | **the AWS-managed keys** (`aws/s3`, `aws/rds`) | customer keys: USD 1 each a month, for control this project doesn't use |
 | Limiting load | **maximum concurrency on each trigger, and API throttling** | reserved concurrency: it takes from the account's pool, which may be small on a new account (§10) |
-| The web app's domain | **CloudFront's own** | a custom domain: a registration and a Route 53 zone at USD 0.50 a month |
+| The web app's address | **the HTTP API's own URL** (ADR-0010) | a custom domain: a registration and a Route 53 zone at USD 0.50 a month |
 | Tamper-evidence for files | **digests and versioning** | S3 Object Lock: compliance mode would stop account deletion (REQ-016) |
 
 Deviations from [docs/architecture-defaults.md](../architecture-defaults.md): serverless in place
@@ -248,8 +243,6 @@ of containers on servers, and no NAT (ADR-0002, ADR-0003).
   aurora-postgresql`, taking the newest 16.x (at least 16.3).
 - [ ] **Cognito's own email sender has a small daily limit.** It's enough for an elective's sign-ups.
   SES is the change if it isn't.
-- [ ] **Which CloudFront edge locations the web app uses** (the price class), given South African
-  users and CloudFront's free allowance. Decided in [web.md](web.md).
 
 ## Threats (STRIDE)
 
@@ -257,7 +250,7 @@ of containers on servers, and no NAT (ADR-0002, ADR-0003).
 |---|---|---|---|---|
 | The database is reachable from the internet | Information disclosure | the VPC | no internet gateway; not publicly accessible; `db` accepts only `fn` | T051's inspection (REQ-018) |
 | A function is used to send data out | Information disclosure | the app subnets | no route out except S3 through the gateway endpoint; `fn` allows only 5432 to `db` and 443 to S3 | T051's inspection; the Terraform plan |
-| A bucket is made public by mistake | Information disclosure | both buckets | Block Public Access on both; the web bucket readable only by CloudFront; TLS-only policies | checkov in the gate; T051's inspection |
+| The documents bucket is made public by mistake | Information disclosure | the bucket | Block Public Access; a TLS-only policy | checkov in the gate; T051's inspection |
 | A forged message is put on a queue | Spoofing | the SQS queues | each queue's policy accepts only its EventBridge rule's ARN | the Terraform plan; T026's test |
 | A stored file is overwritten | Tampering | the documents bucket | versioning keeps the original, and the digest taken on storage detects the change (REQ-010) | tests/api/test_verify.py (T039) |
 | A flood of requests or jobs runs up the bill | Denial of service | API Gateway, the triggers, Aurora | throttling; maximum concurrency 2 per trigger; Aurora capped at 2 ACU; the budget's alerts | the Terraform plan; the budget (T016) |

@@ -13,6 +13,7 @@ The `api` Lambda function behind API Gateway's HTTP API:
 - the pre-signed uploads
 - the S3 key layout
 - the job requests the `api` writes for the workers
+- the web app's files and `/config.json`, which it serves too (ADR-0010; [web.md](web.md))
 
 It doesn't cover:
 - the workers' own processing: [ocr.md](ocr.md), [evidence.md](evidence.md), [dossier.md](dossier.md)
@@ -38,7 +39,8 @@ returns are §6's views, and nothing else leaves the function.
 
 ### Identity
 
-API Gateway's JWT authorizer checks every route except `/health`. It checks the token's issuer
+API Gateway's JWT authorizer checks every `/api/` route. `/health`, `/config.json` and the web
+app's files are open. It checks the token's issuer
 (the user pool), its audience (the web app's client ID) and its expiry. A request with a bad
 token never reaches the function: API Gateway answers 401 itself. The function takes the tenant
 from `requestContext.authorizer.jwt.claims.sub`. On a tenant's first request, it inserts their
@@ -55,7 +57,7 @@ sequenceDiagram
     participant S as S3
     participant E as EventBridge
     participant Q as Queue
-    W->>G: POST /uploads {kind, content_type, size_bytes} + token
+    W->>G: POST /api/uploads {kind, content_type, size_bytes} + token
     G->>A: invoke (claims.sub = tenant)
     A->>A: check kind, type and size (REQ-003)
     A->>D: INSERT Document (requested)
@@ -78,7 +80,7 @@ sequenceDiagram
     participant S as S3
     participant E as EventBridge
     participant Q as dossier queue
-    W->>A: POST /dossiers {document_ids}
+    W->>A: POST /api/dossiers {document_ids}
     A->>D: check every ID is the tenant's, and stored
     A->>D: INSERT Dossier (requested), DossierItems
     A->>S: PUT jobs/dossier/{dossier_id}.json (through the gateway endpoint)
@@ -114,21 +116,24 @@ can't be written.
 
 ### Endpoints
 
-Every endpoint except `/health` needs a valid token. Every response is JSON.
+Every `/api/` endpoint needs a valid token, and answers JSON. The web app's files and
+`/config.json` are open (ADR-0010).
 
 | Method and path | Request | Success | Errors | Requirements |
 |---|---|---|---|---|
 | `GET /health` | none | `200 {"ok": true}` | none | the kit's smoke check |
-| `POST /uploads` | `{"kind", "content_type", "size_bytes", "filename"}` | `201 {"document_id", "url", "fields", "expires_at"}` | `422` refused, with the reason | REQ-002, REQ-003, NFR-001, NFR-006 |
-| `GET /documents?kind=` | none | `200 {"documents": [DocumentView]}` | none | REQ-001 |
-| `GET /documents/{id}` | none | `200 DocumentView` | `404` | REQ-001, REQ-009 |
-| `GET /leases/{id}/flags` | none | `200 LeaseFlags` | `404`; `409` still reading | REQ-004 to REQ-007 |
-| `POST /evidence/{id}/verify` | none | `200 Verification` | `404`; `409` not stored yet | REQ-010 |
-| `GET /timeline` | none | `200 {"entries": [TimelineEntryView]}` | none | REQ-012 |
-| `POST /dossiers` | `{"document_ids": [uuid]}` | `202 {"dossier_id"}` | `422` empty, more than 150 documents, or an ID not the tenant's or not stored | REQ-013 |
-| `GET /dossiers/{id}` | none | `200 {"status", "download_url"?, "expires_at"?}` | `404` | REQ-013 |
-| `POST /navigator` | `{"question"}` | `200 Answer` or `200 Outside` | `422` empty | REQ-014 |
-| `DELETE /account` | none | `202` | none | REQ-016 |
+| `GET /config.json` | none | `200 {"region", "user_pool_id", "client_id"}`, from the function's environment | none | ADR-0010 |
+| `GET /` and any other path outside `/api/` | none | the web app's files; `index.html` for an unknown path | none | ADR-0010 |
+| `POST /api/uploads` | `{"kind", "content_type", "size_bytes", "filename"}` | `201 {"document_id", "url", "fields", "expires_at"}` | `422` refused, with the reason | REQ-002, REQ-003, NFR-001, NFR-006 |
+| `GET /api/documents?kind=` | none | `200 {"documents": [DocumentView]}` | none | REQ-001 |
+| `GET /api/documents/{id}` | none | `200 DocumentView` | `404` | REQ-001, REQ-009 |
+| `GET /api/leases/{id}/flags` | none | `200 LeaseFlags` | `404`; `409` still reading | REQ-004 to REQ-007 |
+| `POST /api/evidence/{id}/verify` | none | `200 Verification` | `404`; `409` not stored yet | REQ-010 |
+| `GET /api/timeline` | none | `200 {"entries": [TimelineEntryView]}` | none | REQ-012 |
+| `POST /api/dossiers` | `{"document_ids": [uuid]}` | `202 {"dossier_id"}` | `422` empty, more than 150 documents, or an ID not the tenant's or not stored | REQ-013 |
+| `GET /api/dossiers/{id}` | none | `200 {"status", "download_url"?, "expires_at"?}` | `404` | REQ-013 |
+| `POST /api/navigator` | `{"question"}` | `200 Answer` or `200 Outside` | `422` empty | REQ-014 |
+| `DELETE /api/account` | none | `202` | none | REQ-016 |
 
 ### What each kind of upload accepts (REQ-003)
 
@@ -182,7 +187,7 @@ The worker checks ownership again from the database, and never trusts the object
 
 ### Download links
 
-`GET /dossiers/{id}` gives a pre-signed GET that expires in 5 minutes, for the tenant's own
+`GET /api/dossiers/{id}` gives a pre-signed GET that expires in 5 minutes, for the tenant's own
 dossier only.
 
 ## 7. Structure
@@ -195,6 +200,7 @@ dossier only.
 | `src/tokelo/api/documents.py`, `leases.py`, `evidence.py`, `timeline.py`, `dossiers.py`, `navigator.py`, `account.py` | new | one endpoint group each |
 | `src/tokelo/api/views.py` | new | §6's views, the only shapes that leave the function |
 | `src/tokelo/core/db.py` | new | connections and tenant-scoped queries ([domain-model.md](domain-model.md) §7) |
+| `src/tokelo/api/static.py` | new | the web app's files, their caching and security headers, `/config.json` (ADR-0010) |
 | `src/tokelo/core/keys.py` | new | §6's key layout, used by the `api` and the workers alike |
 | `services/api/Dockerfile` | new | Lambda's Python 3.14 base, pinned by digest |
 
@@ -207,6 +213,7 @@ dossier only.
 | How the `api` starts a job | **an object in S3** (ADR-0003) | calling SQS or EventBridge: there's no way out of the VPC to them |
 | The first request after a pause | **retry the connection for up to 20 s, then 503 with `Retry-After`** | wait longer: the HTTP API cuts the request at 30 s anyway |
 | Migrations | **the RDS Data API, from the infrastructure workflow (ADR-0008)** | a handler inside the VPC, as ADR-0002 first planned: it can't reach the master secret |
+| Serving the web app | **this function, from its image** (ADR-0010) | S3 and CloudFront: outside the kit's pa11y, ZAP, signing and promotion |
 | Frameworks | **none:** a small router on `routeKey` | a web framework in Lambda: a bigger image and cold start, for 11 routes |
 
 Deviations from [docs/architecture-defaults.md](../architecture-defaults.md): no web framework
@@ -227,14 +234,12 @@ and no always-on server. Both follow from ADR-0002.
 
 - [ ] **iPhone photos:** Safari usually converts HEIC to JPEG on upload, but not always. If
   tenants' photos arrive as HEIC, accepting it needs a decision (and a library) first.
-- [ ] **The web app's origin for CORS** is its CloudFront domain, known after T020, and it goes
-  into the HTTP API's CORS settings then.
 
 ## Threats (STRIDE)
 
 | Threat | STRIDE | Where | Mitigation | Proven by |
 |---|---|---|---|---|
-| A forged or expired token | Spoofing | API Gateway → `api` | the JWT authorizer checks the issuer, audience and expiry before the function runs; `/health` is the only open route | an unauthenticated request to each route gives 401 (T024) |
+| A forged or expired token | Spoofing | API Gateway → `api` | the JWT authorizer checks the issuer, audience and expiry before the function runs; only `/health`, `/config.json` and the web app's files are open | an unauthenticated request to each route gives 401 (T024) |
 | A tenant requests another's record by ID | Information disclosure | every `{id}` route | every query filters on the token's tenant; a foreign ID gives 404 | tests/api/test_authz.py (T024) |
 | An upload claims one type but carries another, or is too large | Tampering | the POST policy | the policy fixes the key, the type and the size range; the worker checks the file's actual type again | tests/api/test_presign.py, tests/api/test_lease_intake.py (T025, T030) |
 | A leaked upload or download URL is reused | Information disclosure | pre-signed URLs | uploads expire in 15 minutes and fix one key; downloads expire in 5 | tests/api/test_presign.py (NFR-006) |

@@ -59,11 +59,11 @@ hard constraints:** the grounding rule, POPIA, the free plan, and a deadline bef
 | **Language(s) + versions** | Python 3.14, the newest Lambda runtime that isn't in preview (AWS's Lambda runtimes page, checked 2026-09-19); the web app's toolchain is pinned in its design doc |
 | **Architecture** | Event-driven and serverless: an HTTP API on Lambda, and worker functions fed by SQS. Every service is a Lambda container image (ADR-0002). This replaces setup's first answer, an API on ECS Fargate |
 | **Messaging / async** | EventBridge to Amazon SQS standard queues, each with a dead-letter queue after 3 failures, and idempotent workers (ADR-0007). Jobs start as objects in S3 (ADR-0003) |
-| **Frontend** | React + shadcn/ui (Radix + Tailwind + CVA), static files on S3 behind CloudFront |
+| **Frontend** | React + shadcn/ui (Radix + Tailwind + CVA), served by the `api` function from its image (ADR-0010); the toolchain is pinned in [docs/design/web.md](docs/design/web.md) |
 | **Containerization** | One container image per service, built, scanned, signed and deployed by digest by the kit's release pipeline. Local development runs them with Docker |
 | **Runtime/deploy target** | AWS Lambda in `eu-west-1`, in a staging and a production environment in one account, deployed by the kit's `aws` adapter through GitHub OIDC roles |
 | **Data layer** | Aurora PostgreSQL Serverless v2, engine 16, 0 to 2 ACU, pausing after 10 minutes idle, IAM authentication (ADR-0004); S3 for documents (private, SSE-KMS) |
-| **Key external services/models** | Amazon Cognito, API Gateway (HTTP API), EventBridge, SQS, S3, CloudFront. OCR with pypdf and Tesseract 5, English only (ADR-0009). No Textract, and no language model in phases 1–5 (ADR-0006) |
+| **Key external services/models** | Amazon Cognito, API Gateway (HTTP API), EventBridge, SQS, S3. OCR with pypdf and Tesseract 5, English only (ADR-0009). No Textract, and no language model in phases 1–5 (ADR-0006) |
 | **Testing** | pytest, with `@pytest.mark.req`; ruff, pyright; in the release pipeline, k6 (performance), pa11y (accessibility) and ZAP (DAST) |
 | **Perf/cost goals** | NFR-001 to NFR-009 in [REQUIREMENTS.md](REQUIREMENTS.md). In short: an upload URL at p95 < 500 ms warm; the first request after a pause within 30 s; a digital lease's flags within 2 minutes; at most USD 20 a month |
 | **Constraints** | The AWS free plan (no Organizations; it ends 2027-02-26). `eu-west-1`, with the POPIA section 72 transfer stated in the privacy notice (ADR-0001). No NAT, so nothing inside the VPC calls the internet or other AWS APIs (ADR-0003). The grounding rule |
