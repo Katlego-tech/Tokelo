@@ -118,19 +118,21 @@ that lane's implementation tasks are written — see
 Mirrors [TASKS.md](TASKS.md). Each phase should be independently demoable at its checkpoint. The
 specification's own milestones are in brackets.
 
-0. **Design:** ADRs (done), requirements, C4, then the domain model and a design doc per lane.
+0. **Design:** ADRs and requirements (done), then the domain model and a design doc per lane.
 1. **Setup:** the service skeletons with their health handlers, the web app skeleton, the test
    config, and the four `[[service]]` entries in `realm.toml`. Then the AWS bootstrap, the
    `v0.0.0` seed, and the staging infrastructure: VPC, subnets, S3, queues, Aurora and Cognito
    (spec phase 1).
-2. **Foundational:** sign-in and authorization (REQ-001), pre-signed uploads (REQ-002), and
-   S3 → EventBridge → SQS with dead-letter queues (REQ-017) (spec phase 2, without Textract).
+2. **Foundational:** the curated sources, the schema, sign-in and authorization (REQ-001),
+   pre-signed uploads (REQ-002), and S3 → EventBridge → SQS with dead-letter queues (REQ-017)
+   (spec phase 2, without Textract).
 3. **US1, check a lease:** the text layer and Tesseract, the rule catalogue and its explanations
    (spec phases 2 and 3).
 4. **US2, evidence:** digests, EXIF, verification, the audit log (spec phase 4).
-5. **US3, the dossier; then US4, the navigator** (spec phase 4).
-6. **Hardening and release:** the NFRs measured, the release checks, UAT, production (spec
-   phase 5).
+5. **US3, the dossier** (spec phase 4).
+6. **US4, the navigator.**
+7. **Hardening and release:** account deletion, the NFRs measured, the gates, UAT, production
+   (spec phase 5).
 
 ---
 
