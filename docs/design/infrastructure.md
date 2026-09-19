@@ -151,6 +151,8 @@ paused and active states are Aurora's own (ADR-0004).
 
 - Every function is in the app subnets, with security group `fn`, amd64, alias `live`, and logs
   kept 30 days.
+- **The `api`'s environment** (read by `/config.json` and the CSP, ADR-0010): `TOKELO_USER_POOL_ID`,
+  `TOKELO_CLIENT_ID` and `TOKELO_DOCUMENTS_BUCKET`, set by Terraform (T020). `AWS_REGION` is Lambda's own.
 - Each queue trigger reads **one message at a time**, reports the failures in its batch, and has
   a **maximum concurrency of 2**. That's the lowest allowed, and it keeps the database's
   connections and the bill small.

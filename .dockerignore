@@ -5,3 +5,7 @@
 # The ocr image installs its runtime client from the lock (services/ocr/Dockerfile).
 !pyproject.toml
 !uv.lock
+# The api image builds the web app (services/api/Dockerfile, ADR-0010), from its lock.
+!web/
+web/node_modules
+web/dist
