@@ -7,13 +7,15 @@
 #   TF_VAR_budget_email=<where the budget's alerts go> bash scripts/realm/aws-bootstrap.sh
 #
 # 0. Brings infra/bootstrap/terraform.tfvars in step: github_repository from the origin remote,
-#    services from realm.toml's [[service]] names.
+#    services from realm.toml's [[service]] names, github_subject_prefix from GitHub's API (the
+#    start of the repo's OIDC subject: immutable, repo:OWNER@ID/REPO@ID, for newer repos).
 # 1. Applies infra/bootstrap: the state bucket and its key, GitHub's OIDC provider, the four
 #    roles, the permissions boundary, a repository per service, the budget. The first time, with
 #    local state.
 # 2. Writes backend.hcl in infra/bootstrap and in each infra/envs/* root.
 # 3. The first time: moves the bootstrap's state into the bucket it has just created.
-# 4. Sets the repository's variables with gh: AWS_REGION and the four role ARNs.
+# 4. Sets the repository's variables through gh's REST API (any gh): AWS_REGION and the four
+#    role ARNs.
 # 5. Writes [deploy] registry into realm.toml.
 #
 # Then commit infra/bootstrap/terraform.tfvars, the backend.hcl files and realm.toml. After a failure, run it again: the local
@@ -40,6 +42,13 @@ gh auth status >/dev/null 2>&1 || die "gh isn't logged in: gh auth login"
 url="$(git remote get-url origin 2>/dev/null)" || die "no origin remote: create the GitHub repo and push first"
 repo="$(printf '%s' "$url" | sed -E 's#^(git@github\.com:|https://github\.com/)##; s#\.git$##')"
 [[ "$repo" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]] || die "origin isn't a GitHub repo: $url"
+# The start of the repo's OIDC `sub` claim, which the roles trust, as GitHub itself reports it:
+# repositories created after 2026-07-15 have immutable subjects, repo:OWNER@ID/REPO@ID.
+prefix="$(gh api "repos/$repo/actions/oidc/customization/sub" --jq '.sub_claim_prefix // ""')" \
+  || die "couldn't read $repo's OIDC subject from GitHub (repos/$repo/actions/oidc/customization/sub)"
+[ -n "$prefix" ] || prefix="repo:$repo"
+[[ "$prefix" =~ ^repo:[A-Za-z0-9._-]+(@[0-9]+)?/[A-Za-z0-9._-]+(@[0-9]+)?$ ]] \
+  || die "GitHub's OIDC subject for $repo isn't one the bootstrap understands: $prefix"
 region="$("$realm" release config deploy.region)" || die "realm.toml's [deploy] needs region"
 terraform="$(bash scripts/realm/tools.sh terraform)" || die "couldn't fetch Terraform (above)"
 
@@ -70,17 +79,32 @@ print(v[sys.argv[2]] if len(sys.argv) > 2 else v)' "$@"
 
 names="$("$realm" release names)" || die "realm.toml's [[service]] names need fixing (above)"
 [ -n "$names" ] || die "realm.toml has no [[service]]: the bootstrap makes an image repository for each"
-python3 - "$repo" "$names" <<'PY' || die "couldn't bring infra/bootstrap/terraform.tfvars in step"
+python3 - "$repo" "$names" "$prefix" <<'PY' || die "couldn't bring infra/bootstrap/terraform.tfvars in step"
 import json, re, sys
 from pathlib import Path
 path = Path("infra/bootstrap/terraform.tfvars")
 text = path.read_text()
-for key, value in (("github_repository", sys.argv[1]), ("services", sys.argv[2].split())):
+for key, value in (("github_repository", sys.argv[1]), ("services", sys.argv[2].split()),
+                   ("github_subject_prefix", sys.argv[3])):
     text, n = re.subn(rf"^({key}\s*=\s*).*$", lambda m: m.group(1) + json.dumps(value), text,
                       count=1, flags=re.M)
-    if n != 1:
+    if n == 0 and key == "github_subject_prefix":  # projects set up before it existed
+        text = text.rstrip("\n") + f"\n{key} = {json.dumps(value)}\n"
+    elif n != 1:
         sys.exit(f"infra/bootstrap/terraform.tfvars has no {key} line")
-path.write_text(text)
+# Aligned as `terraform fmt` aligns them, so the gate's format check stays clean: each run of
+# `key = value` lines shares one column for its `=`.
+lines, block = text.split("\n"), []
+for i, line in enumerate(lines + [""]):
+    if re.match(r"^[A-Za-z_][A-Za-z0-9_-]*\s*=", line):
+        block.append(i)
+        continue
+    width = max((len(lines[j].split("=", 1)[0].strip()) for j in block), default=0)
+    for j in block:
+        key, rest = lines[j].split("=", 1)
+        lines[j] = f"{key.strip():<{width}} = {rest.strip()}"
+    block = []
+path.write_text("\n".join(lines))
 PY
 
 credentials
@@ -135,12 +159,17 @@ if [ "$first" -eq 1 ]; then
 fi
 
 step "4. the repository's variables, on $repo"
-gh variable set AWS_REGION --repo "$repo" --body "$region" >/dev/null
-say "   AWS_REGION"
+# Through the REST API, which every gh has (`gh variable` needs gh 2.31 or later): update the
+# variable if it's there, create it if it isn't.
+setvar() {  # setvar NAME VALUE
+  gh api -X PATCH "repos/$repo/actions/variables/$1" -f name="$1" -f value="$2" >/dev/null 2>&1 \
+    || gh api -X POST "repos/$repo/actions/variables" -f name="$1" -f value="$2" >/dev/null \
+    || die "couldn't set the variable $1 on $repo"
+  say "   $1"
+}
+setvar AWS_REGION "$region"
 for kind in plan apply release promote; do
-  name="AWS_$(printf '%s' "$kind" | tr 'a-z' 'A-Z')_ROLE"
-  gh variable set "$name" --repo "$repo" --body "$(value roles "$kind")" >/dev/null
-  say "   $name"
+  setvar "AWS_$(printf '%s' "$kind" | tr 'a-z' 'A-Z')_ROLE" "$(value roles "$kind")"
 done
 
 step "5. [deploy] registry in realm.toml"
