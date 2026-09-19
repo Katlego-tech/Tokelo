@@ -104,6 +104,13 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     none — design documentation
 - [ ] T002 [P] [DSN] `<docs/design/<lane>.md — one design doc per non-trivial lane>`
       Req:     none — design documentation
+- [x] T003 [DSN] Decide the architecture: ADR-0001 to ADR-0006 in docs/adr/
+      Req:     none — design documentation (the decisions the requirements and designs rest on)
+      Files:   docs/adr/0001-region.md … docs/adr/0006-language-model.md
+      Verify:  `scripts/realm/realm adr-check` passes, and each ADR's Status is Katlego's decision
+      Done:    the region, the services and their runtimes, the network, the database, the OCR
+               engine and the language model are each accepted or rejected, so the AWS bootstrap
+               and the design docs can start
 
 **Checkpoint:** every lane in Phase 2+ has a merged design doc; `docs/design/README.md` indexes them.
 
