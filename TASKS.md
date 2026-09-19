@@ -202,7 +202,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  `bash scripts/gate.sh` lints, tests and builds web/, across 2 projects
       Done:    an empty app builds, and the `api` image serves it at `/` with its security headers and
                `/config.json` (ADR-0010); no page is built yet (T027 builds the first)
-- [ ] T015 [SET] Require the `gate` check on `main` (branch protection, step 2)
+- [x] T015 [SET] Require the `gate` check on `main` (branch protection, step 2)
       Req:     none — repository settings
       Verify:  `gh api repos/Katlego-tech/Tokelo/branches/main/protection --jq .required_status_checks.contexts` prints ["gate"]
       Done:    a PR can't merge with a red gate. It waits for T011, so no push run is red for want of a manifest
