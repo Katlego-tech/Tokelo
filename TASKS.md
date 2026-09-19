@@ -111,6 +111,13 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Done:    the region, the services and their runtimes, the network, the database, the OCR
                engine and the language model are each accepted or rejected, so the AWS bootstrap
                and the design docs can start
+- [x] T004 [DSN] Write the specification, the plan, the operational concept, the requirements (proposed) and C4 levels 1–2
+      Req:     none — design documentation (the requirements themselves are its output)
+      Files:   SPEC.md, PLAN.md, REQUIREMENTS.md, docs/architecture/context.md, docs/architecture/containers.md
+      Verify:  `scripts/realm/realm req-lint` and `design-check` pass; Katlego reviews the PR
+      Done:    everything the Concept gate reads exists. The gate passes once the business and
+               stakeholder requirements are approved, through approved requirements beneath them
+               that tasks and tests name
 
 **Checkpoint:** every lane in Phase 2+ has a merged design doc; `docs/design/README.md` indexes them.
 
