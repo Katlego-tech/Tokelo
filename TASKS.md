@@ -259,10 +259,11 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 - [ ] T023 [FND] Create the schema, and keep the audit log append-only
       Req:     REQ-011
       Design:  docs/design/domain-model.md
-      Files:   migrations/0001_*.sql, src/tokelo/api/migrate.py, tests/integration/test_schema.py
+      Files:   infra/db/migrations/0001_*.sql, scripts/migrate.py, .github/workflows/realm-infra.yml, tests/integration/test_schema.py
       Verify:  the test is written first and fails; then, against PostgreSQL 16 in Docker, the
                application role can INSERT into the audit log but UPDATE and DELETE are refused
-      Done:    the migration runs as a function inside the VPC, started by the pipeline (ADR-0002)
+      Done:    `realm-infra`'s apply job runs the migrations through the RDS Data API after `terraform
+               apply` (ADR-0008), and the functions connect only as the application user
 - [ ] T024 [FND] Serve each tenant only their own records
       Req:     REQ-001
       Design:  docs/design/api.md
