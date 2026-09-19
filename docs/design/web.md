@@ -31,7 +31,9 @@ The app is in English only (ADR-0009).
 
 ### The toolchain
 
-Pinned to the newest release of each on 2026-09-19, from the npm registry and nodejs.org:
+Pinned on 2026-09-19 from the npm registry and nodejs.org, under the same 7-day cooldown as the
+Python side: `package-lock.json` was resolved with `npm install --before 2026-09-12`, so no
+package, direct or transitive, is newer than a week (T014):
 
 | Package | Version | Notes |
 |---|---|---|
@@ -44,8 +46,9 @@ Pinned to the newest release of each on 2026-09-19, from the npm registry and no
 | react-router | 8.4.0 | |
 | aws-amplify | 6.20.0 | Auth only, imported as `aws-amplify/auth` |
 | jspdf | 4.2.1 (MIT) | joining photos into one PDF; not `pdf-lib`, unpublished since 2022 |
-| vitest, jsdom, @testing-library/react, axe-core | 5.0.1, 30.1.0, 16.3.3, 4.13.0 | |
-| eslint, typescript-eslint | 10.11.0, 8.70.0 | |
+| vitest, jsdom, @testing-library/react, @testing-library/dom, axe-core | 5.0.0, 30.0.1, 16.3.3, 10.4.1, 4.13.0 | the cooldown held back vitest 5.0.1, jsdom 30.1.0 and @testing-library/dom 10.4.2 |
+| eslint, @eslint/js, typescript-eslint, globals | 10.10.0, 10.0.1, 8.70.0, 17.12.0 | the cooldown held back eslint 10.11.0 |
+| @types/react, @types/react-dom | 19.3.0 | |
 
 `package-lock.json` pins everything beneath. The gate runs `npm run lint` (ESLint, then `tsc
 --noEmit`), `npm test` (Vitest) and `npm run build` (Vite).
