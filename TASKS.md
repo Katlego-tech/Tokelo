@@ -182,7 +182,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Done:    ruff, pyright and pytest run in the gate, with the `req` marker registered. The image
                builds from Lambda's Python 3.14 base, pinned by digest. A new branch's first push
                no longer trips the no-manifest rule
-- [ ] T012 [SET] Give the three workers their health answers
+- [x] T012 [SET] Give the three workers their health answers
       Req:     none — setup (the kit's worker health contract)
       Files:   src/tokelo/{ocr,evidence,dossier}/handler.py, services/{ocr,evidence,dossier}/Dockerfile, tests/unit/test_health.py
       Contract:invoked with {"realm":"health"} → {"ok": true}

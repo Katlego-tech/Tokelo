@@ -36,3 +36,6 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.7",
 ]
+ocr-image = [
+    "awslambdaric>=4.0.3",
+]

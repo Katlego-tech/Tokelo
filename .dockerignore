@@ -2,3 +2,6 @@
 # rest (the git history, .venv, .realm, the docs) never reaches the build.
 *
 !src/
+# The ocr image installs its runtime client from the lock (services/ocr/Dockerfile).
+!pyproject.toml
+!uv.lock
