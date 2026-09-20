@@ -48,7 +48,7 @@ port = 8080                  # the kit asks every web service for one; a Lambda 
 health = "/health"
 ui = true                    # it serves the web app, so pa11y and ZAP check it (ADR-0010)
 runtime = "lambda"
-staging_url = ""             # the HTTP API's URL: set when staging exists (T020)
+staging_url = "https://525zi4zedi.execute-api.eu-west-1.amazonaws.com"  # the HTTP API (T020)
 production_url = ""          #   and when production does (T053)
 
 [[service]]

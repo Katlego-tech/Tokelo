@@ -227,9 +227,9 @@ archived() {  # archived <image>: the digest the registry holds under that tag (
 }
 
 publish() {  # push each image archive to the registry, keeping its digest (skopeo)
-  # The seed is archived before anything serves it, so a URL isn't asked for here (§14.3);
+  # The seed is archived before anything serves it, so no URL is asked for here (§14.3);
   # nothing below uses one.
-  setup_release "$1" --without-urls
+  setup_release "$1" --urls none
   [ -f "$out/release.json" ] || die "no dist/$version/release.json: build $version first"
   local registry svc image digest pushed
   registry="$("$realm" release config deploy.registry)"
@@ -266,7 +266,9 @@ publish() {  # push each image archive to the registry, keeping its digest (skop
 
 stage() {
   [ "$1" != v0.0.0 ] || die "v0.0.0 is the seed; it's archived, never staged"
-  setup_release "$1"
+  # Staging's URL, and only staging's: production is created from a release that was staged
+  # (§14.3), so it doesn't exist yet the first time this runs.
+  setup_release "$1" --urls staging
   [ -f "$out/release.json" ] || die "no dist/$version/release.json: build $version first"
   "$realm" gate-passed Development || die "the Development gate hasn't passed yet (GATES.md)"
   "$realm" release slo-check || die "every web service needs its objectives in docs/ops/slo.toml"
@@ -352,7 +354,7 @@ stage() {
 }
 
 promote() {
-  setup_release "$1"; shift
+  setup_release "$1" --urls production; shift
   local emergency=""
   [ "${1:-}" = --emergency ] && emergency="${2:-}"
   [ "${1:-}" = --emergency ] && [ -z "$emergency" ] && die "--emergency needs the reason"
@@ -416,7 +418,7 @@ promote() {
 
 rollback() {
   [ "$1" != v0.0.0 ] || die "v0.0.0 is the seed: it was never staged, so it never goes to production"
-  setup_release "$1"
+  setup_release "$1" --urls production
   : > "$checks"
   say "== roll production back to $version =="
   deploy_all production "$version" && smoke_all production || die "the rollback to $version didn't come up healthy"
