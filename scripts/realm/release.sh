@@ -211,11 +211,12 @@ k6_run() {  # k6_run <script> <log> [docker args]: k6 in its container; PERF_ENV
   ) > "$log" 2>&1
 }
 
-setup_release() {  # the settings every command after build needs
-  version="$1"; out="$root/dist/$version"; checks="$out/checks.tsv"
+setup_release() {  # setup_release <version> [deploy-check flags]: what every command after
+  version="$1"; shift                                          # build needs from realm.toml
+  out="$root/dist/$version"; checks="$out/checks.tsv"
   mkdir -p "$out"
   platform="$("$realm" release config deploy.platform)"
-  "$realm" release deploy-check || die "fix realm.toml's [deploy] settings first"
+  "$realm" release deploy-check "$@" || die "fix realm.toml's [deploy] settings first"
   services="$("$realm" release services)" || die "realm.toml's [[service]] entries need fixing"
 }
 
@@ -226,7 +227,9 @@ archived() {  # archived <image>: the digest the registry holds under that tag (
 }
 
 publish() {  # push each image archive to the registry, keeping its digest (skopeo)
-  setup_release "$1"
+  # The seed is archived before anything serves it, so a URL isn't asked for here (§14.3);
+  # nothing below uses one.
+  setup_release "$1" --without-urls
   [ -f "$out/release.json" ] || die "no dist/$version/release.json: build $version first"
   local registry svc image digest pushed
   registry="$("$realm" release config deploy.registry)"
