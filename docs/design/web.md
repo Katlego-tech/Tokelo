@@ -25,7 +25,7 @@ The app is in English only (ADR-0009).
 | Kind | Where |
 | --- | --- |
 | Visual references | [`sign-up.svg`](web/sign-up.svg) (sign-up and sign-in), [`upload.svg`](web/upload.svg), [`lease.svg`](web/lease.svg), [`evidence.svg`](web/evidence.svg), [`dossier.svg`](web/dossier.svg), [`navigator.svg`](web/navigator.svg), [`account.svg`](web/account.svg): phone-sized wireframes of layout, order and copy. They aren't a colour spec: shadcn/ui's default theme is the design system |
-| Design system | shadcn/ui components (Radix, Tailwind, CVA), copied into `web/src/components/ui/` by its CLI |
+| Design system | shadcn/ui's composition — Radix primitives, Tailwind and CVA variants — in `web/src/components/ui/`, written against the pinned packages rather than fetched by the `shadcn` CLI, which installs whatever is newest and would walk through the 7-day cooldown (T027). The tokens in `src/index.css` are the wireframes' own palette |
 | The API | [api.md](api.md) §6: the endpoints under `/api/`, and the views, which the app's types mirror |
 | Standards | WCAG 2.1 AA (NFR-009), checked with axe; Cognito SRP sign-in through Amplify's Auth module |
 
@@ -42,11 +42,12 @@ package, direct or transitive, is newer than a week (T014):
 | vite, @vitejs/plugin-react | 8.3.0, 6.1.1 | |
 | typescript | **6.0.3** | not 7.0: `typescript-eslint` 8.70 supports TypeScript below 6.1 only |
 | tailwindcss, @tailwindcss/vite | 4.3.3 | |
-| radix-ui, class-variance-authority, tailwind-merge | 1.6.7, 0.7.1, 3.7.0 | what shadcn/ui's components use |
-| react-router | 8.4.0 | |
+| radix-ui, class-variance-authority, tailwind-merge | 1.6.7, 0.7.1, 3.6.0 | what shadcn/ui's components use; the cooldown holds back tailwind-merge 3.7.0 |
+| react-router | 8.3.1 | the cooldown holds back 8.4.0 |
 | aws-amplify | 6.20.0 | Auth only, imported as `aws-amplify/auth` |
 | jspdf | 4.2.1 (MIT) | joining photos into one PDF; not `pdf-lib`, unpublished since 2022 |
 | vitest, jsdom, @testing-library/react, @testing-library/dom, axe-core | 5.0.0, 30.0.1, 16.3.3, 10.4.1, 4.13.0 | the cooldown held back vitest 5.0.1, jsdom 30.1.0 and @testing-library/dom 10.4.2 |
+| @testing-library/user-event, @testing-library/jest-dom | 14.6.7, 7.0.1 | a test clicks and types as a tenant would, and reads as what they'd see (T027) |
 | eslint, @eslint/js, typescript-eslint, globals | 10.10.0, 10.0.1, 8.70.0, 17.12.0 | the cooldown held back eslint 10.11.0 |
 | @types/react, @types/react-dom | 19.3.0 | |
 
@@ -210,7 +211,9 @@ flowchart TD
     Account --> DeleteAccount
 ```
 
-Every screen is built from `web/src/components/ui/` (shadcn/ui), never hand-rolled markup.
+Every screen is built from `web/src/components/ui/`, never hand-rolled markup. The header carries
+the name and, when a tenant is signed in, Sign out; the menu the wireframes show arrives with the
+screens it would link to (T035 onwards).
 
 ## 7. Structure
 
@@ -237,6 +240,8 @@ Every screen is built from `web/src/components/ui/` (shadcn/ui), never hand-roll
 | Accessibility per screen | **axe in each screen's tests,** as well as pa11y in the release | pa11y alone: in the release it can only reach the public pages, not the signed-in ones |
 | TypeScript | **6.0.3** | 7.0.2, the newest: `typescript-eslint` doesn't support it yet |
 | Analytics | **none** | any third-party script: tenants' documents are personal, and the CSP stays `'self'` |
+| Fonts | **the device's own** (a system stack) | a web font: the CSP is `style-src 'self'`, and a font fetched from elsewhere would also record every tenant who opened their lease |
+| Loading jsPDF | **on demand,** when a tenant chooses photos | at the top of the bundle: it brings html2canvas and dompurify, some 380 kB that a tenant uploading a PDF never downloads (T027: the first load went from 266 kB to 136 kB gzipped) |
 
 Deviations from [docs/architecture-defaults.md](../architecture-defaults.md): the app is served
 by the `api`'s function, not its own container (ADR-0010).

@@ -300,13 +300,15 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Done:    the tenant sees a failed item as failed. Until T029 and T031 wire their lanes in, an
                upload on staging has no worker to run it: its job retries and lands in the
                dead-letter queue, where the alarm says so
-- [ ] T027 [FND] Web: sign up after the privacy notice, sign in, and upload a file
+- [x] T027 [FND] Web: sign up after the privacy notice, sign in, and upload a file
       Req:     REQ-015, REQ-001, NFR-009
       Design:  docs/design/web.md, docs/design/web/sign-up.svg, docs/design/web/upload.svg
-      Files:   web/src/…
-      Verify:  the tests are written first and fail; then axe reports 0 violations, and the notice
-               states where data is stored and the POPIA section 72 basis
-      Done:    a signed-in tenant uploads a file straight to S3 on staging
+      Files:   web/src/{api,auth,components,components/ui,routes,test}/…, web/src/index.css
+      Verify:  the tests are written first and fail; then axe reports 0 violations on all four
+               screens, and the notice states where data is stored and the POPIA section 72 basis
+      Done:    the app asks for a ticket and posts the file to storage itself — the bytes never go
+               through the API. The walk-through on staging (a real Cognito sign-up, with its
+               emailed code) is Katlego's, once the release carries this app
 
 **Checkpoint:** a signed-in tenant uploads a file straight to storage, and its job reaches a worker on staging.
 
