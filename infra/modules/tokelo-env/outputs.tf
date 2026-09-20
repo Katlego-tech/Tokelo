@@ -34,3 +34,23 @@ output "audit_table_arn" {
   description = "The audit log's table, for the functions' policies (T020)."
   value       = aws_dynamodb_table.audit.arn
 }
+
+output "documents_bucket" {
+  description = "The documents bucket: uploads, job objects and dossiers (api.md §6's key layout)."
+  value       = aws_s3_bucket.documents.id
+}
+
+output "documents_bucket_arn" {
+  description = "The documents bucket, for the functions' policies (T020)."
+  value       = aws_s3_bucket.documents.arn
+}
+
+output "queue_arns" {
+  description = "Each job queue, for the functions' event source mappings (T020)."
+  value       = { for name, queue in aws_sqs_queue.job : name => queue.arn }
+}
+
+output "alerts_topic_arn" {
+  description = "Where the dead-letter alarms go. Subscribe an address to it by hand (alarms.tf)."
+  value       = aws_sns_topic.alerts.arn
+}

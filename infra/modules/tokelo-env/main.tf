@@ -3,9 +3,11 @@
 #
 #   network.tf    the VPC, its app subnets, the route tables, the two gateway endpoints and fn
 #   tables.tf     the two DynamoDB tables (ADR-0011)
+#   storage.tf    the documents bucket
+#   events.tf     the EventBridge rules and the four queues, each with its dead-letter queue
+#   alarms.tf     the topic, and an alarm on each dead-letter queue
 #
-# The rest of §6 — the documents bucket, the events and queues, the functions, the user pool and
-# the HTTP API — arrives with T019 and T020.
+# The rest of §6 — the functions, the user pool and the HTTP API — arrives with T020.
 
 terraform {
   required_version = ">= 1.10"
