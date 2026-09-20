@@ -40,12 +40,15 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 | `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | ✅ Done |
 | `release` (T021: v0.1.2 staged) | Katlego | Claude Code | 🔵 In review — PR #26 waits for the UAT sign-off |
 | `core` + `api` (T023–T026: the store, tenant-scoped reads, pre-signed uploads, the job spine) | Katlego | Claude Code | ✅ Done |
+| `web` (T027: the privacy notice, sign-up, sign-in and the uploader) | Katlego | Claude Code | ✅ Done |
 
 ## ⏭️ Next action
 
 Three things for Katlego, none of them blocking Phase 2:
 
 1. **Sign off UAT on PR #26** (or say what to try first) — that's where the `v0.1.2` record waits.
+   The next release will carry the web app, so a walk-through on staging can be part of it: create
+   an account, confirm the emailed code, and upload a lease.
 2. **Turn on** Settings → Actions → General → Workflow permissions → *"Allow GitHub Actions to
    create and approve pull requests"*, so the pipeline opens its own record PRs.
 3. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
@@ -147,6 +150,10 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   the conditional writes), the first /api/ reads scoped to the tenant in the token, and pre-signed
   POST uploads that never let a file's bytes through the API. 26 tests against DynamoDB Local.
   Next: T026. Blocked on: nothing.
+- 2026-09-21 — Katlego (via Claude Code) — T027: the web app's first screens — the privacy notice
+  before the account, sign-up with its emailed code, sign-in, and the uploader that posts a file
+  straight to storage. 21 screen tests, axe clean on all four screens. Next: T022 (the statutes'
+  real text) closes Phase 2. Blocked on: nothing.
 - 2026-09-20 — Katlego (via Claude Code) — T026: the job spine — every worker's reading of an SQS
   batch, its per-message failure reporting, and the third failure that marks the document failed
   and still redrives. Next: T027 (the web sign-up and upload), or T022 with real statute text.

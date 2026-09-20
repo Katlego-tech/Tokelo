@@ -1,1 +1,41 @@
+/* Tokelo's theme (docs/design/web.md §2; the wireframes in docs/design/web/).
+ *
+ * The wireframes aren't a colour spec, but they do carry the project's palette: a near-black
+ * header, one blue that means "you can act here", grey for what is said rather than done, and a
+ * red kept for refusals. Those are the tokens below, so a screen never reaches for a raw colour.
+ *
+ * No web font is loaded. The content security policy is `style-src 'self'` (ADR-0010), and a
+ * font from someone else's server would be both a request the policy forbids and a record of
+ * every tenant who read their lease. The stack below is what the device already has. */
 @import "tailwindcss";
+
+@theme {
+  --color-ink: #1f2933; /* headings, body text, the header bar */
+  --color-muted: #616e7c; /* supporting text: explanations, hints, the footer */
+  --color-line: #cbd2d9; /* borders and rules */
+  --color-surface: #f5f7fa; /* callouts and thumbnails */
+  --color-brand: #2563eb; /* the one blue: buttons, links, focus */
+  --color-brand-dark: #1d4ed8;
+  --color-danger: #b91c1c; /* refusals only */
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --radius-field: 0.5rem;
+  --radius-panel: 0.625rem;
+}
+
+/* A focus ring that is visible on white and on the header alike: accessibility is not a state
+ * to be styled away (NFR-009, WCAG 2.1 AA). */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  body {
+    background: white;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+}
