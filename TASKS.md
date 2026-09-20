@@ -241,10 +241,11 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  `curl https://<staging API>/health` returns 200; all four functions are in the app
                subnets, and each role names only its own tables and prefixes
       Done:    the functions run the v0.0.0 images; realm.toml has the api's staging URL
-- [ ] T021 [SET] Release v0.1.0 to staging through the pipeline
+- [x] T021 [SET] Release v0.1.2 to staging through the pipeline
       Req:     none — the release pipeline
       Verify:  the release workflow deploys by digest, the smoke checks pass for all four services,
-               and it opens "release: v0.1.0 staged"
+               and "release: v0.1.2 staged" is open for the UAT sign-off (v0.1.0 and v0.1.1 were
+               rejected by the DAST check; ECR's tags are immutable, so each fix took a version)
       Done:    staging runs signed images built from main
 
 **Checkpoint:** four healthy services on staging, deployed by the pipeline; the gate is required on `main`.
@@ -505,6 +506,14 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  the release record shows every check passed and the UAT sign-off; production is
                applied through realm-infra; the promote workflow succeeds and the watch window holds
       Done:    the Release gate has its dated entry
+- [ ] T056 [POL] Make the `ocr` image reproducible
+      Req:     none — supply chain (the kit's DESIGN.md §9: build twice, compare digests)
+      Files:   services/ocr/Dockerfile
+      Verify:  the release record's Images table says Reproducible: yes for `ocr`, as it does for the
+               other three
+      Done:    two builds of the same commit give the same digest. The apt install T029 adds is what
+               differs (v0.1.0 to v0.1.2, 2026-09-20); SOURCE_DATE_EPOCH and a pinned package set are
+               the usual answer
 - [ ] T054 [POL] Sweep for placeholders: no `TODO`/`FIXME`/stub bodies/hard-coded sample data
       remain outside of tasks that explicitly declared them, and each declared one has an open
       follow-up task ID.
