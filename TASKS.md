@@ -262,7 +262,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                its text and where it's from
       Done:    the Rental Housing Act 50 of 1999, the Consumer Protection Act 68 of 2008 (sections 14
                and 48) and the PIE Act 19 of 1998, as far as the rules and topics need them
-- [ ] T023 [FND] Write the store: the item types, the keys and the conditional writes
+- [x] T023 [FND] Write the store: the item types, the keys and the conditional writes
       Req:     REQ-011
       Design:  docs/design/domain-model.md
       Files:   src/tokelo/core/model.py, src/tokelo/core/store.py, tests/integration/test_store.py

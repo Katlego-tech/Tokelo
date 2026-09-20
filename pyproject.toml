@@ -28,14 +28,21 @@ pythonVersion = "3.14"
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "--strict-markers"
-markers = ["req(*ids): the requirements this test verifies"]
+markers = [
+    "req(*ids): the requirements this test verifies",
+    "docker: runs a container (DynamoDB Local); needs Docker",
+]
 
 [dependency-groups]
 dev = [
+    "boto3>=1.42.0",       # the tests talk to DynamoDB Local; the functions use the SDK too
     "pyright>=1.1.414",
     "pytest>=9.1.1",
     "ruff>=0.16.7",
 ]
+# The `ocr` image is Debian's Python, not Lambda's, so it needs the runtime client and the SDK.
+# The other three run on public.ecr.aws/lambda/python, which ships boto3 already.
 ocr-image = [
     "awslambdaric>=4.0.3",
+    "boto3>=1.42.0",
 ]
