@@ -26,8 +26,15 @@ export class ApiFailure extends Error {
 }
 
 export async function loadConfig(): Promise<Config> {
-  const answer = await fetch("/config.json", { headers: { accept: "application/json" } });
-  if (!answer.ok) throw new ApiFailure(answer.status, "no_config", "This app isn't configured.");
+  const answer = await fetch("/config.json", {
+    headers: { accept: "application/json" },
+  });
+  if (!answer.ok)
+    throw new ApiFailure(
+      answer.status,
+      "no_config",
+      "This app isn't configured.",
+    );
   return (await answer.json()) as Config;
 }
 
@@ -91,7 +98,12 @@ function wait(ms: number): Promise<void> {
 
 // ------------------------------------------------------------------ the calls ---
 export function requestUpload(
-  ticket: { kind: string; content_type: string; size_bytes: number; filename: string },
+  ticket: {
+    kind: string;
+    content_type: string;
+    size_bytes: number;
+    filename: string;
+  },
   token: () => Promise<string>,
   waking?: Waking,
 ): Promise<UploadTicket> {
@@ -120,19 +132,27 @@ export async function putFile(
   onProgress?: (percent: number) => void,
 ): Promise<void> {
   const form = new FormData();
-  for (const [name, value] of Object.entries(ticket.fields)) form.append(name, value);
+  for (const [name, value] of Object.entries(ticket.fields))
+    form.append(name, value);
   form.append("file", file);
 
   await new Promise<void>((done, failed) => {
     const request = new XMLHttpRequest(); // fetch can't report progress on the way up
     request.open("POST", ticket.url);
     request.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+      if (event.lengthComputable)
+        onProgress?.(Math.round((event.loaded / event.total) * 100));
     });
     request.addEventListener("load", () =>
       request.status >= 200 && request.status < 300
         ? done()
-        : failed(new ApiFailure(request.status, "upload_failed", "The upload didn't finish.")),
+        : failed(
+            new ApiFailure(
+              request.status,
+              "upload_failed",
+              "The upload didn't finish.",
+            ),
+          ),
     );
     request.addEventListener("error", () =>
       failed(new ApiFailure(0, "upload_failed", "The upload didn't finish.")),

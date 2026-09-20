@@ -2,7 +2,8 @@
 // isn't here: the app mirrors the API, it doesn't invent a model of its own (web.md §3).
 
 export type DocumentKind = "lease" | "photo" | "notice" | "chat";
-export type DocumentStatus = "requested" | "stored" | "processed" | "failed" | "expired";
+export type DocumentStatus =
+  "requested" | "stored" | "processed" | "failed" | "expired";
 
 export type Capture = {
   captured_at: string | "not recorded";
@@ -32,4 +33,8 @@ export type UploadTicket = {
 
 export type ApiError = { error: { code: string; message: string } };
 
-export type Config = { region: string; user_pool_id: string; client_id: string };
+export type Config = {
+  region: string;
+  user_pool_id: string;
+  client_id: string;
+};

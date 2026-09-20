@@ -25,7 +25,7 @@ The app is in English only (ADR-0009).
 | Kind | Where |
 | --- | --- |
 | Visual references | [`sign-up.svg`](web/sign-up.svg) (sign-up and sign-in), [`upload.svg`](web/upload.svg), [`lease.svg`](web/lease.svg), [`evidence.svg`](web/evidence.svg), [`dossier.svg`](web/dossier.svg), [`navigator.svg`](web/navigator.svg), [`account.svg`](web/account.svg): phone-sized wireframes of layout, order and copy. They aren't a colour spec: shadcn/ui's default theme is the design system |
-| Design system | shadcn/ui's composition — Radix primitives, Tailwind and CVA variants — in `web/src/components/ui/`, written against the pinned packages rather than fetched by the `shadcn` CLI, which installs whatever is newest and would walk through the 7-day cooldown (T027). The tokens in `src/index.css` are the wireframes' own palette |
+| Design system | **shadcn/ui**, added by its CLI pinned at 4.21.0 (`--base radix`, the Nova preset) into `web/src/components/ui/`. Its Nova theme is neutral grey; `src/index.css` replaces the tokens with the wireframes' own palette, so the components are shadcn's and the look is Tokelo's (T027) |
 | The API | [api.md](api.md) §6: the endpoints under `/api/`, and the views, which the app's types mirror |
 | Standards | WCAG 2.1 AA (NFR-009), checked with axe; Cognito SRP sign-in through Amplify's Auth module |
 
@@ -42,7 +42,8 @@ package, direct or transitive, is newer than a week (T014):
 | vite, @vitejs/plugin-react | 8.3.0, 6.1.1 | |
 | typescript | **6.0.3** | not 7.0: `typescript-eslint` 8.70 supports TypeScript below 6.1 only |
 | tailwindcss, @tailwindcss/vite | 4.3.3 | |
-| radix-ui, class-variance-authority, tailwind-merge | 1.6.7, 0.7.1, 3.6.0 | what shadcn/ui's components use; the cooldown holds back tailwind-merge 3.7.0 |
+| radix-ui, class-variance-authority, tailwind-merge, clsx | 1.6.7, 0.7.1, 3.6.0, 2.1.1 | what shadcn/ui's components use; the cooldown holds back tailwind-merge 3.7.0 |
+| shadcn, tw-animate-css, lucide-react, @fontsource-variable/geist | 4.21.0, 1.4.0, 1.45.0, 5.3.0 | the CLI and what its components import; the cooldown holds back lucide-react 1.47.0 |
 | react-router | 8.3.1 | the cooldown holds back 8.4.0 |
 | aws-amplify | 6.20.0 | Auth only, imported as `aws-amplify/auth` |
 | jspdf | 4.2.1 (MIT) | joining photos into one PDF; not `pdf-lib`, unpublished since 2022 |
@@ -239,8 +240,10 @@ screens it would link to (T035 onwards).
 | A lease photographed as several pages | **joined into one PDF in the browser** | several uploads per lease: the agreed `POST /api/uploads` has no way to group them ([ocr.md](ocr.md)) |
 | Accessibility per screen | **axe in each screen's tests,** as well as pa11y in the release | pa11y alone: in the release it can only reach the public pages, not the signed-in ones |
 | TypeScript | **6.0.3** | 7.0.2, the newest: `typescript-eslint` doesn't support it yet |
+| `cn()` | **clsx + tailwind-merge**, as shadcn's components used until this month | the new `cn` package the CLI now writes in: it was published nine hours after this project's cooldown, and is three weeks old. Two lines aren't worth a fresh runtime dependency |
+| How a screen is composed | **a light canvas, the screen on a white sheet** — shadcn's admin blocks' pattern (the reference Katlego gave, 2026-09-21): a section title with a muted line under it, panels on their own surface inside the sheet, and what is happening shown as a chip on a small tile | everything flush on white: on a phone a form, a notice and a progress bar then read as separate things floating on a page |
 | Analytics | **none** | any third-party script: tenants' documents are personal, and the CSP stays `'self'` |
-| Fonts | **the device's own** (a system stack) | a web font: the CSP is `style-src 'self'`, and a font fetched from elsewhere would also record every tenant who opened their lease |
+| Fonts | **Geist, bundled** (`@fontsource-variable/geist`, ~29 kB for the Latin subset) | a font loaded from someone else's server: the CSP is `'self'`, and it would also record every tenant who opened their lease. Bundled, it is served from this app's own assets |
 | Loading jsPDF | **on demand,** when a tenant chooses photos | at the top of the bundle: it brings html2canvas and dompurify, some 380 kB that a tenant uploading a PDF never downloads (T027: the first load went from 266 kB to 136 kB gzipped) |
 
 Deviations from [docs/architecture-defaults.md](../architecture-defaults.md): the app is served

@@ -21,14 +21,20 @@ const auth: Auth = {
 const TICKET = {
   document_id: "33333333-3333-4333-8333-333333333333",
   url: "https://tokelo-staging-documents.s3.eu-west-1.amazonaws.com/",
-  fields: { key: "uploads/t/lease/33333333-3333-4333-8333-333333333333", policy: "p" },
+  fields: {
+    key: "uploads/t/lease/33333333-3333-4333-8333-333333333333",
+    policy: "p",
+  },
   expires_at: "2026-09-21T06:15:00Z",
 };
 
 /** An XMLHttpRequest that records what was sent and reports success, since jsdom has no S3. */
 function recordingXhr(sent: { form?: FormData; url?: string }) {
   return class {
-    upload = { addEventListener: (_: string, listener: (e: ProgressEvent) => void) => void listener };
+    upload = {
+      addEventListener: (_: string, listener: (e: ProgressEvent) => void) =>
+        void listener,
+    };
     status = 204;
     private listeners: Record<string, () => void> = {};
     open(_method: string, url: string) {
@@ -61,7 +67,11 @@ function answers(...responses: Response[]) {
   return fetch;
 }
 
-function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
+function json(
+  body: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json", ...headers },
@@ -81,13 +91,17 @@ async function choose(name: RegExp, file: File, { asPickerWould = true } = {}) {
   fireEvent.change(input);
 }
 
-const PDF = () => new File([new Uint8Array([37, 80, 68, 70])], "lease.pdf", {
-  type: "application/pdf",
-});
+const PDF = () =>
+  new File([new Uint8Array([37, 80, 68, 70])], "lease.pdf", {
+    type: "application/pdf",
+  });
 
 describe("[REQ-002] the file goes straight to storage", () => {
   it("asks the API for a ticket, then posts the file to S3 with the fields it was given", async () => {
-    const fetch = answers(json(TICKET, 201), json({ id: TICKET.document_id, status: "stored" }));
+    const fetch = answers(
+      json(TICKET, 201),
+      json({ id: TICKET.document_id, status: "stored" }),
+    );
     renderRoute("/lease/new", { auth });
 
     await choose(/choose a pdf/i, PDF());
@@ -101,24 +115,31 @@ describe("[REQ-002] the file goes straight to storage", () => {
       content_type: "application/pdf",
       filename: "lease.pdf",
     });
-    expect((options.headers as Record<string, string>).authorization).toBe("Bearer a-token");
+    expect((options.headers as Record<string, string>).authorization).toBe(
+      "Bearer a-token",
+    );
 
     // The bytes went to S3, with the signed fields, and never to the API.
     await waitFor(() => expect(sent.url).toBe(TICKET.url));
     expect(sent.form?.get("key")).toBe(TICKET.fields.key);
     expect(sent.form?.get("file")).toBeInstanceOf(File);
-    expect(fetch.mock.calls.every(([called]) => !String(called).includes("s3"))).toBe(true);
+    expect(
+      fetch.mock.calls.every(([called]) => !String(called).includes("s3")),
+    ).toBe(true);
   });
 
   it("tells the tenant it is processing once the file is in", async () => {
-    answers(json(TICKET, 201), json({ id: TICKET.document_id, status: "stored" }));
+    answers(
+      json(TICKET, 201),
+      json({ id: TICKET.document_id, status: "stored" }),
+    );
     renderRoute("/lease/new", { auth });
 
     await choose(/choose a pdf/i, PDF());
 
-    expect(await screen.findByRole("status", { name: /processing/i })).toHaveTextContent(
-      /you can leave this page/i,
-    );
+    expect(
+      await screen.findByRole("status", { name: /processing/i }),
+    ).toHaveTextContent(/you can leave this page/i);
   });
 });
 
@@ -127,11 +148,17 @@ describe("[REQ-003] what a tenant is told before spending their data", () => {
     const fetch = answers();
     renderRoute("/lease/new", { auth });
 
-    await choose(/choose a pdf/i, new File(["x"], "lease.doc", { type: "application/msword" }), {
-      asPickerWould: false,
-    });
+    await choose(
+      /choose a pdf/i,
+      new File(["x"], "lease.doc", { type: "application/msword" }),
+      {
+        asPickerWould: false,
+      },
+    );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/word documents aren't accepted/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /word documents aren't accepted/i,
+    );
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -148,12 +175,21 @@ describe("[REQ-003] what a tenant is told before spending their data", () => {
   });
 
   it("shows the server's own reason when the server refuses", async () => {
-    answers(json({ error: { code: "refused", message: "A lease may be at most 20 MB." } }, 422));
+    answers(
+      json(
+        {
+          error: { code: "refused", message: "A lease may be at most 20 MB." },
+        },
+        422,
+      ),
+    );
     renderRoute("/lease/new", { auth });
 
     await choose(/choose a pdf/i, PDF());
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/at most 20 MB/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /at most 20 MB/i,
+    );
   });
 });
 

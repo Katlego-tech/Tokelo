@@ -2,9 +2,10 @@
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
-import { useAuth } from "../auth/AuthContext";
-import { Button } from "../components/ui/button";
-import { Field } from "../components/ui/field";
+import { useAuth } from "@/auth/AuthContext";
+import { ScreenTitle } from "@/components/ScreenTitle";
+import { TextField } from "@/components/TextField";
+import { Button } from "@/components/ui/button";
 import { Refusal } from "./SignUp";
 
 export function SignIn() {
@@ -26,20 +27,22 @@ export function SignIn() {
           // Cognito says "Incorrect username or password" for both, and so does this screen:
           // which of the two it was is not something a stranger should be able to find out.
           .catch((e: unknown) =>
-            setFailure(e instanceof Error ? e.message : "Incorrect email or password."),
+            setFailure(
+              e instanceof Error ? e.message : "Incorrect email or password.",
+            ),
           )
           .finally(() => setBusy(false));
       }}
     >
-      <h1 className="mt-6 text-[22px] font-bold text-ink">Sign in</h1>
-      <Field
+      <ScreenTitle title="Sign in">Welcome back.</ScreenTitle>
+      <TextField
         label="Email"
         type="email"
         autoComplete="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
       />
-      <Field
+      <TextField
         label="Password"
         type="password"
         autoComplete="current-password"
@@ -47,13 +50,19 @@ export function SignIn() {
         onChange={(event) => setPassword(event.target.value)}
       />
       {failure ? <Refusal message={failure} /> : null}
-      <div className="mt-6">
-        <Button type="submit" disabled={busy}>
-          Sign in
-        </Button>
-      </div>
+      <Button
+        type="submit"
+        size="lg"
+        className="mt-6 h-11 w-full"
+        disabled={busy}
+      >
+        Sign in
+      </Button>
       <p className="mt-5 text-sm">
-        <Link to="/sign-up" className="text-brand underline-offset-4 hover:underline">
+        <Link
+          to="/sign-up"
+          className="text-primary underline-offset-4 hover:underline"
+        >
           Create an account
         </Link>
       </p>

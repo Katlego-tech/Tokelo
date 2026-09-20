@@ -5,8 +5,8 @@ export function WakingBanner({ waking }: { waking: boolean }) {
   return (
     <p
       role="status"
-      className="mt-4 rounded-[var(--radius-field)] border border-brand bg-white px-3 py-2.5
-        text-[13px] font-bold text-brand"
+      className="mt-4 rounded-lg border border-primary bg-white px-3 py-2.5
+        text-[13px] font-bold text-primary"
     >
       Still waking up: a few seconds
     </p>

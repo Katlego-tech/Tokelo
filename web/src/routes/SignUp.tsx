@@ -6,11 +6,13 @@
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
-import { useAuth } from "../auth/AuthContext";
-import { Button } from "../components/ui/button";
-import { Callout } from "../components/ui/callout";
-import { Checkbox } from "../components/ui/checkbox";
-import { Field } from "../components/ui/field";
+import { useAuth } from "@/auth/AuthContext";
+import { ScreenTitle } from "@/components/ScreenTitle";
+import { Notice } from "@/components/Notice";
+import { TextField } from "@/components/TextField";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export function SignUp() {
   const { signUp, confirm } = useAuth();
@@ -52,14 +54,11 @@ export function SignUp() {
           });
         }}
       >
-        <h1 className="mt-6 text-[22px] font-bold text-ink">
-          Check your email
-        </h1>
-        <p className="mt-2 text-sm text-muted">
+        <ScreenTitle title="Check your email">
           We sent a code to {email || "your address"}. Enter it to finish
           creating your account.
-        </p>
-        <Field
+        </ScreenTitle>
+        <TextField
           label="Code"
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -67,11 +66,14 @@ export function SignUp() {
           onChange={(event) => setCode(event.target.value)}
         />
         {failure ? <Refusal message={failure} /> : null}
-        <div className="mt-6">
-          <Button type="submit" disabled={busy || code.length === 0}>
-            Confirm
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          size="lg"
+          className="mt-6 h-11 w-full"
+          disabled={busy || !code}
+        >
+          Confirm
+        </Button>
       </form>
     );
   }
@@ -86,30 +88,36 @@ export function SignUp() {
         });
       }}
     >
-      <h1 className="mt-6 text-[22px] font-bold text-ink">
-        Create your account
-      </h1>
+      <ScreenTitle title="Create your account">
+        One account holds your lease, your photos and your dossiers — and nobody
+        else&apos;s.
+      </ScreenTitle>
 
-      <Callout title="Privacy notice">
+      <Notice title="Privacy notice">
         Your documents are stored by AWS in Ireland (EU), which takes them out
         of South Africa under POPIA section 72. Only you can see them, and you
         can delete everything at any time.
-      </Callout>
+      </Notice>
 
-      <Checkbox
-        checked={read}
-        onCheckedChange={setRead}
-        label="I have read the privacy notice"
-      />
+      <div className="mt-4 flex items-center gap-3">
+        <Checkbox
+          id="read-the-notice"
+          checked={read}
+          onCheckedChange={(value) => setRead(value === true)}
+        />
+        <Label htmlFor="read-the-notice" className="text-sm font-normal">
+          I have read the privacy notice
+        </Label>
+      </div>
 
-      <Field
+      <TextField
         label="Email"
         type="email"
         autoComplete="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
       />
-      <Field
+      <TextField
         label="Password"
         hint="(at least 12 characters)"
         type="password"
@@ -120,16 +128,19 @@ export function SignUp() {
 
       {failure ? <Refusal message={failure} /> : null}
 
-      <div className="mt-6">
-        <Button type="submit" disabled={!read || busy}>
-          Create account
-        </Button>
-      </div>
+      <Button
+        type="submit"
+        size="lg"
+        className="mt-6 h-11 w-full"
+        disabled={!read || busy}
+      >
+        Create account
+      </Button>
 
       <p className="mt-5 text-sm">
         <Link
           to="/sign-in"
-          className="text-brand underline-offset-4 hover:underline"
+          className="text-primary underline-offset-4 hover:underline"
         >
           Already have an account? Sign in
         </Link>
@@ -140,10 +151,8 @@ export function SignUp() {
 
 export function Refusal({ message }: { message: string }) {
   return (
-    <div role="alert">
-      <Callout title="That didn't work" tone="danger">
-        {message}
-      </Callout>
-    </div>
+    <Notice title="That didn't work" tone="destructive" role="alert">
+      {message}
+    </Notice>
   );
 }

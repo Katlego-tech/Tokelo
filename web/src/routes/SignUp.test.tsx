@@ -38,7 +38,9 @@ describe("[REQ-015] the privacy notice comes before the account", () => {
     const create = screen.getByRole("button", { name: /create account/i });
     expect(create).toBeDisabled();
 
-    await user.click(screen.getByRole("checkbox", { name: /i have read the privacy notice/i }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /i have read the privacy notice/i }),
+    );
     expect(create).toBeEnabled();
   });
 });
@@ -48,12 +50,17 @@ describe("[REQ-001] signing up", () => {
     const user = userEvent.setup();
     renderRoute("/sign-up", { auth });
 
-    await user.click(screen.getByRole("checkbox", { name: /i have read the privacy notice/i }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /i have read the privacy notice/i }),
+    );
     await user.type(screen.getByLabelText(/email/i), "tenant@example.com");
     await user.type(screen.getByLabelText(/password/i), "hunter2-hunter2");
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(auth.signUp).toHaveBeenCalledWith("tenant@example.com", "hunter2-hunter2");
+    expect(auth.signUp).toHaveBeenCalledWith(
+      "tenant@example.com",
+      "hunter2-hunter2",
+    );
     expect(await screen.findByLabelText(/code/i)).toBeInTheDocument();
   });
 
@@ -62,17 +69,23 @@ describe("[REQ-001] signing up", () => {
     const refusing: Auth = {
       ...auth,
       signUp: vi.fn(async () => {
-        throw new Error("Password did not conform with policy: Password not long enough");
+        throw new Error(
+          "Password did not conform with policy: Password not long enough",
+        );
       }),
     };
     renderRoute("/sign-up", { auth: refusing });
 
-    await user.click(screen.getByRole("checkbox", { name: /i have read the privacy notice/i }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /i have read the privacy notice/i }),
+    );
     await user.type(screen.getByLabelText(/email/i), "tenant@example.com");
     await user.type(screen.getByLabelText(/password/i), "short");
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/not long enough/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /not long enough/i,
+    );
   });
 });
 
@@ -91,6 +104,8 @@ describe("[NFR-009] accessibility", () => {
 describe("the legal notice", () => {
   it("is on every screen, because the app is information and not advice", () => {
     renderRoute("/sign-in", { auth });
-    expect(screen.getByText(/legal information, not legal advice/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/legal information, not legal advice/i),
+    ).toBeInTheDocument();
   });
 });
