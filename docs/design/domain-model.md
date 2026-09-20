@@ -114,6 +114,10 @@ classDiagram
 | Dossier (with the documents it names) | `tokelo-<env>` | `TENANT#<tenant id>` | `DOSSIER#<dossier id>` |
 | Audit entry | `tokelo-<env>-audit` | `SUBJECT#<pseudonym>` | `<at>#<ulid>` |
 
+Every item also carries a **`type`** attribute — `tenant`, `document`, `page`, `clause`,
+`timeline`, `dossier` — which is how one query's answer is sorted back into the aggregate it
+belongs to, without parsing sort keys.
+
 **The enumerations** (string attributes; the values are the code's, in `model.py`):
 
 | Attribute | Values |
@@ -205,7 +209,7 @@ project.
 | What is wanted | The call |
 |---|---|
 | A document, with its pages and clauses | `Query pk = TENANT#t and begins_with(sk, "DOC#<id>")` |
-| A tenant's documents | `Query pk = TENANT#t and begins_with(sk, "DOC#")`, keeping the items whose `sk` has no `#PAGE#` or `#CLAUSE#` |
+| A tenant's documents | `Query pk = TENANT#t and begins_with(sk, "DOC#")`, keeping the items of `type` `document` |
 | A lease's flags | the first query above: the document, its pages (for the unreadable ones) and its clauses come back together |
 | The timeline | `Query pk = TENANT#t and begins_with(sk, "TIMELINE#")`, which comes back in time order |
 | One dossier | `GetItem pk = TENANT#t, sk = DOSSIER#<id>` |
@@ -220,7 +224,7 @@ Two writes that must land together — a document and its timeline entry — are
 | Path | New? | Responsibility |
 | --- | --- | --- |
 | `infra/modules/tokelo-env/tables.tf` | new | the two tables, on-demand, with the keys above (T018) |
-| `src/tokelo/core/store.py` | new | the only code that talks to DynamoDB: the keys, the queries above, the condition expressions, and the tenant-scoped access (T023) |
+| `src/tokelo/core/store.py` | new | the only code that talks to DynamoDB: the keys, the queries above, the condition expressions, and the tenant-scoped access (T023). The one place boto3, which ships no types, meets typed code |
 | `src/tokelo/core/model.py` | new | the item types and the enumerations above, and nothing else |
 
 ## 8. Decisions & alternatives
