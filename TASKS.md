@@ -229,11 +229,11 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 - [ ] T019 [SET] Create staging's documents bucket, event rules and queues (with Katlego's go-ahead)
       Req:     REQ-002, REQ-017
       Design:  docs/design/infrastructure.md
-      Files:   infra/modules/tokelo-env/{storage,events}.tf
+      Files:   infra/modules/tokelo-env/{storage,events,alarms}.tf
       Verify:  the plan shows the bucket private (Block Public Access, SSE-KMS with the AWS-managed key,
                versioning) and one standard queue per job type (ADR-0007), each with a dead-letter
-               queue after 3 receives
-      Done:    applied to staging
+               queue after 3 receives and an alarm on it
+      Done:    applied to staging, and Katlego has subscribed an address to the alerts topic
 - [ ] T020 [SET] Create staging's user pool, HTTP API and the four functions (with Katlego's go-ahead)
       Req:     REQ-001
       Design:  docs/design/infrastructure.md, docs/design/api.md
