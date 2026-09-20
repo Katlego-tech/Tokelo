@@ -62,13 +62,17 @@ def store(dynamodb_local: str, monkeypatch: pytest.MonkeyPatch) -> Iterator[Any]
 
     from tokelo.core.store import Store
 
+    # Lambda sets all of these; a CI runner has no AWS config file at all, so the test says what
+    # a function would be told. Both region variables: botocore reads AWS_DEFAULT_REGION.
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
     monkeypatch.setenv("AWS_REGION", "eu-west-1")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "eu-west-1")
+    monkeypatch.delenv("AWS_PROFILE", raising=False)
     monkeypatch.setenv("TOKELO_TABLE", TABLE)
     monkeypatch.setenv("TOKELO_AUDIT_TABLE", AUDIT_TABLE)
 
-    dynamodb: Any = boto3.resource("dynamodb", endpoint_url=dynamodb_local)
+    dynamodb: Any = boto3.resource("dynamodb", endpoint_url=dynamodb_local, region_name="eu-west-1")
     for name in (TABLE, AUDIT_TABLE):
         table = dynamodb.create_table(
             TableName=name,
