@@ -1,15 +1,15 @@
 """The web app and its settings, served by the `api` function (ADR-0010; docs/design/web.md).
 
 The built app (web/dist) is copied into the image. Hashed files under assets/ are cached for a
-year; index.html is never cached and answers any app route; every HTML response carries the
-security headers. Nothing outside the web root is ever served, and no /api/ path is answered
-with the app."""
+year and nothing else is stored at all; index.html answers any app route; every response carries
+the security headers (responses.SECURITY), and a page also carries its content security policy.
+Nothing outside the web root is ever served, and no /api/ path is answered with the app."""
 
 import base64
 from collections.abc import Mapping
 from pathlib import Path
 
-from tokelo.api.responses import Response, error, json_response
+from tokelo.api.responses import Response, error, json_response, secured
 
 TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -24,7 +24,8 @@ TYPES = {
     ".txt": "text/plain; charset=utf-8",
 }
 TEXT = ("text/", "application/json", "image/svg+xml")
-IMMUTABLE = "public, max-age=31536000, immutable"
+IMMUTABLE = "public, max-age=31536000, immutable"  # hashed names: the only cacheable answers
+NO_STORE = "no-store"  # everything else is per-tenant, or about to change
 
 
 def web_root(env: Mapping[str, str]) -> Path:
@@ -58,17 +59,9 @@ def content_security_policy(env: Mapping[str, str]) -> str:
 
 def file_response(path: Path, cache_control: str, env: Mapping[str, str]) -> Response:
     content_type = TYPES.get(path.suffix, "application/octet-stream")
-    headers = {
-        "content-type": content_type,
-        "cache-control": cache_control,
-        "x-content-type-options": "nosniff",
-    }
+    headers = secured({"content-type": content_type, "cache-control": cache_control})
     if content_type.startswith("text/html"):
-        headers |= {
-            "content-security-policy": content_security_policy(env),
-            "strict-transport-security": "max-age=31536000; includeSubDomains",
-            "referrer-policy": "no-referrer",
-        }
+        headers["content-security-policy"] = content_security_policy(env)
     data = path.read_bytes()
     if content_type.startswith(TEXT):
         return {"statusCode": 200, "headers": headers, "body": data.decode("utf-8")}
@@ -83,10 +76,9 @@ def file_response(path: Path, cache_control: str, env: Mapping[str, str]) -> Res
 def not_found() -> Response:
     return {
         "statusCode": 404,
-        "headers": {
-            "content-type": "text/plain; charset=utf-8",
-            "x-content-type-options": "nosniff",
-        },
+        "headers": secured(
+            {"content-type": "text/plain; charset=utf-8", "cache-control": NO_STORE}
+        ),
         "body": "Not found.",
     }
 
@@ -102,15 +94,15 @@ def serve(path: str, env: Mapping[str, str]) -> Response:
     if any(part.startswith(".") or "%" in part or "\\" in part for part in parts):
         return not_found()
     if not parts:
-        return file_response(index, "no-cache", env)
+        return file_response(index, NO_STORE, env)
     candidate = root.joinpath(*parts).resolve()
     if not candidate.is_relative_to(root):
         return not_found()
     if candidate.is_file():
-        cache = IMMUTABLE if parts[0] == "assets" else "public, max-age=3600"
+        cache = IMMUTABLE if parts[0] == "assets" else NO_STORE
         return file_response(candidate, "no-cache" if candidate == index else cache, env)
     if "." not in parts[-1]:
-        return file_response(index, "no-cache", env)  # an app route: the app handles it
+        return file_response(index, NO_STORE, env)  # an app route: the app handles it
     return not_found()
 
 

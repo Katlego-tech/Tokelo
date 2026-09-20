@@ -169,6 +169,27 @@ production:
 {"region": "eu-west-1", "user_pool_id": "eu-west-1_…", "client_id": "…"}
 ```
 
+### The headers every response carries
+
+Set in `src/tokelo/api/responses.py` and checked by `tests/api/test_static.py`. They are on every
+answer the function gives — a page, an asset, a JSON body, a 404 — because a response that leaves
+them out weakens the ones that don't (the v0.1.0 ZAP baseline found exactly that).
+
+| Header | Value | Why |
+|---|---|---|
+| `strict-transport-security` | `max-age=31536000; includeSubDomains` | the tenant's browser never tries this origin over plain HTTP again |
+| `x-content-type-options` | `nosniff` | an uploaded file can't be re-read as a script |
+| `referrer-policy` | `no-referrer` | a document ID never leaves in a Referer header |
+| `permissions-policy` | `accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()` | the app needs none of them; a feature that does has to change this line |
+| `cross-origin-opener-policy` | `same-origin` | nothing shares a browsing context with the app |
+| `cross-origin-resource-policy` | `same-origin` | nothing else may embed what the app serves |
+| `cache-control` | `no-store`, except `public, max-age=31536000, immutable` under `/assets/` | only content-hashed files are safe to keep |
+| `content-security-policy` | §Threats' policy | pages only |
+
+**Cross-Origin-Embedder-Policy is deliberately not set:** `require-corp` would block the tenant's
+own photos, which come from S3 by pre-signed URL and carry no CORP header. That decision, and the
+two other warnings the baseline reports, are recorded in `docs/release/zap-rules.tsv`.
+
 ### The component tree
 
 ```mermaid
