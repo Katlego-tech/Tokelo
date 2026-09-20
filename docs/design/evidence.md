@@ -154,7 +154,7 @@ Deviations from [docs/architecture-defaults.md](../architecture-defaults.md): no
 |---|---|---|---|---|
 | A tenant supplies a digest of their own | Spoofing | the digest | the worker computes it from the stored object; nothing from the client is used | tests/evidence/test_digest.py (T037) |
 | A stored file is overwritten after it was fingerprinted | Tampering | the documents bucket | versioning keeps the original, and verification reads the recorded version, so a later write can't pass as the original | tests/api/test_verify.py (T039) |
-| A digest is changed in the database | Tampering | `Document.sha256` | the trigger refuses any change once it's set ([domain-model.md](domain-model.md)) | tests/integration/test_schema.py (T023) |
+| A digest is changed in the store | Tampering | `Document.sha256` | the write carries `attribute_not_exists(sha256)`, so the first digest stands ([domain-model.md](domain-model.md)) | tests/integration/test_store.py (T023) |
 | A tenant denies having uploaded or verified a file | Repudiation | uploads, verifications | an audit entry for each, which the application can't edit | tests/integration/test_schema.py (T023) |
 | A photo's GPS reveals where the tenant lives to someone else | Information disclosure | `CaptureMetadata` | only the tenant's own requests return it; it enters a dossier only when the tenant selects that photo | tests/api/test_authz.py (T024) |
 | A crafted image exhausts memory | Denial of service | `exif.py` | only the EXIF block is read, never the pixels; 20 MB at most | tests/evidence/test_exif.py (T038) |

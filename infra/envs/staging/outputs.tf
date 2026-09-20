@@ -5,12 +5,12 @@ output "vpc_id" {
   value       = module.env.vpc_id
 }
 
-output "database_cluster_arn" {
-  description = "Staging's Aurora cluster: the migrations address it through the Data API (ADR-0008)."
-  value       = module.env.database_cluster_arn
+output "table_name" {
+  description = "Staging's tenants' table (ADR-0011)."
+  value       = module.env.table_name
 }
 
-output "database_master_secret_arn" {
-  description = "Staging's master-user secret, made and rotated by AWS."
-  value       = module.env.database_master_secret_arn
+output "audit_table_name" {
+  description = "Staging's audit table."
+  value       = module.env.audit_table_name
 }

@@ -99,12 +99,12 @@ sequenceDiagram
     end
 ```
 
-### When the database is resuming (NFR-002)
+### When the server is still waking up (NFR-002)
 
-Every API call goes through one client, `web/src/api/client.ts`. On `503 {"error": {"code":
-"database_resuming"}}`, it shows the banner "Waking up the database: about 15 seconds" and
-retries after `Retry-After`, up to 4 times. Then it shows the error. No screen handles 503 on
-its own.
+Every API call goes through one client, `web/src/api/client.ts`. On any `503` with a
+`Retry-After` — `store_unavailable`, or a cold function that took too long ([api.md](api.md) §4)
+— it shows the banner "Still waking up: a few seconds" and retries after `Retry-After`, up to 4
+times. Then it shows the error. No screen handles 503 on its own.
 
 **Failure paths:**
 - **The server refuses an upload (422):** the reason is shown as the server wrote it.
@@ -174,7 +174,7 @@ production:
 ```mermaid
 flowchart TD
     App --> Config[ConfigLoader: /config.json] --> Auth[AuthProvider: Amplify, sessionStorage]
-    Auth --> Layout[Layout: header, ResumeBanner, LegalNotice footer]
+    Auth --> Layout[Layout: header, WakingBanner, LegalNotice footer]
     Layout --> SignUp & SignIn & LeaseNew & Lease & Evidence & Dossier & Ask & Account
     LeaseNew --> Uploader
     Evidence --> Uploader
@@ -196,10 +196,10 @@ Every screen is built from `web/src/components/ui/` (shadcn/ui), never hand-roll
 | Path | New? | Responsibility |
 | --- | --- | --- |
 | `web/package.json`, `package-lock.json`, `.nvmrc`, `vite.config.ts`, `eslint.config.js`, `tsconfig.json` | new | §2's toolchain and the gate's three scripts (T014) |
-| `web/src/api/client.ts`, `web/src/api/types.ts` | new | one API client, with the resume retry; the view types |
+| `web/src/api/client.ts`, `web/src/api/types.ts` | new | one API client, with the 503 retry; the view types |
 | `web/src/auth/` | new | Amplify's configuration from `/config.json`; sessionStorage for tokens |
 | `web/src/components/ui/` | new | shadcn/ui's components |
-| `web/src/components/` | new | §6's tree: Uploader, PhotoJoiner, ClauseCard, SectionRef, EvidenceCard, NotRecorded, RecordPicker, LocationWarning, AnswerCard, ResumeBanner, LegalNotice, DeleteAccount |
+| `web/src/components/` | new | §6's tree: Uploader, PhotoJoiner, ClauseCard, SectionRef, EvidenceCard, NotRecorded, RecordPicker, LocationWarning, AnswerCard, WakingBanner, LegalNotice, DeleteAccount |
 | `web/src/routes/` | new | one file per screen in §6 |
 | `web/src/**/*.test.tsx` | new | behaviour, and axe on every screen |
 | `services/api/Dockerfile` | changed | a Node stage builds `web/`, and its `dist/` is copied into the image (ADR-0010) |
@@ -225,7 +225,7 @@ by the `api`'s function, not its own container (ADR-0010).
 - Every screen's tests (Vitest, Testing Library), written first:
   - the behaviour in its reference: the notice gates "Create account"; the wording in §6
   - **axe reports 0 violations** (NFR-009)
-- `client.test.ts`: a 503 `database_resuming` shows the banner and retries after `Retry-After`,
+- `client.test.ts`: a 503 with `Retry-After` shows the banner and retries after it,
   up to 4 times (NFR-002).
 - `PhotoJoiner.test.ts`: 4 photos become one 4-page PDF, and 31 are refused.
 - The release pipeline: pa11y with axe on the `api`'s staging URL (`ui = true`); ZAP on the same

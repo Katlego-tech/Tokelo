@@ -46,9 +46,9 @@
 <text x='169.8' y='286' font-family='Inter, Arial, sans-serif' font-size='15' fill='white' font-weight='bold'>Sign in</text>
 <text x='20' y='328' font-family='Inter, Arial, sans-serif' font-size='14' fill='#2563eb' font-weight='normal'>Create an account</text>
 <rect x='20' y='354' width='350' height='38' rx='8' fill='white' stroke='#2563eb'/>
-<text x='32' y='378' font-family='Inter, Arial, sans-serif' font-size='13' fill='#2563eb' font-weight='bold'>Waking up the database: about 15 seconds</text>
-<text x='20' y='418' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>Shown only while the database resumes</text>
-<text x='20' y='438' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>(the API answers 503 database_resuming).</text>
+<text x='32' y='378' font-family='Inter, Arial, sans-serif' font-size='13' fill='#2563eb' font-weight='bold'>Still waking up: a few seconds</text>
+<text x='20' y='418' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>Shown only while the server is still</text>
+<text x='20' y='438' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>starting (the API answers 503 with Retry-After).</text>
 <text x='20' y='458' font-family='Inter, Arial, sans-serif' font-size='14' fill='#616e7c' font-weight='normal'>The app retries by itself after Retry-After.</text>
 <text x='20' y='820' font-family='Inter, Arial, sans-serif' font-size='11' fill='#616e7c' font-weight='normal'>Legal information, not legal advice · English only</text>
 </g>

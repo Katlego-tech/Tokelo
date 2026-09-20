@@ -1,6 +1,6 @@
 # ADR-0004 — The database is Aurora PostgreSQL Serverless v2, pausing at 0 ACU, in one AZ
 
-- Status: accepted
+- Status: superseded by ADR-0011
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context

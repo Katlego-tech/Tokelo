@@ -79,8 +79,8 @@ names the tool that measures it.
 | Evaluator | the cloud elective's assessor | reviews the architecture and a demonstration | the four competencies in the specification (§6) are visible in the running system and in these documents |
 
 **Where it runs:** AWS `eu-west-1`, in two environments, staging and production, from one account
-on AWS's free plan, which ends on 2027-02-26 (ADR-0001 to ADR-0004). Both are idle most of the
-time: the functions cost nothing and the database pauses. Development runs on the operator's
+on AWS's free plan, which ends on 2027-02-26 (ADR-0001 to ADR-0003, ADR-0011). Both are idle most
+of the time: the functions cost nothing and the tables are charged per request. Development runs on the operator's
 machine. Real tenant documents never go into the repository.
 
 **A normal day:** a tenant signs in and uploads a lease. The file goes straight to storage, not
@@ -89,8 +89,8 @@ its section. Later they upload inspection photos, and each is fingerprinted as i
 dispute starts, they pick the lease, the photos and the notices, and download one indexed PDF.
 
 **A bad day:**
-- The first request after a quiet spell waits for the database to resume, about 15 seconds
-  (ADR-0004). The web app says so rather than looking broken.
+- The first request after a quiet spell waits for the function to start, a few seconds. The web
+  app says so rather than looking broken.
 - A photo is too dark to read. The tenant is told which page failed; nothing is guessed.
 - A job fails three times and goes to its dead-letter queue. The tenant sees the item as
   failed, and the operator is alerted.
@@ -268,12 +268,13 @@ curated sources (the grounding rule, [AGENTS.md](AGENTS.md)).
   fails three times to a dead-letter queue, and show the tenant that item as failed.
 - Verify by: test (integration)
 
-### REQ-018 — Keep compute and the database off the internet
+### REQ-018 — Keep compute and the stored data off the internet
 - Level: software · Parent: SR-006 · State: proposed
-- Statement: The functions that reach the database, and the database itself, shall have no
-  route to or from the internet, and the database shall accept connections only from those
-  functions.
-- Verify by: inspection (the Terraform and the deployed security groups)
+- Statement: The functions shall have no route to or from the internet; they shall reach storage
+  and the tables only through VPC gateway endpoints, and the tables shall be reachable only
+  through the endpoint whose policy names them and only by the functions' own roles.
+- Verify by: inspection (the Terraform, the deployed route tables and security groups, and the
+  endpoint and role policies)
 
 ### REQ-019 — Email the operator as spending rises
 - Level: software · Parent: SR-007 · State: proposed
@@ -291,7 +292,8 @@ curated sources (the grounding rule, [AGENTS.md](AGENTS.md)).
 
 ### NFR-002 — The first request after a pause still completes
 - Characteristic (ISO/IEC 25010): performance efficiency · Parent: SR-007 · State: proposed
-- Target: the first API request after at least 15 minutes idle completes within 30 s
+- Target: the first API request after at least 15 minutes idle completes within 30 s (a cold
+  function; the store has nothing to resume, ADR-0011)
 - Verify by: test (performance)
 - Measured by: perf/first-request.js (k6), run against staging after 15 minutes idle
 

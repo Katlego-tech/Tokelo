@@ -1,6 +1,6 @@
 # ADR-0008 — Schema migrations run through the RDS Data API, from the infrastructure workflow
 
-- Status: accepted
+- Status: superseded by ADR-0011
 - Date: 2026-09-19 · Deciders: Katlego
 
 ## Context

@@ -27,7 +27,7 @@ It doesn't cover:
 | --- | --- |
 | Requirements | REQ-001 to REQ-003, REQ-005 to REQ-007, REQ-010, REQ-013, REQ-014, REQ-016, NFR-001, NFR-002, NFR-006 |
 | The tables | [domain-model.md](domain-model.md) |
-| Decisions | ADR-0002 (Lambda), ADR-0003 (no way out of the VPC), ADR-0004 (Aurora, IAM authentication), ADR-0007 (standard queues), ADR-0008 (migrations) |
+| Decisions | ADR-0002 (Lambda), ADR-0003 (no way out of the VPC), ADR-0007 (standard queues), ADR-0011 (DynamoDB, superseding ADR-0004 and ADR-0008) |
 | External standards | API Gateway HTTP API, payload format 2.0; its JWT authorizer, with a Cognito user pool as issuer; S3 pre-signed POST, whose policy can bound the size (`content-length-range`) |
 
 ## 3. Domain model
@@ -89,17 +89,19 @@ sequenceDiagram
     E->>Q: the dossier job
 ```
 
-### The database connection
+### Reaching the store
 
-The function opens a connection per invocation and closes it before returning. It connects as
-the application user, with an IAM token signed locally (ADR-0004), a connect timeout of 20 s, and
-up to 3 attempts. Its timeout is 29 s, under the HTTP API's 30 s. It never keeps a pool between
-invocations, or the database would never pause.
+There is no connection to open: the function calls DynamoDB over HTTPS through the gateway
+endpoint, signed with its own role (ADR-0011), and every call names the token's tenant as the
+partition key. The client is built once per container and reused, with the SDK's standard retries
+and a total timeout well under the function's 29 s, which is itself under the HTTP API's 30 s.
 
 **Failure paths:**
-- **The database is resuming, and 20 s isn't enough:** answer `503 {"error": {"code":
-  "database_resuming", …}}` with `Retry-After: 10`. The web app shows the wait and retries
-  ([web.md](web.md)).
+- **DynamoDB throttles or is unreachable:** the SDK retries; if it still fails, answer
+  `503 {"error": {"code": "store_unavailable", …}}` with `Retry-After: 5`. The web app shows the
+  wait and retries ([web.md](web.md)).
+- **A conditional write is refused** (the digest is already there, or the document exists): that
+  is the job already done, not an error ([domain-model.md](domain-model.md) §3).
 - **A record exists but isn't the tenant's:** answer `404`, exactly as if it didn't exist.
 - **The tenant uploads nothing:** the document stays `requested` and reads `expired` after 15
   minutes ([domain-model.md](domain-model.md) §5).
@@ -178,7 +180,7 @@ A clause with no flag says "no issue found by these checks", never "lawful" (REQ
 
 ### The dossier job request
 
-The worker checks ownership again from the database, and never trusts the object's list alone.
+The worker checks ownership again in the tenant's partition, and never trusts the object's list alone.
 
 ```json
 {"version": 1, "dossier_id": "uuid", "tenant_id": "uuid",
@@ -244,6 +246,6 @@ and no always-on server. Both follow from ADR-0002.
 | An upload claims one type but carries another, or is too large | Tampering | the POST policy | the policy fixes the key, the type and the size range; the worker checks the file's actual type again | tests/api/test_presign.py, tests/api/test_lease_intake.py (T025, T030) |
 | A leaked upload or download URL is reused | Information disclosure | pre-signed URLs | uploads expire in 15 minutes and fix one key; downloads expire in 5 | tests/api/test_presign.py (NFR-006) |
 | A tenant denies having verified or requested something | Repudiation | verify, dossiers, account | each is an audit entry, which the application can't edit | tests/integration/test_schema.py (T023) |
-| A flood of requests runs up the bill or wakes the database constantly | Denial of service | API Gateway | route throttling ([infrastructure.md](infrastructure.md) §4); the budget's alerts (REQ-019) | the throttling settings in Terraform, reviewed in T020 |
-| A crafted job object makes the dossier worker read another tenant's files | Elevation of privilege | `jobs/dossier/*.json` | only the `api` role can write under `jobs/`; the worker checks every ID's owner in the database, not in the object | tests/dossier/test_pdf.py (T043) |
+| A flood of requests runs up the bill | Denial of service | API Gateway | route throttling ([infrastructure.md](infrastructure.md) §4); the budget's alerts (REQ-019) | the throttling settings in Terraform, reviewed in T020 |
+| A crafted job object makes the dossier worker read another tenant's files | Elevation of privilege | `jobs/dossier/*.json` | only the `api` role can write under `jobs/`; the worker checks every ID's owner in the tenant's partition, not in the object | tests/dossier/test_pdf.py (T043) |
 | A response carries a section outside the curated set | Tampering | flags, answers | views build `SectionRef`s only from the curated set, and unknown IDs are refused | tests/unit/test_rules.py, tests/unit/test_topics.py (REQ-006) |
