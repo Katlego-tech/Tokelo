@@ -42,8 +42,7 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 
 ## ⏭️ Next action
 
-1. T020 — staging's user pool, HTTP API and the four functions, which is what gives the `api` its
-   staging URL (and unblocks T021's release).
+1. T021 — the first staging release, `v0.1.0`, through the pipeline.
 2. Subscribe an address to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
    email): the dead-letter alarms have nowhere to go until then.
 
@@ -54,7 +53,7 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 | Phase | What | Target window | Status |
 |-------|------|---------------|--------|
 | Phase 0 | Design: the ADRs, the requirements, a design doc per lane (T001–T010) | to 2026-09-19 | ✅ |
-| Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → | 🟡 T020 |
+| Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → | 🟡 T021 |
 | Phase 2 | Foundational: sources, schema, sign-in, uploads, the event path (T022–T026, T033–T038) | | ⬜ |
 | Phases 3–7 | US1 the lease check, US2 evidence, US3 the dossier, US4 the navigator, then hardening | | ⬜ |
 
@@ -68,9 +67,12 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 - **AWS:** the bootstrap (state bucket and key, the OIDC provider, the four CI roles and the
   permissions boundary, four ECR repositories, the USD 20 budget) — T016.
 - **The seed:** `v0.0.0` built reproducibly, signed, and archived to ECR by digest — T017.
-- **Staging, so far:** the VPC with no way out, its app subnets and route table, the S3 and
-  DynamoDB gateway endpoints, the `fn` security group, the two tables (T018), and the documents
-  bucket, the four queues with their dead-letter queues, the event rules and the alarms (T019).
+- **Staging, in full:** the VPC with no way out, its app subnets and route table, the S3 and
+  DynamoDB gateway endpoints, the `fn` security group and the two tables (T018); the documents
+  bucket, the four queues with their dead-letter queues, the event rules and the alarms (T019);
+  the Cognito pool, the HTTP API and the four functions (T020). It answers at
+  `https://525zi4zedi.execute-api.eu-west-1.amazonaws.com`: the web app at `/`, `{"ok": true}` at
+  `/health`, and 401 for `/api/…` without a token.
 
 ## 🛠️ Environment & access
 
@@ -124,3 +126,7 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 - 2026-09-20 — Katlego (via Claude Code) — T018: the network applied, then Aurora was refused by
   the free plan; ADR-0011 moved the store to DynamoDB and the tables are live. T019: the bucket,
   the queues, the rules and the alarms. Next: T020. Blocked on: nothing.
+- 2026-09-20 — Katlego (via Claude Code) — T020: staging is complete and answering; realm.toml has
+  its URL. Three kit defects on the way (SecretRealm PRs #18–#20: /tmp sizing, a policy made in
+  the same apply, and the URLs each release command asks for). Next: T021, the first staging
+  release. Blocked on: nothing.

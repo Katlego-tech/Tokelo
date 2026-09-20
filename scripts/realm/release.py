@@ -529,10 +529,18 @@ def ref(root: Path, config: dict, version: str, service: str) -> str:
 
 
 # ------------------------------------------------------------ deploy checks ---
-def deploy_problems(config: dict, urls: bool = True) -> list[str]:
-    """Settings the platform needs before anything is deployed (DESIGN.md §5.2). With
-    urls=False, a web service's URLs aren't asked for: publish archives the seed image before
-    the infrastructure that serves it exists (§14.3), and nothing there uses a URL."""
+# Which environments' URLs a command needs: all of them by default, one for a command that
+# deploys to one, none for publish (DESIGN.md §14.3's order: the seed is archived, the
+# infrastructure is created from it, staging runs it, and production is made from what staging
+# proved — so each URL exists only once that environment does).
+ENVIRONMENTS = ("staging", "production")
+
+
+def deploy_problems(config: dict, urls: tuple[str, ...] = ENVIRONMENTS) -> list[str]:
+    """Settings the platform needs before anything is deployed (DESIGN.md §5.2). `urls` is the
+    environments whose web-service URLs must be set: publish passes none, because it archives
+    the seed before anything serves it, and stage passes staging, because production is created
+    later, from the release it stages."""
     deploy = config.get("deploy", {})
     platform, mode = deploy.get("platform"), deploy.get("mode", "source")
     if platform == "compose":
@@ -557,9 +565,9 @@ def deploy_problems(config: dict, urls: bool = True) -> list[str]:
     for s in config.get("service", []):
         if not s.get("railway_service"):
             problems.append(f"[[service]] {s.get('name')} needs railway_service (its Railway ID)")
-        if s.get("kind") == "worker" or not urls:
+        if s.get("kind") == "worker":
             continue  # no URL: the adapter's health verb checks it
-        for env in ("staging", "production"):
+        for env in urls:
             if not str(s.get(f"{env}_url", "")).startswith("https://"):
                 problems.append(f"[[service]] {s.get('name')} needs {env}_url (https://…)")
     return problems
@@ -572,10 +580,10 @@ def ecr_registry(registry: str, region: str = r"[a-z0-9-]+") -> bool:
     )
 
 
-def aws_problems(config: dict, urls: bool = True) -> list[str]:
+def aws_problems(config: dict, urls: tuple[str, ...] = ENVIRONMENTS) -> list[str]:
     """The aws platform's settings (DESIGN.md §14.3): the region, the ECR registry that
-    aws-bootstrap.sh fills in, each service's runtime, and, unless urls is False, a web
-    service's two URLs."""
+    aws-bootstrap.sh fills in, each service's runtime, and a web service's URL in each of the
+    `urls` environments."""
     deploy = config.get("deploy", {})
     region = str(deploy.get("region", ""))
     problems = []
@@ -590,9 +598,9 @@ def aws_problems(config: dict, urls: bool = True) -> list[str]:
     for s in config.get("service", []):
         if s.get("runtime") not in ("ecs", "lambda"):
             problems.append(f'[[service]] {s.get("name")} needs runtime = "ecs" or "lambda"')
-        if s.get("kind") == "worker" or not urls:
+        if s.get("kind") == "worker":
             continue  # no URL: the adapter's health verb checks it
-        for env in ("staging", "production"):
+        for env in urls:
             if not str(s.get(f"{env}_url", "")).startswith("https://"):
                 problems.append(f"[[service]] {s.get('name')} needs {env}_url (https://…)")
     return problems
@@ -667,7 +675,12 @@ def cli(root: Path, config: dict, args: list[str], tasks: dict[str, list[str]], 
     c = sub.add_parser("config")
     c.add_argument("key")
     dc = sub.add_parser("deploy-check")
-    dc.add_argument("--without-urls", action="store_true", help="before the services are served")
+    dc.add_argument(
+        "--urls",
+        default="all",
+        choices=("all", "none", *ENVIRONMENTS),
+        help="whose web-service URLs must be set: all (the default), one environment's, or none",
+    )
     sub.add_parser("perf-env")
     z = sub.add_parser("zap-rules")
     z.add_argument("out")
@@ -724,7 +737,8 @@ def cli(root: Path, config: dict, args: list[str], tasks: dict[str, list[str]], 
         (out / "release.json").write_text(json.dumps(data, indent=2) + "\n")
         print(f"   wrote {(out / 'release.json').relative_to(root)}")
     elif a.command == "deploy-check":
-        problems = deploy_problems(config, urls=not a.without_urls)
+        wanted = {"all": ENVIRONMENTS, "none": ()}.get(a.urls, (a.urls,))
+        problems = deploy_problems(config, urls=wanted)
         for problem in problems:
             print(f"!! {problem}")
         return 1 if problems else 0

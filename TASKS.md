@@ -226,7 +226,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                on-demand tables; after the merge applies it, the app route table has no 0.0.0.0/0
                route and `aws dynamodb describe-table` shows PAY_PER_REQUEST with the keys pk and sk
       Done:    the functions can reach the tables without a route to the internet (ADR-0011)
-- [ ] T019 [SET] Create staging's documents bucket, event rules and queues (with Katlego's go-ahead)
+- [x] T019 [SET] Create staging's documents bucket, event rules and queues (with Katlego's go-ahead)
       Req:     REQ-002, REQ-017
       Design:  docs/design/infrastructure.md
       Files:   infra/modules/tokelo-env/{storage,events,alarms}.tf
@@ -234,7 +234,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                versioning) and one standard queue per job type (ADR-0007), each with a dead-letter
                queue after 3 receives and an alarm on it
       Done:    applied to staging, and Katlego has subscribed an address to the alerts topic
-- [ ] T020 [SET] Create staging's user pool, HTTP API and the four functions (with Katlego's go-ahead)
+- [x] T020 [SET] Create staging's user pool, HTTP API and the four functions (with Katlego's go-ahead)
       Req:     REQ-001
       Design:  docs/design/infrastructure.md, docs/design/api.md
       Files:   infra/modules/tokelo-env/{functions,identity,api}.tf, realm.toml (staging_url)
