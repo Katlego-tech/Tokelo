@@ -34,3 +34,15 @@ variable "protect" {
   type        = bool
   default     = false
 }
+
+variable "initial_image_tag" {
+  description = "The release each function is created from: v0.0.0 (the seed) for staging, the first staged release for production. After that the release pipeline chooses the image."
+  type        = string
+  default     = "v0.0.0"
+}
+
+variable "log_retention_days" {
+  description = "How long CloudWatch keeps this environment's logs (§6)."
+  type        = number
+  default     = 30
+}

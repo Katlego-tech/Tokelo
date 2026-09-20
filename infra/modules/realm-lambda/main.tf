@@ -10,6 +10,8 @@
 # - The handler must answer the event {"realm": "health"} with {"ok": true}: that's the release's
 #   health check for a worker (docs/release/README.md).
 # - x86_64 only, like the release's images.
+# - /tmp is 512 MB unless ephemeral_storage_mb says otherwise: a worker that writes a file
+#   while it works (an image, a PDF) sizes it here, and pays for it only while it runs.
 
 terraform {
   required_version = ">= 1.10"
@@ -67,8 +69,11 @@ resource "aws_iam_role_policy_attachment" "basics" {
   : "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole")
 }
 
+# Keyed by position, not by the ARN itself: a policy created in the same apply has no ARN at plan
+# time, and a set keyed by unknown values can't be planned at all ("Invalid for_each argument").
+# The list's length is known, so its indexes are.
 resource "aws_iam_role_policy_attachment" "more" {
-  for_each   = toset(var.policy_arns)
+  for_each   = { for i, arn in var.policy_arns : tostring(i) => arn }
   role       = aws_iam_role.this.name
   policy_arn = each.value
 }
@@ -89,6 +94,10 @@ resource "aws_lambda_function" "this" {
   timeout                        = var.timeout
   reserved_concurrent_executions = var.reserved_concurrent_executions
   publish                        = true
+
+  ephemeral_storage {
+    size = var.ephemeral_storage_mb
+  }
 
   dynamic "environment" {
     for_each = length(var.environment_variables) > 0 ? [var.environment_variables] : []

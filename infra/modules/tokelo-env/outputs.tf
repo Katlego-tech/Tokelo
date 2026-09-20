@@ -54,3 +54,18 @@ output "alerts_topic_arn" {
   description = "Where the dead-letter alarms go. Subscribe an address to it by hand (alarms.tf)."
   value       = aws_sns_topic.alerts.arn
 }
+
+output "user_pool_id" {
+  description = "The tenants' user pool; the web app reads it from /config.json (ADR-0010)."
+  value       = aws_cognito_user_pool.tenants.id
+}
+
+output "user_pool_client_id" {
+  description = "The web app's public client."
+  value       = aws_cognito_user_pool_client.web.id
+}
+
+output "api_url" {
+  description = "Where the web app and the JSON API answer: realm.toml's staging_url / production_url."
+  value       = aws_apigatewayv2_api.http.api_endpoint
+}

@@ -155,8 +155,10 @@ Two tables per environment, on-demand, with the keys [domain-model.md](domain-mo
 
 - Every function is in the app subnets, with security group `fn`, amd64, alias `live`, and logs
   kept 30 days.
-- **The `api`'s environment** (read by `/config.json` and the CSP, ADR-0010): `TOKELO_USER_POOL_ID`,
-  `TOKELO_CLIENT_ID` and `TOKELO_DOCUMENTS_BUCKET`, set by Terraform (T020). `AWS_REGION` is Lambda's own.
+- **Every function's environment:** `TOKELO_TABLE`, `TOKELO_AUDIT_TABLE` and
+  `TOKELO_DOCUMENTS_BUCKET`, so no name is hard-coded in the code. The `api` also gets
+  `TOKELO_USER_POOL_ID` and `TOKELO_CLIENT_ID`, which `/config.json` and the CSP read (ADR-0010).
+  All of them are set by Terraform (T020); `AWS_REGION` is Lambda's own.
 - Each queue trigger reads **one message at a time**, reports the failures in its batch, and has
   a **maximum concurrency of 2**. That's the lowest allowed, and it keeps the write rate and the
   bill small.
