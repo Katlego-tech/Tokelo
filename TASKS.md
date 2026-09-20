@@ -214,7 +214,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                `aws budgets describe-budgets` shows USD 20 with credits excluded;
                `aws ecr describe-repositories` lists tokelo/api, /ocr, /evidence, /dossier
       Done:    the files it writes are merged through a PR; the account is still on the free plan
-- [ ] T017 [SET] Seed the images: tag v0.0.0 (with Katlego's go-ahead)
+- [x] T017 [SET] Seed the images: tag v0.0.0 (with Katlego's go-ahead)
       Req:     none — the kit's seed (the kit's DESIGN.md §14)
       Verify:  the release workflow publishes and stops; `aws ecr describe-images` shows v0.0.0 in each repository
       Done:    Terraform can create the functions from the seed images
