@@ -17,7 +17,11 @@
 - the business and stakeholder requirements are approved
 - PLAN.md names the tier, the platform and the budget
 
-<!-- - Passed: YYYY-MM-DD · Evidence: … · Signed: … -->
+- Passed: 2026-09-20 · Evidence: [SPEC.md](SPEC.md) (the problem, the four user stories and the
+  operational concept), [REQUIREMENTS.md](REQUIREMENTS.md) (7 business and stakeholder
+  requirements with 38 beneath them, reviewed and merged in PR #4), [PLAN.md](PLAN.md) (the
+  standard tier, AWS `eu-west-1` on the free plan, and the USD 20 a month budget), and ADR-0001
+  to ADR-0003 on where it runs and what it may cost.
 
 ## Development
 
@@ -26,7 +30,25 @@
 - C4 levels 1 and 2 match the code; an accepted ADR for each decision the build rests on
 - every design doc has its threats worked out; the gate is green on `main`
 
-<!-- - Passed: YYYY-MM-DD · Evidence: … · Signed: … -->
+- Passed: 2026-09-20 · Evidence: ADR-0001 to ADR-0011 accepted and frozen; `realm adr-check`, `design-check` and `trace` all clean; the gate green and required on `main`; staging applied and answering (T018 to T020). Scope and detail below.
+
+  **Scope: the setup release (`v0.1.0`)** — the architecture, the infrastructure and the
+  pipeline, not the features.
+
+  - **Decisions:** ADR-0001 to ADR-0011, all accepted and frozen (`realm adr-check`: 11 ADRs);
+    ADR-0005 superseded by ADR-0009, ADR-0004 and ADR-0008 by ADR-0011.
+  - **Architecture:** C4 levels 1 and 2 in [docs/architecture/](docs/architecture/) match what is
+    deployed — four Lambda services, DynamoDB, S3, EventBridge and SQS — and every design doc in
+    [docs/design/](docs/design/) has its STRIDE threats (`realm design-check`: 9 documents).
+  - **Traceability:** `realm trace` is clean — 38 requirements, 56 tasks, no broken link.
+  - **The gate is green on `main`,** and required there: 18 checks across 2 projects, including
+    Semgrep, checkov with a reason for every skip, tflint and the Terraform checks.
+  - **Staging is applied and answering** (T018–T020): `/health` returns `{"ok": true}`, `/api/`
+    without a token returns 401 from API Gateway, and the web app is served at `/`.
+  - **What this entry does not cover:** every feature requirement is still `proposed`. None of
+    US1–US4 is built, so no requirement has its tests yet, and REQ-018 and REQ-019 are verified by
+    inspection in T051 rather than by a test. **T052 reads this gate again for `v1.0.0`,** when
+    the first release's requirements are approved with their tasks and tests.
 
 ## Release
 

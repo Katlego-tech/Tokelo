@@ -3,7 +3,8 @@
 # The release's watch window measures these after every promotion: for [watch] minutes it sends
 # steady traffic to each objective's path in production, and if one breaks, the previous release
 # goes back in automatically and an incident opens. Every web [[service]] in realm.toml needs
-# one. Workers have no URL to watch: set the objective on the web service in front of them.
+# one. Workers have no URL to watch: the objectives below cover them through the API in front of
+# them (the dead-letter alarms watch the queues themselves, infrastructure.md §6).
 
 error_budget_policy = """
 When a window's error budget is spent, feature work stops and the next tasks are corrective or
@@ -13,18 +14,24 @@ preventive until the budget recovers (AGENTS.md, Secret Realm rules)."""
 minutes = 10               # how long production is watched after a promotion
 rate = 5                   # requests per second, per objective
 
+# The API either answers or it doesn't. 99.5% over 28 days is about three and a half hours of
+# error budget a month, which is what one person operating one environment can hold.
 [[slo]]
-service = "<service>"      # a [[service]] name from realm.toml
+service = "api"
 name = "availability"
-sli = "share of requests not answered with a 5xx"
-path = "/health"           # what the watch window calls
+sli = "share of requests to /health not answered with a 5xx"
+path = "/health"
 objective_percent = 99.5
 window = "28d"
 
+# The web app is served by the same function from its own image (ADR-0010), so this is what a
+# tenant waits for before anything is on screen. 500 ms leaves room for a warm Lambda serving a
+# hashed asset; NFR-001 holds the API itself to the same figure, and NFR-002 covers the first
+# request after a pause separately.
 [[slo]]
-service = "<service>"
+service = "api"
 name = "latency"
-sli = "p95 latency of GET <path>"
+sli = "p95 latency of GET /"
 path = "/"
-p95_ms = 300
+p95_ms = 500
 window = "28d"
