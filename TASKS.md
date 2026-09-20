@@ -218,26 +218,28 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     none — the kit's seed (the kit's DESIGN.md §14)
       Verify:  the release workflow publishes and stops; `aws ecr describe-images` shows v0.0.0 in each repository
       Done:    Terraform can create the functions from the seed images
-- [ ] T018 [SET] Create staging's network and database (with Katlego's go-ahead)
+- [ ] T018 [SET] Create staging's network and tables (with Katlego's go-ahead)
       Req:     REQ-018, NFR-008
-      Design:  docs/design/infrastructure.md
-      Files:   infra/envs/staging/*.tf
-      Verify:  the PR's plan shows no NAT, no internet gateway and Aurora at 0–2 ACU; after the merge
-               applies it, the private subnets' route tables have no 0.0.0.0/0 route and
-               `aws rds describe-db-clusters` shows MinCapacity 0 and IAM authentication on
-      Done:    the database pauses when idle
+      Design:  docs/design/infrastructure.md, docs/design/domain-model.md
+      Files:   infra/modules/tokelo-env/*.tf, infra/envs/staging/*.tf
+      Verify:  the PR's plan shows no NAT, no internet gateway, both gateway endpoints, and two
+               on-demand tables; after the merge applies it, the app route table has no 0.0.0.0/0
+               route and `aws dynamodb describe-table` shows PAY_PER_REQUEST with the keys pk and sk
+      Done:    the functions can reach the tables without a route to the internet (ADR-0011)
 - [ ] T019 [SET] Create staging's documents bucket, event rules and queues (with Katlego's go-ahead)
       Req:     REQ-002, REQ-017
       Design:  docs/design/infrastructure.md
-      Files:   infra/envs/staging/*.tf
+      Files:   infra/modules/tokelo-env/{storage,events}.tf
       Verify:  the plan shows the bucket private (Block Public Access, SSE-KMS with the AWS-managed key,
-               versioning) and one SQS FIFO queue per job type, each with a dead-letter queue after 3 receives
+               versioning) and one standard queue per job type (ADR-0007), each with a dead-letter
+               queue after 3 receives
       Done:    applied to staging
 - [ ] T020 [SET] Create staging's user pool, HTTP API and the four functions (with Katlego's go-ahead)
       Req:     REQ-001
       Design:  docs/design/infrastructure.md, docs/design/api.md
-      Files:   infra/envs/staging/*.tf, realm.toml (staging_url)
-      Verify:  `curl https://<staging API>/health` returns 200; the three database-facing functions are in the private subnets
+      Files:   infra/modules/tokelo-env/{functions,identity,api}.tf, realm.toml (staging_url)
+      Verify:  `curl https://<staging API>/health` returns 200; all four functions are in the app
+               subnets, and each role names only its own tables and prefixes
       Done:    the functions run the v0.0.0 images; realm.toml has the api's staging URL
 - [ ] T021 [SET] Release v0.1.0 to staging through the pipeline
       Req:     none — the release pipeline
@@ -259,14 +261,16 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                its text and where it's from
       Done:    the Rental Housing Act 50 of 1999, the Consumer Protection Act 68 of 2008 (sections 14
                and 48) and the PIE Act 19 of 1998, as far as the rules and topics need them
-- [ ] T023 [FND] Create the schema, and keep the audit log append-only
+- [ ] T023 [FND] Write the store: the item types, the keys and the conditional writes
       Req:     REQ-011
       Design:  docs/design/domain-model.md
-      Files:   infra/db/migrations/0001_*.sql, scripts/migrate.py, .github/workflows/realm-infra.yml, tests/integration/test_schema.py
-      Verify:  the test is written first and fails; then, against PostgreSQL 16 in Docker, the
-               application role can INSERT into the audit log but UPDATE and DELETE are refused
-      Done:    `realm-infra`'s apply job runs the migrations through the RDS Data API after `terraform
-               apply` (ADR-0008), and the functions connect only as the application user
+      Files:   src/tokelo/core/model.py, src/tokelo/core/store.py, tests/integration/test_store.py
+      Contract:domain-model.md §3's keys and §6's queries; store.<call>(tenant, …) takes the tenant first
+      Verify:  the test is written first and fails; then, against DynamoDB Local in Docker, a second
+               sha256 is refused, a repeated create leaves one item, and one tenant's query returns
+               nothing of another's
+      Done:    every read and write names a tenant's partition, and no code outside store.py calls
+               DynamoDB (ADR-0011)
 - [ ] T024 [FND] Serve each tenant only their own records
       Req:     REQ-001
       Design:  docs/design/api.md

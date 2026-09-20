@@ -18,7 +18,7 @@ C4Container
         Container(ocr, "ocr", "Python 3.14 on Lambda; pypdf, Tesseract 5", "Page text, clause rules, explanations")
         Container(evidence, "evidence", "Python 3.14 on Lambda", "SHA-256 digests, EXIF metadata")
         Container(dossier, "dossier", "Python 3.14 on Lambda", "The indexed dispute PDF")
-        ContainerDb(db, "Database", "Aurora PostgreSQL Serverless v2, private subnets", "Tenants, leases, clauses, flags, evidence, digests, the audit log")
+        ContainerDb(db, "Store", "DynamoDB, two on-demand tables, reached through a gateway endpoint", "Tenants, leases, clauses, flags, evidence, digests, the audit log")
     }
     Rel(tenant, web, "Uses", "HTTPS")
     Rel(web, auth, "Signs in", "HTTPS")
@@ -44,7 +44,7 @@ C4Container
 | **Every job starts as an object in S3.** An upload, or a job request the `api` writes (such as "build this dossier"), creates an object. EventBridge sends it to the job's queue | functions inside the VPC can't call SQS or EventBridge, because there's no way out of the subnets. S3 is reachable through the free gateway endpoint | ADR-0003 |
 | **File bytes never pass through the API** | pre-signed URLs offload the I/O (competency 1) | REQ-002 |
 | **A job that fails three times goes to its dead-letter queue** | at-least-once processing, with nothing silently lost (competency 2) | REQ-017 |
-| **The functions and the database are in private subnets, with no way to or from the internet**; the database takes connections only from the functions | strict network isolation (competency 3) | ADR-0003, REQ-018 |
+| **The functions are in private subnets with no way to or from the internet**; they reach S3 and the tables through gateway endpoints, and the tables are named by the endpoint's policy and by each role | strict network isolation (competency 3) | ADR-0003, ADR-0011, REQ-018 |
 | **Each evidence file's SHA-256 is recorded when it's stored**, and the audit log is append-only | cryptographic integrity (competency 4) | REQ-008, REQ-011 |
 | **Every service is a Lambda function from a container image,** deployed by digest by the release pipeline | $0 while idle | ADR-0002 |
-| **The database pauses at 0 ACU when idle,** and connections use IAM tokens signed locally | nearly $0 while idle; no secrets endpoint needed | ADR-0004 |
+| **The store is charged per request, with no server and nothing idle,** and every call is signed with the function's own role | nearly $0 while idle; no password anywhere | ADR-0011 |

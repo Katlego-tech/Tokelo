@@ -15,8 +15,8 @@ Tokelo is serverless and event-driven, on AWS in `eu-west-1`, built with the Sec
 - Files go straight to S3 through pre-signed URLs. Every job, whether an upload or a request the
   API writes, starts as an object in S3. EventBridge carries it to an SQS standard queue (ADR-0007) with a
   dead-letter queue, and a worker function takes it from there: `ocr`, `evidence` or `dossier`.
-- The functions that touch the database, and the database itself, are in private subnets with no
-  way to the internet. The database is Aurora PostgreSQL Serverless v2, which pauses when idle.
+- The functions are in private subnets with no way to the internet; they reach S3 and DynamoDB
+  through gateway endpoints. The store is DynamoDB, which has no server and nothing idle.
 
 **The key technical bet:** everything scales to zero, so both environments fit the **AWS free
 plan: about USD 19 a month until the plan ends on 2027-02-26** (ADR-0002 to ADR-0004). **The
@@ -62,7 +62,7 @@ hard constraints:** the grounding rule, POPIA, the free plan, and a deadline bef
 | **Frontend** | React + shadcn/ui (Radix + Tailwind + CVA), served by the `api` function from its image (ADR-0010); the toolchain is pinned in [docs/design/web.md](docs/design/web.md) |
 | **Containerization** | One container image per service, built, scanned, signed and deployed by digest by the kit's release pipeline. Local development runs them with Docker |
 | **Runtime/deploy target** | AWS Lambda in `eu-west-1`, in a staging and a production environment in one account, deployed by the kit's `aws` adapter through GitHub OIDC roles |
-| **Data layer** | Aurora PostgreSQL Serverless v2, engine 16, 0 to 2 ACU, pausing after 10 minutes idle, IAM authentication (ADR-0004); S3 for documents (private, SSE-KMS) |
+| **Data layer** | DynamoDB, two on-demand tables reached through a gateway endpoint (ADR-0011); S3 for documents (private, SSE-KMS) |
 | **Key external services/models** | Amazon Cognito, API Gateway (HTTP API), EventBridge, SQS, S3. OCR with pypdf and Tesseract 5, English only (ADR-0009). No Textract, and no language model in phases 1–5 (ADR-0006) |
 | **Testing** | pytest, with `@pytest.mark.req`; ruff, pyright; in the release pipeline, k6 (performance), pa11y (accessibility) and ZAP (DAST) |
 | **Perf/cost goals** | NFR-001 to NFR-009 in [REQUIREMENTS.md](REQUIREMENTS.md). In short: an upload URL at p95 < 500 ms warm; the first request after a pause within 30 s; a digital lease's flags within 2 minutes; at most USD 20 a month |
@@ -121,7 +121,7 @@ specification's own milestones are in brackets.
 0. **Design:** ADRs and requirements (done), then the domain model and a design doc per lane.
 1. **Setup:** the service skeletons with their health handlers, the web app skeleton, the test
    config, and the four `[[service]]` entries in `realm.toml`. Then the AWS bootstrap, the
-   `v0.0.0` seed, and the staging infrastructure: VPC, subnets, S3, queues, Aurora and Cognito
+   `v0.0.0` seed, and the staging infrastructure: VPC, subnets, S3, queues, the tables and Cognito
    (spec phase 1).
 2. **Foundational:** the curated sources, the schema, sign-in and authorization (REQ-001),
    pre-signed uploads (REQ-002), and S3 → EventBridge → SQS with dead-letter queues (REQ-017)

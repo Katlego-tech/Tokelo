@@ -11,26 +11,26 @@ output "app_subnet_ids" {
 }
 
 output "function_security_group_id" {
-  description = "The fn security group: out to the database and to S3 only."
+  description = "The fn security group: out to S3 and DynamoDB only."
   value       = aws_security_group.fn.id
 }
 
-output "database_cluster_arn" {
-  description = "The Aurora cluster: what the Data API and the migrations address (ADR-0008)."
-  value       = aws_rds_cluster.this.arn
+output "table_name" {
+  description = "The tenants' table: everything a tenant owns (ADR-0011)."
+  value       = aws_dynamodb_table.main.name
 }
 
-output "database_endpoint" {
-  description = "The writer's address, for the functions' connection string."
-  value       = aws_rds_cluster.this.endpoint
+output "table_arn" {
+  description = "The tenants' table, for the functions' policies (T020)."
+  value       = aws_dynamodb_table.main.arn
 }
 
-output "database_name" {
-  description = "The database inside the cluster."
-  value       = aws_rds_cluster.this.database_name
+output "audit_table_name" {
+  description = "The audit log's table, which nothing may change or delete (REQ-011)."
+  value       = aws_dynamodb_table.audit.name
 }
 
-output "database_master_secret_arn" {
-  description = "The master user's secret, made and rotated by AWS. Only the migrations read it (ADR-0008)."
-  value       = aws_rds_cluster.this.master_user_secret[0].secret_arn
+output "audit_table_arn" {
+  description = "The audit log's table, for the functions' policies (T020)."
+  value       = aws_dynamodb_table.audit.arn
 }
