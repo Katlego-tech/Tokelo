@@ -37,14 +37,20 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 
 | Lane | Owner | AI | Status |
 |------|-------|----|--------|
-| `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | 🟡 Doing |
-| `release` (T021: v0.1.0 to staging) | Katlego | Claude Code | ⬜ To Do |
+| `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | ✅ Done |
+| `release` (T021: v0.1.2 staged) | Katlego | Claude Code | 🔵 In review — PR #26 waits for the UAT sign-off |
 
 ## ⏭️ Next action
 
-1. T021 — the first staging release, `v0.1.0`, through the pipeline.
-2. Subscribe an address to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
+Three things for Katlego, none of them blocking Phase 2:
+
+1. **Sign off UAT on PR #26** (or say what to try first) — that's where the `v0.1.2` record waits.
+2. **Turn on** Settings → Actions → General → Workflow permissions → *"Allow GitHub Actions to
+   create and approve pull requests"*, so the pipeline opens its own record PRs.
+3. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
    email): the dead-letter alarms have nowhere to go until then.
+
+Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
 
@@ -53,8 +59,8 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 | Phase | What | Target window | Status |
 |-------|------|---------------|--------|
 | Phase 0 | Design: the ADRs, the requirements, a design doc per lane (T001–T010) | to 2026-09-19 | ✅ |
-| Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → | 🟡 T021 |
-| Phase 2 | Foundational: sources, schema, sign-in, uploads, the event path (T022–T026, T033–T038) | | ⬜ |
+| Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → 2026-09-20 | ✅ |
+| Phase 2 | Foundational: the curated sources, the store, sign-in, uploads, the event path | next | ⬜ |
 | Phases 3–7 | US1 the lease check, US2 evidence, US3 the dossier, US4 the navigator, then hardening | | ⬜ |
 
 ## 🧱 What's built so far
@@ -73,6 +79,9 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
   the Cognito pool, the HTTP API and the four functions (T020). It answers at
   `https://525zi4zedi.execute-api.eu-west-1.amazonaws.com`: the web app at `/`, `{"ok": true}` at
   `/health`, and 401 for `/api/…` without a token.
+- **A release through the pipeline** (T021): `v0.1.2` is staged — built twice to the same digest
+  (except `ocr`, T056), signed, archived by digest, deployed to all four functions, and past the
+  smoke, accessibility and DAST checks with no warnings.
 
 ## 🛠️ Environment & access
 
@@ -130,3 +139,7 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
   its URL. Three kit defects on the way (SecretRealm PRs #18–#20: /tmp sizing, a policy made in
   the same apply, and the URLs each release command asks for). Next: T021, the first staging
   release. Blocked on: nothing.
+- 2026-09-20 — Katlego (via Claude Code) — T021: the Concept and Development gates recorded
+  (scoped to the setup release), the SLOs written, and `v0.1.2` staged with every check green.
+  v0.1.0 and v0.1.1 were rejected by DAST on the way and their fixes are in. Next: Phase 2, from
+  T022. Blocked on: nothing — three things wait for Katlego under Next action.
