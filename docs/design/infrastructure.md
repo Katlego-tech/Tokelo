@@ -112,6 +112,7 @@ paused and active states are Aurora's own (ADR-0004).
 | Master user | `manage_master_user_password = true`; used only by migrations through the Data API (`enable_http_endpoint = true`) |
 | Storage | encrypted with the AWS-managed RDS key; backups kept 1 day |
 | Protection | deletion protection and a final snapshot in production; neither in staging |
+| Logs | the `postgresql` log exported to CloudWatch, kept 30 days. Query logging stays off: it would write every statement, and the tenants' data with it, into the logs |
 | Extras | Performance Insights and Enhanced Monitoring off, because they cost money |
 
 ### The documents bucket
