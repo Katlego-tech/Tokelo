@@ -9,7 +9,7 @@ import base64
 from collections.abc import Mapping
 from pathlib import Path
 
-from tokelo.api.responses import Response, error, json_response, secured
+from tokelo.api.responses import NO_STORE, Response, error, json_response, secured
 
 TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -25,7 +25,7 @@ TYPES = {
 }
 TEXT = ("text/", "application/json", "image/svg+xml")
 IMMUTABLE = "public, max-age=31536000, immutable"  # hashed names: the only cacheable answers
-NO_STORE = "no-store"  # everything else is per-tenant, or about to change
+# NO_STORE comes from responses.py: the same answer for a page, a JSON body and a 404.
 
 
 def web_root(env: Mapping[str, str]) -> Path:
@@ -116,4 +116,4 @@ def config(env: Mapping[str, str]) -> Response:
     }
     if not all(settings.values()):
         return error(503, "not_configured", "This function has no web app settings.")
-    return json_response(200, settings, {"cache-control": "no-store"})
+    return json_response(200, settings)  # json_response is already no-store
