@@ -69,8 +69,11 @@ resource "aws_iam_role_policy_attachment" "basics" {
   : "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole")
 }
 
+# Keyed by position, not by the ARN itself: a policy created in the same apply has no ARN at plan
+# time, and a set keyed by unknown values can't be planned at all ("Invalid for_each argument").
+# The list's length is known, so its indexes are.
 resource "aws_iam_role_policy_attachment" "more" {
-  for_each   = toset(var.policy_arns)
+  for_each   = { for i, arn in var.policy_arns : tostring(i) => arn }
   role       = aws_iam_role.this.name
   policy_arn = each.value
 }

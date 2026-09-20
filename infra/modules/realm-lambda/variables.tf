@@ -70,7 +70,7 @@ variable "vpc" {
 }
 
 variable "policy_arns" {
-  description = "Policies for what the function does (read a queue, write a bucket): created under /<name>/."
+  description = "Policies for what the function does (read a queue, write a bucket): created under /<name>/. They may be created in the same apply; their ARNs need not be known at plan time."
   type        = list(string)
   default     = []
 }
