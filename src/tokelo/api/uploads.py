@@ -21,6 +21,7 @@ import boto3
 
 from tokelo.api.auth import tenant_of
 from tokelo.api.responses import Response, error, json_response
+from tokelo.core.keys import upload_key
 from tokelo.core.model import Document, DocumentKind, DocumentStatus
 from tokelo.core.store import Store
 
@@ -58,12 +59,6 @@ def s3_for() -> Any:
 
 class Refused(Exception):
     """The file can't be used, and the tenant is told why (REQ-003)."""
-
-
-def upload_key(tenant_id: str, kind: DocumentKind, document_id: str) -> str:
-    """api.md §6's key layout. The kind is in the key because that is what decides which queue
-    the object's event goes to (infrastructure.md §6)."""
-    return f"uploads/{tenant_id}/{kind}/{document_id}"
 
 
 def asked_for(event: Event) -> tuple[DocumentKind, str, int]:

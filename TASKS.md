@@ -288,13 +288,18 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  the test is written first and fails; then the URL allows one key, one content type
                and at most the stated size, and expires within 15 minutes
       Done:    the API never receives a file's bytes
-- [ ] T026 [FND] Carry jobs from S3 through the queues, and fail them into dead-letter queues
+- [x] T026 [FND] Carry jobs from S3 through the queues, and fail them into dead-letter queues
       Req:     REQ-017
       Design:  docs/design/infrastructure.md, docs/design/api.md
-      Files:   src/tokelo/core/jobs.py, tests/integration/test_job_spine.py
-      Verify:  the test is written first and fails; then, on staging, an object in S3 reaches its
-               worker, and a job that fails three times lands in the dead-letter queue with its item marked failed
-      Done:    the tenant sees a failed item as failed
+      Files:   src/tokelo/core/jobs.py, src/tokelo/core/keys.py, tests/integration/test_job_spine.py
+      Verify:  the tests are written first and fail; then, against DynamoDB Local, a job's key names
+               its tenant and document, one bad message doesn't take its batch-mates with it, and the
+               third failure marks the document failed and is still reported so it redrives.
+               The staging leg — an object reaching a worker that does something with it — is proven
+               by the first lane that has work: T029 (ocr) and T031 (evidence), which call jobs.run
+      Done:    the tenant sees a failed item as failed. Until T029 and T031 wire their lanes in, an
+               upload on staging has no worker to run it: its job retries and lands in the
+               dead-letter queue, where the alarm says so
 - [ ] T027 [FND] Web: sign up after the privacy notice, sign in, and upload a file
       Req:     REQ-015, REQ-001, NFR-009
       Design:  docs/design/web.md, docs/design/web/sign-up.svg, docs/design/web/upload.svg
