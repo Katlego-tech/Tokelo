@@ -183,7 +183,7 @@ them out weakens the ones that don't (the v0.1.0 ZAP baseline found exactly that
 | `permissions-policy` | `accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()` | the app needs none of them; a feature that does has to change this line |
 | `cross-origin-opener-policy` | `same-origin` | nothing shares a browsing context with the app |
 | `cross-origin-resource-policy` | `same-origin` | nothing else may embed what the app serves |
-| `cache-control` | `no-store`, except `public, max-age=31536000, immutable` under `/assets/` | only content-hashed files are safe to keep |
+| `cache-control` | `no-store, no-cache, must-revalidate`, except `public, max-age=31536000, immutable` under `/assets/` | only content-hashed files are safe to keep; all three directives, because a store that honours one and not the others still keeps the page |
 | `content-security-policy` | §Threats' policy | pages only |
 
 **Cross-Origin-Embedder-Policy is deliberately not set:** `require-corp` would block the tenant's

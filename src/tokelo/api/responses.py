@@ -11,6 +11,10 @@ from typing import Any
 
 type Response = dict[str, Any]
 
+# A JSON answer is per-tenant and never worth keeping. All three directives, because a
+# store that honours only one of them still keeps it (ZAP rule 10015).
+NO_STORE = "no-store, no-cache, must-revalidate"
+
 # What the app is allowed to use: nothing. Listed rather than left out, so a feature that wants a
 # camera has to change this line and say why (docs/design/web.md §6).
 PERMISSIONS = (
@@ -39,7 +43,7 @@ def json_response(status: int, body: object, headers: dict[str, str] | None = No
     return {
         "statusCode": status,
         "headers": secured(
-            {"content-type": "application/json", "cache-control": "no-store", **(headers or {})}
+            {"content-type": "application/json", "cache-control": NO_STORE, **(headers or {})}
         ),
         "body": json.dumps(body),
     }

@@ -41,7 +41,7 @@ def test_the_root_serves_the_app_uncached_with_its_security_headers(web_root):
     assert response["statusCode"] == 200
     headers = response["headers"]
     assert headers["content-type"] == "text/html; charset=utf-8"
-    assert headers["cache-control"] == "no-store"
+    assert headers["cache-control"] == "no-store, no-cache, must-revalidate"
     assert "frame-ancestors 'none'" in headers["content-security-policy"]
     assert "script-src 'self'" in headers["content-security-policy"]
     assert headers["strict-transport-security"].startswith("max-age=31536000")
@@ -111,7 +111,7 @@ def test_config_json_comes_from_the_functions_environment(web_root, monkeypatch)
     monkeypatch.setenv("TOKELO_CLIENT_ID", "example-client-id")
     response = get("/config.json")
     assert response["statusCode"] == 200
-    assert response["headers"]["cache-control"] == "no-store"
+    assert response["headers"]["cache-control"] == "no-store, no-cache, must-revalidate"
     assert json.loads(response["body"]) == {
         "region": "eu-west-1",
         "user_pool_id": "eu-west-1_Example",
@@ -151,4 +151,4 @@ def test_every_response_carries_the_transport_headers(web_root, path):
 
 @pytest.mark.parametrize("path", ["/", "/lease/7d2f", "/assets/missing-000.js"])
 def test_nothing_but_a_hashed_asset_may_be_stored(web_root, path):
-    assert get(path)["headers"]["cache-control"] == "no-store"
+    assert get(path)["headers"]["cache-control"] == "no-store, no-cache, must-revalidate"
