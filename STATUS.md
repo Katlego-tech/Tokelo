@@ -1,9 +1,9 @@
 # `Tokelo` — STATUS
 
 > Source of truth for "what's going on right now." Read first, update last. Treat updating it as
-> part of "done." (This is the blank template — copy to `STATUS.md` and keep that one live.)
+> part of "done."
 
-_Last updated: YYYY-MM-DD — by <name> (via <tool>)_
+_Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 
 ---
 
@@ -37,30 +37,53 @@ _Last updated: YYYY-MM-DD — by <name> (via <tool>)_
 
 | Lane | Owner | AI | Status |
 |------|-------|----|--------|
-| | | | |
+| `infra` (T018–T020: staging's network, database, storage, events, identity, API, functions) | Katlego | Claude Code | 🟡 Doing |
+| `release` (T021: v0.1.0 to staging) | Katlego | Claude Code | ⬜ To Do |
 
 ## ⏭️ Next action
 
-1.
+1. T018 — staging's network and database: `infra/modules/tokelo-env/` and
+   `infra/envs/staging/`, applied by `realm-infra` on merge.
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
 
+> The AWS free plan ends 2027-02-26, or when the USD 100 of credits run out (ADR-0003).
+
 | Phase | What | Target window | Status |
 |-------|------|---------------|--------|
-| Phase 0 | Setup & access | | ⬜ |
-| | | | ⬜ |
+| Phase 0 | Design: the ADRs, the requirements, a design doc per lane (T001–T010) | to 2026-09-19 | ✅ |
+| Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → | 🟡 T018 |
+| Phase 2 | Foundational: sources, schema, sign-in, uploads, the event path (T022–T026, T033–T038) | | ⬜ |
+| Phases 3–7 | US1 the lease check, US2 evidence, US3 the dossier, US4 the navigator, then hardening | | ⬜ |
 
 ## 🧱 What's built so far
 
--
+- **The design:** ADR-0001 to ADR-0010 (accepted, frozen; 0005 superseded by 0009), SPEC.md,
+  REQUIREMENTS.md (38), PLAN.md, TASKS.md (55), the architecture and the eight design docs.
+- **The code:** the four services (`api`, `ocr`, `evidence`, `dossier`) with their health
+  handlers and Dockerfiles; the `api` serves the web app from its own image (ADR-0010); the web
+  skeleton; the unit and API tests. The gate is green and required on `main`.
+- **AWS:** the bootstrap (state bucket and key, the OIDC provider, the four CI roles and the
+  permissions boundary, four ECR repositories, the USD 20 budget) — T016.
+- **The seed:** `v0.0.0` built reproducibly, signed, and archived to ECR by digest — T017.
 
 ## 🛠️ Environment & access
 
--
+- **Account** 753176172735, region `eu-west-1`, **the AWS free plan** — no Organization, no
+  IAM Identity Center: creating either moves the account to the paid plan and expires the credits.
+- Katlego signs in with `aws login --profile tokelo` (IAM user `katlego-admin`, no access keys).
+  Sessions are short: re-run it before any `aws` command here.
+- CI signs in by OIDC as the four roles; the repository variables hold their ARNs and the region.
+- The repository is public; `main` needs a PR and a green `gate`.
 
 ## ⚠️ Open decisions / risks
 
--
+- **The free plan is the constraint.** Everything is sized to about USD 9–10 a month (ADR-0003).
+  Nothing may create an Organization, a NAT gateway, an interface endpoint or a customer KMS key.
+- **Textract refuses this account** (`SubscriptionRequiredException`), so OCR is open source:
+  the PDF's text layer, then Tesseract, English only (ADR-0009).
+- **Lambda's account concurrency is 10.** The design needs 9 (the `api`, plus 2 per trigger), so
+  no function may reserve concurrency (docs/design/infrastructure.md §10).
 
 ## 🔄 Retrospectives (one per phase boundary)
 
@@ -70,15 +93,23 @@ _Last updated: YYYY-MM-DD — by <name> (via <tool>)_
 > is especially useless: it will agree and then repeat the mistake next session. Only a change to a
 > file changes the outcome. Format: [docs/iteration-rituals.md](docs/iteration-rituals.md).
 
-### `<Phase N>` — YYYY-MM-DD
+### `Phase 0 → Phase 1` — 2026-09-19
 
-- **What happened:** `<from the Log, the merged PRs, the tasks that slipped>`
-- **Why:** `<the system cause, not the person>`
-- **Committed change:** `<the specific edit to AGENTS.md / a template / scripts/gate.sh — and done>`
+- **What happened:** the design landed as planned; setup then hit three defects in the kit
+  itself (Semgrep on the kit's own Terraform, `realm-infra` applying before the bootstrap, and
+  GitHub's immutable OIDC subjects), and a fourth at the seed (`publish` asking for URLs that
+  only T020 creates).
+- **Why:** the kit had never been run end to end on a new AWS account, so its first-run path was
+  the least-tested one — and nothing in it said which checks belong to which command.
+- **Committed change:** each was fixed in SecretRealm with a test that fails without the fix
+  (PRs #14–#17) and synced here, rather than worked around in this project.
 
 ## 🗒️ Log
 
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
-- YYYY-MM-DD — <name> (via <tool>) — <what changed>. Next: <what's next>. Blocked on: <or nothing>.
+- 2026-09-19 — Katlego (via Claude Code) — T011–T016: the manifest and tests, the four services,
+  the web skeleton, branch protection, the AWS bootstrap. Next: the seed. Blocked on: nothing.
+- 2026-09-20 — Katlego (via Claude Code) — T017: `v0.0.0` archived to ECR after SecretRealm
+  PR #17 freed `publish` from the URL check. Next: T018. Blocked on: nothing.
