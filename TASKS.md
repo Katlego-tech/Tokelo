@@ -279,11 +279,12 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                src/tokelo/api/handler.py, tests/api/test_authz.py
       Verify:  the test is written first and fails; then a tenant asking for another's lease gets 404
       Done:    every query is scoped to the tenant in the token's claims
-- [ ] T025 [FND] Issue pre-signed upload URLs
+- [x] T025 [FND] Issue pre-signed upload URLs
       Req:     REQ-002, NFR-006
       Design:  docs/design/api.md
       Files:   src/tokelo/api/uploads.py, tests/api/test_presign.py
-      Contract:POST /api/uploads {kind, content_type, size} → {url, key, expires_at} (docs/design/api.md)
+      Contract:POST /api/uploads {kind, content_type, size_bytes, filename} → 201 {document_id, url,
+               fields, expires_at} (docs/design/api.md §6: a POST policy, not a PUT URL)
       Verify:  the test is written first and fails; then the URL allows one key, one content type
                and at most the stated size, and expires within 15 minutes
       Done:    the API never receives a file's bytes

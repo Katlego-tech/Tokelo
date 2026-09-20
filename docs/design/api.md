@@ -137,6 +137,9 @@ Every `/api/` endpoint needs a valid token, and answers JSON. The web app's file
 | `POST /api/navigator` | `{"question"}` | `200 Answer` or `200 Outside` | `422` empty | REQ-014 |
 | `DELETE /api/account` | none | `202` | none | REQ-016 |
 
+`POST /api/uploads` takes a `filename` and **doesn't store it**: a file's name is the tenant's,
+and often their landlord's, and nothing here needs it. The object's key is the document's ID.
+
 ### What each kind of upload accepts (REQ-003)
 
 | `kind` | Content types | At most |

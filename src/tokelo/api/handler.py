@@ -10,7 +10,7 @@ import os
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from tokelo.api import documents, static
+from tokelo.api import documents, static, uploads
 from tokelo.api.auth import Unauthenticated
 from tokelo.api.responses import Response, error, json_response
 
@@ -37,6 +37,8 @@ def api(event: Event) -> Response:
     method = str(context.get("http", {}).get("method", "GET")).upper()
     path = [part for part in str(event.get("rawPath", "")).split("/") if part][1:]
     match method, path:
+        case "POST", ["uploads"]:
+            return uploads.request_upload(event)
         case "GET", ["documents"]:
             return documents.list_documents(event)
         case "GET", ["documents", document_id]:
