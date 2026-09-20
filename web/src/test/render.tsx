@@ -10,7 +10,10 @@ import { LeaseNew } from "../routes/LeaseNew";
 import { SignIn } from "../routes/SignIn";
 import { SignUp } from "../routes/SignUp";
 
-export function renderRoute(path: string, { auth }: { auth: Auth }): RenderResult {
+export function renderRoute(
+  path: string,
+  { auth }: { auth: Auth },
+): RenderResult {
   return render(
     <AuthContext.Provider value={auth}>
       <MemoryRouter initialEntries={[path]}>

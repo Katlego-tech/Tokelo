@@ -1,10 +1,13 @@
 // Uploading a lease (docs/design/web/upload.svg; REQ-002, REQ-003).
-import { Uploader } from "../components/Uploader";
+import { ScreenTitle } from "@/components/ScreenTitle";
+import { Uploader } from "@/components/Uploader";
 
 export function LeaseNew() {
   return (
     <>
-      <h1 className="mt-6 text-[22px] font-bold text-ink">Upload a lease</h1>
+      <ScreenTitle title="Upload a lease">
+        We read every page and check its clauses against the law.
+      </ScreenTitle>
       <Uploader kind="lease" />
     </>
   );

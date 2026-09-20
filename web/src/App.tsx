@@ -18,20 +18,26 @@ export function App() {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    loadConfig().then(setConfig).catch(() => setFailed(true));
+    loadConfig()
+      .then(setConfig)
+      .catch(() => setFailed(true));
   }, []);
 
   if (failed) {
     return (
       <main className="mx-auto max-w-md p-5">
-        <h1 className="text-xl font-bold text-ink">Tokelo isn&apos;t available</h1>
-        <p className="mt-2 text-sm text-muted">
-          This copy of the app has no settings to sign you in with. Please try again later.
+        <h1 className="text-xl font-bold text-foreground">
+          Tokelo isn&apos;t available
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This copy of the app has no settings to sign you in with. Please try
+          again later.
         </p>
       </main>
     );
   }
-  if (!config) return <p className="p-5 text-sm text-muted">Loading…</p>;
+  if (!config)
+    return <p className="p-5 text-sm text-muted-foreground">Loading…</p>;
 
   return (
     <AuthProvider config={config}>
@@ -42,18 +48,30 @@ export function App() {
 
 function Screens() {
   const { status } = useAuth();
-  if (status === "loading") return <p className="p-5 text-sm text-muted">Loading…</p>;
+  if (status === "loading")
+    return <p className="p-5 text-sm text-muted-foreground">Loading…</p>;
 
   return (
     <Layout>
       <Routes>
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/lease/new" element={<SignedIn>{<LeaseNew />}</SignedIn>} />
-        <Route path="/evidence/new" element={<SignedIn>{<EvidenceNew />}</SignedIn>} />
+        <Route
+          path="/lease/new"
+          element={<SignedIn>{<LeaseNew />}</SignedIn>}
+        />
+        <Route
+          path="/evidence/new"
+          element={<SignedIn>{<EvidenceNew />}</SignedIn>}
+        />
         <Route
           path="*"
-          element={<Navigate to={status === "signed-in" ? "/lease/new" : "/sign-in"} replace />}
+          element={
+            <Navigate
+              to={status === "signed-in" ? "/lease/new" : "/sign-in"}
+              replace
+            />
+          }
         />
       </Routes>
     </Layout>
@@ -62,5 +80,9 @@ function Screens() {
 
 function SignedIn({ children }: { children: React.ReactNode }) {
   const { status } = useAuth();
-  return status === "signed-in" ? <>{children}</> : <Navigate to="/sign-in" replace />;
+  return status === "signed-in" ? (
+    <>{children}</>
+  ) : (
+    <Navigate to="/sign-in" replace />
+  );
 }

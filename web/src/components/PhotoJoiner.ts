@@ -11,12 +11,16 @@ export const MAX_PAGES = 30;
 export type Drawn = { dataUrl: string; width: number; height: number };
 
 /** Read one photo and re-encode it as a JPEG the PDF can hold. */
-export async function drawn(file: File, canvas: HTMLCanvasElement): Promise<Drawn> {
+export async function drawn(
+  file: File,
+  canvas: HTMLCanvasElement,
+): Promise<Drawn> {
   const image = await loadImage(file);
   canvas.width = image.width;
   canvas.height = image.height;
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("This browser can't prepare photos for upload.");
+  if (!context)
+    throw new Error("This browser can't prepare photos for upload.");
   context.drawImage(image, 0, 0);
   return {
     dataUrl: canvas.toDataURL("image/jpeg", QUALITY),
@@ -37,18 +41,32 @@ export async function pdfOf(pages: Drawn[]): Promise<Blob> {
     const scale = Math.min(A4.width / page.width, A4.height / page.height);
     const width = page.width * scale;
     const height = page.height * scale;
-    pdf.addImage(page.dataUrl, "JPEG", (A4.width - width) / 2, (A4.height - height) / 2, width, height);
+    pdf.addImage(
+      page.dataUrl,
+      "JPEG",
+      (A4.width - width) / 2,
+      (A4.height - height) / 2,
+      width,
+      height,
+    );
   });
   return pdf.output("blob");
 }
 
-export async function joinPhotos(files: File[], canvas: HTMLCanvasElement): Promise<File> {
+export async function joinPhotos(
+  files: File[],
+  canvas: HTMLCanvasElement,
+): Promise<File> {
   if (files.length > MAX_PAGES) {
-    throw new Error(`A lease may be at most ${MAX_PAGES} pages, and you chose ${files.length}.`);
+    throw new Error(
+      `A lease may be at most ${MAX_PAGES} pages, and you chose ${files.length}.`,
+    );
   }
   const pages: Drawn[] = [];
   for (const file of files) pages.push(await drawn(file, canvas));
-  return new File([await pdfOf(pages)], "lease.pdf", { type: "application/pdf" });
+  return new File([await pdfOf(pages)], "lease.pdf", {
+    type: "application/pdf",
+  });
 }
 
 function loadImage(file: File): Promise<HTMLImageElement> {

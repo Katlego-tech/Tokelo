@@ -1,22 +1,28 @@
-// How far an upload has got (docs/design/web/upload.svg). Radix's progress, so the percentage is
-// announced rather than only drawn.
-import { Progress as Primitive } from "radix-ui";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { Progress as ProgressPrimitive } from "radix-ui";
 
-export function Progress({ value, label }: { value: number; label: string }) {
+function Progress({
+  className,
+  value,
+  ...props
+}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
   return (
-    <div className="mt-4">
-      <p className="text-xs text-muted">{label}</p>
-      <Primitive.Root
-        value={value}
-        max={100}
-        aria-label={label}
-        className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-line"
-      >
-        <Primitive.Indicator
-          className="h-full rounded-full bg-brand transition-[width]"
-          style={{ width: `${value}%` }}
-        />
-      </Primitive.Root>
-    </div>
+    <ProgressPrimitive.Root
+      data-slot="progress"
+      className={cn(
+        "relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-muted",
+        className,
+      )}
+      {...props}
+    >
+      <ProgressPrimitive.Indicator
+        data-slot="progress-indicator"
+        className="size-full flex-1 bg-primary transition-all"
+        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      />
+    </ProgressPrimitive.Root>
   );
 }
+
+export { Progress };

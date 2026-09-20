@@ -15,7 +15,13 @@ import {
 import { Amplify } from "aws-amplify";
 import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 import { defaultStorage, sessionStorage } from "aws-amplify/utils";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import type { Config } from "../api/types";
 import { AuthContext, type Auth, type AuthStatus } from "./AuthContext";
@@ -30,13 +36,24 @@ export function configure(config: Config): void {
       },
     },
   });
-  cognitoUserPoolsTokenProvider.setKeyValueStorage(sessionStorage ?? defaultStorage);
+  cognitoUserPoolsTokenProvider.setKeyValueStorage(
+    sessionStorage ?? defaultStorage,
+  );
 }
 
-export function AuthProvider({ config, children }: { config: Config; children: ReactNode }) {
+export function AuthProvider({
+  config,
+  children,
+}: {
+  config: Config;
+  children: ReactNode;
+}) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [email, setEmail] = useState<string | null>(null);
-  const [pending, setPending] = useState<{ email: string; password: string } | null>(null);
+  const [pending, setPending] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
 
   useEffect(() => {
     configure(config);
