@@ -5,9 +5,13 @@
 #   tables.tf     the two DynamoDB tables (ADR-0011)
 #   storage.tf    the documents bucket
 #   events.tf     the EventBridge rules and the four queues, each with its dead-letter queue
+#   identity.tf   the Cognito user pool and the web app's client
+#   functions.tf  the four functions, their roles and their queue triggers
+#   api.tf        the HTTP API, its authorizer and its routes
 #   alarms.tf     the topic, and an alarm on each dead-letter queue
 #
-# The rest of §6 — the functions, the user pool and the HTTP API — arrives with T020.
+# §6's web app needs no resource of its own: the `api` function serves it from its image
+# (ADR-0010).
 
 terraform {
   required_version = ">= 1.10"

@@ -39,6 +39,16 @@ variable "timeout" {
   default     = 30
 }
 
+variable "ephemeral_storage_mb" {
+  description = "/tmp, in MB: 512 (the default) to 10240. A worker that writes a file while it works sizes it here."
+  type        = number
+  default     = 512
+  validation {
+    condition     = var.ephemeral_storage_mb >= 512 && var.ephemeral_storage_mb <= 10240
+    error_message = "ephemeral_storage_mb: 512 to 10240."
+  }
+}
+
 variable "environment_variables" {
   type    = map(string)
   default = {}

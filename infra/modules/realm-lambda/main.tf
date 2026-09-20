@@ -10,6 +10,8 @@
 # - The handler must answer the event {"realm": "health"} with {"ok": true}: that's the release's
 #   health check for a worker (docs/release/README.md).
 # - x86_64 only, like the release's images.
+# - /tmp is 512 MB unless ephemeral_storage_mb says otherwise: a worker that writes a file
+#   while it works (an image, a PDF) sizes it here, and pays for it only while it runs.
 
 terraform {
   required_version = ">= 1.10"
@@ -89,6 +91,10 @@ resource "aws_lambda_function" "this" {
   timeout                        = var.timeout
   reserved_concurrent_executions = var.reserved_concurrent_executions
   publish                        = true
+
+  ephemeral_storage {
+    size = var.ephemeral_storage_mb
+  }
 
   dynamic "environment" {
     for_each = length(var.environment_variables) > 0 ? [var.environment_variables] : []
