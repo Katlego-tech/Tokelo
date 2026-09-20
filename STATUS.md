@@ -39,7 +39,7 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 |------|-------|----|--------|
 | `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | ✅ Done |
 | `release` (T021: v0.1.2 staged) | Katlego | Claude Code | 🔵 In review — PR #26 waits for the UAT sign-off |
-| `core` + `api` (T023, T024, T025: the store, tenant-scoped reads, pre-signed uploads) | Katlego | Claude Code | ✅ Done |
+| `core` + `api` (T023–T026: the store, tenant-scoped reads, pre-signed uploads, the job spine) | Katlego | Claude Code | ✅ Done |
 
 ## ⏭️ Next action
 
@@ -99,6 +99,9 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   Nothing may create an Organization, a NAT gateway, an interface endpoint or a customer KMS key.
 - **Textract refuses this account** (`SubscriptionRequiredException`), so OCR is open source:
   the PDF's text layer, then Tesseract, English only (ADR-0009).
+- **An upload on staging has no worker yet.** The spine (T026) carries a job to a worker, but
+  the `ocr` and `evidence` lanes have nothing to do with one until T029 and T031. Until then a
+  job retries three times and lands in its dead-letter queue, and the alarm is right to fire.
 - **Lambda's account concurrency is 10.** The design needs 9 (the `api`, plus 2 per trigger), so
   no function may reserve concurrency (docs/design/infrastructure.md §10).
 - **Aurora is not available to this account.** A free-plan account can only create an Aurora
@@ -143,7 +146,11 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
 - 2026-09-20 — Katlego (via Claude Code) — T023, T024 and T025: the store (two tables, the keys,
   the conditional writes), the first /api/ reads scoped to the tenant in the token, and pre-signed
   POST uploads that never let a file's bytes through the API. 26 tests against DynamoDB Local.
-  Next: T026 (the job spine) or T022, which needs the statutes' real text. Blocked on: nothing.
+  Next: T026. Blocked on: nothing.
+- 2026-09-20 — Katlego (via Claude Code) — T026: the job spine — every worker's reading of an SQS
+  batch, its per-message failure reporting, and the third failure that marks the document failed
+  and still redrives. Next: T027 (the web sign-up and upload), or T022 with real statute text.
+  Blocked on: nothing.
 - 2026-09-20 — Katlego (via Claude Code) — T021: the Concept and Development gates recorded
   (scoped to the setup release), the SLOs written, and `v0.1.2` staged with every check green.
   v0.1.0 and v0.1.1 were rejected by DAST on the way and their fixes are in. Next: Phase 2, from
