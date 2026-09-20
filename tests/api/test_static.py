@@ -41,7 +41,7 @@ def test_the_root_serves_the_app_uncached_with_its_security_headers(web_root):
     assert response["statusCode"] == 200
     headers = response["headers"]
     assert headers["content-type"] == "text/html; charset=utf-8"
-    assert headers["cache-control"] == "no-cache"
+    assert headers["cache-control"] == "no-store"
     assert "frame-ancestors 'none'" in headers["content-security-policy"]
     assert "script-src 'self'" in headers["content-security-policy"]
     assert headers["strict-transport-security"].startswith("max-age=31536000")
@@ -130,3 +130,25 @@ def test_without_the_built_app_the_root_says_so(web_root):
     response = get("/")
     assert response["statusCode"] == 503
     assert json.loads(response["body"])["error"]["code"] == "web_app_missing"
+
+
+# Every response, not only the page: a ZAP baseline against staging (v0.1.0, 2026-09-20) warned
+# that the assets and the 404s carried none of these.
+@pytest.mark.parametrize(
+    "path", ["/", "/assets/index-abc123.js", "/assets/missing-000.js", "/api/nothing-here"]
+)
+def test_every_response_carries_the_transport_headers(web_root, path):
+    headers = get(path)["headers"]
+    assert headers["strict-transport-security"] == "max-age=31536000; includeSubDomains"
+    assert headers["x-content-type-options"] == "nosniff"
+    assert headers["referrer-policy"] == "no-referrer"
+    assert headers["cross-origin-opener-policy"] == "same-origin"
+    assert headers["cross-origin-resource-policy"] == "same-origin"
+    # The app needs none of these, so none of them is available to anything it loads.
+    policy = headers["permissions-policy"]
+    assert "camera=()" in policy and "geolocation=()" in policy and "microphone=()" in policy
+
+
+@pytest.mark.parametrize("path", ["/", "/lease/7d2f", "/assets/missing-000.js"])
+def test_nothing_but_a_hashed_asset_may_be_stored(web_root, path):
+    assert get(path)["headers"]["cache-control"] == "no-store"
