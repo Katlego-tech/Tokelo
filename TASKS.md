@@ -272,10 +272,11 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                nothing of another's
       Done:    every read and write names a tenant's partition, and no code outside store.py calls
                DynamoDB (ADR-0011)
-- [ ] T024 [FND] Serve each tenant only their own records
+- [x] T024 [FND] Serve each tenant only their own records
       Req:     REQ-001
       Design:  docs/design/api.md
-      Files:   src/tokelo/api/auth.py, tests/api/test_authz.py
+      Files:   src/tokelo/api/auth.py, src/tokelo/api/documents.py, src/tokelo/api/views.py,
+               src/tokelo/api/handler.py, tests/api/test_authz.py
       Verify:  the test is written first and fails; then a tenant asking for another's lease gets 404
       Done:    every query is scoped to the tenant in the token's claims
 - [ ] T025 [FND] Issue pre-signed upload URLs

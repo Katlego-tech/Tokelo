@@ -39,6 +39,7 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 |------|-------|----|--------|
 | `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | ✅ Done |
 | `release` (T021: v0.1.2 staged) | Katlego | Claude Code | 🔵 In review — PR #26 waits for the UAT sign-off |
+| `core` + `api` (T023, T024: the store, and tenant-scoped reads) | Katlego | Claude Code | ✅ Done |
 
 ## ⏭️ Next action
 
@@ -139,6 +140,10 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   its URL. Three kit defects on the way (SecretRealm PRs #18–#20: /tmp sizing, a policy made in
   the same apply, and the URLs each release command asks for). Next: T021, the first staging
   release. Blocked on: nothing.
+- 2026-09-20 — Katlego (via Claude Code) — T023 and T024: the store (two tables, the keys, the
+  conditional writes) and the first /api/ reads, each scoped to the tenant in the token. 13 tests
+  against DynamoDB Local. Next: T022 (the curated legal sections) needs the statutes' real text.
+  Blocked on: nothing.
 - 2026-09-20 — Katlego (via Claude Code) — T021: the Concept and Development gates recorded
   (scoped to the setup release), the SLOs written, and `v0.1.2` staged with every check green.
   v0.1.0 and v0.1.1 were rejected by DAST on the way and their fixes are in. Next: Phase 2, from

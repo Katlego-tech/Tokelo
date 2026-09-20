@@ -197,11 +197,11 @@ dossier only.
 | Path | New? | Responsibility |
 | --- | --- | --- |
 | `src/tokelo/api/handler.py` | new | the entry point: routes on `routeKey`, maps errors to responses |
-| `src/tokelo/api/auth.py` | new | the tenant from the claims; the first-request rows (T024) |
+| `src/tokelo/api/auth.py` | new | the tenant from the claims, and the refusal when there isn't one (T024) |
 | `src/tokelo/api/uploads.py` | new | the kinds' limits, and the POST policy (T025, T030) |
 | `src/tokelo/api/documents.py`, `leases.py`, `evidence.py`, `timeline.py`, `dossiers.py`, `navigator.py`, `account.py` | new | one endpoint group each |
 | `src/tokelo/api/views.py` | new | §6's views, the only shapes that leave the function |
-| `src/tokelo/core/db.py` | new | connections and tenant-scoped queries ([domain-model.md](domain-model.md) §7) |
+| `src/tokelo/core/store.py` | new | the tenant-scoped calls to DynamoDB, and nothing else talks to it ([domain-model.md](domain-model.md) §7) |
 | `src/tokelo/api/static.py` | new | the web app's files, their caching and security headers, `/config.json` (ADR-0010) |
 | `src/tokelo/core/keys.py` | new | §6's key layout, used by the `api` and the workers alike |
 | `services/api/Dockerfile` | new | Lambda's Python 3.14 base, pinned by digest |
