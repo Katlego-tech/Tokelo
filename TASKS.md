@@ -218,7 +218,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     none — the kit's seed (the kit's DESIGN.md §14)
       Verify:  the release workflow publishes and stops; `aws ecr describe-images` shows v0.0.0 in each repository
       Done:    Terraform can create the functions from the seed images
-- [ ] T018 [SET] Create staging's network and tables (with Katlego's go-ahead)
+- [x] T018 [SET] Create staging's network and tables (with Katlego's go-ahead)
       Req:     REQ-018, NFR-008
       Design:  docs/design/infrastructure.md, docs/design/domain-model.md
       Files:   infra/modules/tokelo-env/*.tf, infra/envs/staging/*.tf

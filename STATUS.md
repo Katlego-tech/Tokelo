@@ -37,13 +37,15 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 
 | Lane | Owner | AI | Status |
 |------|-------|----|--------|
-| `infra` (T018–T020: staging's network, database, storage, events, identity, API, functions) | Katlego | Claude Code | 🟡 Doing |
+| `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | 🟡 Doing |
 | `release` (T021: v0.1.0 to staging) | Katlego | Claude Code | ⬜ To Do |
 
 ## ⏭️ Next action
 
-1. T018 — staging's network and database: `infra/modules/tokelo-env/` and
-   `infra/envs/staging/`, applied by `realm-infra` on merge.
+1. T020 — staging's user pool, HTTP API and the four functions, which is what gives the `api` its
+   staging URL (and unblocks T021's release).
+2. Subscribe an address to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
+   email): the dead-letter alarms have nowhere to go until then.
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
 
@@ -52,7 +54,7 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 | Phase | What | Target window | Status |
 |-------|------|---------------|--------|
 | Phase 0 | Design: the ADRs, the requirements, a design doc per lane (T001–T010) | to 2026-09-19 | ✅ |
-| Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → | 🟡 T018 |
+| Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → | 🟡 T020 |
 | Phase 2 | Foundational: sources, schema, sign-in, uploads, the event path (T022–T026, T033–T038) | | ⬜ |
 | Phases 3–7 | US1 the lease check, US2 evidence, US3 the dossier, US4 the navigator, then hardening | | ⬜ |
 
@@ -66,6 +68,9 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 - **AWS:** the bootstrap (state bucket and key, the OIDC provider, the four CI roles and the
   permissions boundary, four ECR repositories, the USD 20 budget) — T016.
 - **The seed:** `v0.0.0` built reproducibly, signed, and archived to ECR by digest — T017.
+- **Staging, so far:** the VPC with no way out, its app subnets and route table, the S3 and
+  DynamoDB gateway endpoints, the `fn` security group, the two tables (T018), and the documents
+  bucket, the four queues with their dead-letter queues, the event rules and the alarms (T019).
 
 ## 🛠️ Environment & access
 
@@ -84,6 +89,9 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
   the PDF's text layer, then Tesseract, English only (ADR-0009).
 - **Lambda's account concurrency is 10.** The design needs 9 (the `api`, plus 2 per trigger), so
   no function may reserve concurrency (docs/design/infrastructure.md §10).
+- **Aurora is not available to this account.** A free-plan account can only create an Aurora
+  cluster outside a VPC, on the internet, so the store is DynamoDB (ADR-0011, 2026-09-20). Any
+  future "just add a database" instinct should read that ADR first.
 
 ## 🔄 Retrospectives (one per phase boundary)
 
@@ -113,3 +121,6 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
   the web skeleton, branch protection, the AWS bootstrap. Next: the seed. Blocked on: nothing.
 - 2026-09-20 — Katlego (via Claude Code) — T017: `v0.0.0` archived to ECR after SecretRealm
   PR #17 freed `publish` from the URL check. Next: T018. Blocked on: nothing.
+- 2026-09-20 — Katlego (via Claude Code) — T018: the network applied, then Aurora was refused by
+  the free plan; ADR-0011 moved the store to DynamoDB and the tables are live. T019: the bucket,
+  the queues, the rules and the alarms. Next: T020. Blocked on: nothing.
