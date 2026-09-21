@@ -42,7 +42,8 @@ _Last updated: 2026-09-21 — by Katlego (via Claude Code)_
 | `core` + `api` (T023–T026: the store, tenant-scoped reads, pre-signed uploads, the job spine) | Katlego | Claude Code | ✅ Done |
 | `web` (T027: the privacy notice, sign-up, sign-in and the uploader) | Katlego | Claude Code | ✅ Done |
 | `legal` (T022: the curated sections of the four sources) | Katlego | Claude Code | ✅ Done |
-| `ocr` (T028–T032: the samples, the reader, the splitter, the catalogue, the intake) | Katlego | Claude Code | ✅ Done |
+| `ocr` (T028–T033: the samples, the reader, the splitter, the catalogue, the intake, the flags) | Katlego | Claude Code | ✅ Done |
+| `ocr` (T057: wiring the worker — the lease job, the fan-out, the analysis) | — | — | ⬜ To Do |
 
 ## ⏭️ Next action
 
@@ -59,7 +60,7 @@ Three things for Katlego, none of them blocking Phase 2:
    email): the dead-letter alarms have nowhere to go until then.
 
 Phase 3 is under way: the intake, the reader, the clause splitter and the rule catalogue are in.
-T033 wires them into the `ocr` worker, which is what finally gives an upload on staging somewhere
+T057 wires them into the `ocr` worker, which is what finally gives an upload on staging somewhere
 to go.
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
@@ -77,7 +78,7 @@ to go.
 ## 🧱 What's built so far
 
 - **The design:** ADR-0001 to ADR-0010 (accepted, frozen; 0005 superseded by 0009), SPEC.md,
-  REQUIREMENTS.md (38), PLAN.md, TASKS.md (55), the architecture and the eight design docs.
+  REQUIREMENTS.md (38), PLAN.md, TASKS.md (56), the architecture and the eight design docs.
 - **The code:** the four services (`api`, `ocr`, `evidence`, `dossier`) with their health
   handlers and Dockerfiles; the `api` serves the web app from its own image (ADR-0010); the web
   skeleton; the unit and API tests. The gate is green and required on `main`.
@@ -113,10 +114,11 @@ to go.
   comfortably inside NFR-005's 15%, but those pages are clean Helvetica degraded on purpose. A
   creased, off-white lease under a kitchen light is harder, and T036 is where that gets found out.
 - **An upload on staging has no worker yet.** The spine (T026) carries a job to a worker, but
-  the `ocr` and `evidence` lanes have nothing to do with one until their workers are wired in
-  (T033 and T038). The pieces exist — the intake, the reader, the splitter, the catalogue — but
-  nothing calls them from a job yet, so an upload on staging still retries three times and lands
-  in its dead-letter queue, and the alarm is right to fire.
+  every piece of the `ocr` lane is now built — the intake, the reader, the splitter, the
+  catalogue and the flags — and nothing calls them from a job. **That was a hole in the plan:**
+  T028–T033 built the lane and no task wired it, so T057 was written to. Until it lands an
+  upload on staging still retries three times into its dead-letter queue, and the alarm is right
+  to fire. The `evidence` lane has the same shape, but T037 says so in its own `Done`.
 - **Lambda's account concurrency is 10.** The design needs 9 (the `api`, plus 2 per trigger), so
   no function may reserve concurrency (docs/design/infrastructure.md §10).
 - **Aurora is not available to this account.** A free-plan account can only create an Aurora
@@ -147,6 +149,12 @@ to go.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-21 — Katlego (via Claude Code) — T033: the flags. Every rule run against every clause
+  of a lease, each flag carrying the sentence a tenant reads, the sections it rests on and the
+  catalogue's version; a clause nothing matched says "no issue found by these checks" and never
+  that it is lawful (REQ-007). All ten terms planted in the sample lease are found. Wrote T057:
+  T028–T033 built the whole `ocr` lane and no task wired it to a job. Next: T057, then T034.
+  Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T030: what this project will take. One table of
   kinds, types and sizes, read both when the URL is signed and when the worker opens the file —
   and the worker reads the type out of the bytes, so a .docx renamed .pdf, a 31-page PDF and an

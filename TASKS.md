@@ -373,13 +373,33 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Done:    10 rules — the seven the task named, plus late-payment penalties, entry without
                notice and receipts. A rule citing a section outside docs/legal/, or failing its own
                example, is refused when the catalogue loads rather than found in front of a tenant
-- [ ] T033 [US1] Flag the clauses, and never call one lawful
+- [x] T033 [US1] Flag the clauses, and never call one lawful
       Req:     REQ-005, REQ-007
       Design:  docs/design/ocr.md
       Files:   src/tokelo/ocr/flags.py, tests/ocr/test_flags.py
       Verify:  the tests are written first and fail; then matching clauses are flagged with their
                rule, and the rest read "no issue found by these checks"
-      Done:    the flags are stored against the lease
+      Done:    the flags are stored against the lease — each clause keyed by its ordinal, so a
+               redelivered job rewrites the same items and a tenant sees what they saw the first
+               time. Every clause comes back, flagged or not: a tenant reads their own lease, not
+               a list of its worst lines. A flag copies the explanation, the sections and the
+               catalogue's version, so what was shown stays readable after the rules improve
+- [ ] T057 [US1] Wire the `ocr` worker: the lease job, the fan-out and the analysis
+      Req:     REQ-003, REQ-004, REQ-005, REQ-017
+      Design:  docs/design/ocr.md §4, §6; docs/design/infrastructure.md §4
+      Files:   src/tokelo/ocr/handler.py, src/tokelo/core/store.py, tests/ocr/test_worker.py
+      Contract:a lease job reads the object by version, checks it (intake), records it stored,
+               stores the pages that carry a text layer and writes one page job for each that
+               doesn't; a page job reads its page; whichever invocation makes pages_done equal
+               page_count runs the analysis (flags.record)
+      Verify:  the tests are written first and fail; then a two-page lease on a stubbed S3 becomes
+               an analysed lease with its clauses and flags, a refused file becomes a failed
+               document carrying its reason, and a redelivered job changes nothing
+      Done:    an upload on staging has somewhere to go — the dead-letter alarm stops being the
+               expected outcome of uploading a lease
+      Note:    numbered after T056 because the gap was found in Phase 3: T028–T033 built every
+               piece of this lane and no task wired them to a job. Needs an atomic `pages_done + 1`
+               that answers the new value, for the race in ocr.md §4
 - [ ] T034 [US1] Serve a lease's flags
       Req:     REQ-005, REQ-006, REQ-007
       Design:  docs/design/api.md

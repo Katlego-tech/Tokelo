@@ -167,6 +167,17 @@ class Store:
             },
         )
 
+    def set_lease_status(self, tenant_id: str, document_id: str, status: LeaseStatus) -> None:
+        """Where the reading got to, without restating the page counts. `reading` → `analysed`
+        or `failed` (domain-model.md §5); the counts belong to the reading, not to this."""
+        self._table.update_item(
+            Key={"pk": model.tenant_pk(tenant_id), "sk": model.document_sk(document_id)},
+            UpdateExpression="SET lease.#status = :status",
+            ConditionExpression="attribute_exists(lease)",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={":status": str(status)},
+        )
+
     def put_page(self, tenant_id: str, document_id: str, page: Page) -> None:
         """Keyed by its number, so a redelivered job rewrites the same item (ADR-0007)."""
         self._table.put_item(
