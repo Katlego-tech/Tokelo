@@ -342,13 +342,19 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                samples, so ADR-0009 stands and no PaddleOCR ADR is needed. The samples are a floor,
                not a promise: a photograph of a creased lease under a kitchen light is harder, and
                T036 reads a real one end to end on staging
-- [ ] T030 [US1] Accept or refuse a lease file
+- [x] T030 [US1] Accept or refuse a lease file
       Req:     REQ-003
       Design:  docs/design/api.md, docs/design/ocr.md
       Files:   src/tokelo/api/uploads.py, src/tokelo/ocr/intake.py, tests/api/test_lease_intake.py
       Verify:  the tests are written first and fail; then PDF, JPEG and PNG of at most 20 MB and 30
                pages are accepted, and anything else is refused with its reason
-      Done:    checked when the URL is requested and again in the worker
+      Done:    checked when the URL is requested and again in the worker, from one table both read
+               (intake.KINDS) — two lists would drift, and a file the API promised to take would
+               be refused after the tenant had uploaded it. The worker's check is the one a policy
+               can't do: the type comes from the file's first bytes, so a .docx renamed .pdf is
+               refused; a PDF is counted and a 31st page refused; an image that claims 30000 square
+               is refused before a pixel is allocated. A file that won't open is refused with a
+               reason rather than raised on, so the job doesn't redrive three times in silence
 - [x] T031 [US1] Split a lease's text into clauses
       Req:     REQ-005
       Design:  docs/design/ocr.md

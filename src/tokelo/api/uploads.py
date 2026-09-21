@@ -6,8 +6,9 @@ size range and a quarter of an hour. The `api` keeps no copy, holds no buffer an
 `PutObject` permission on anything but the `uploads/` prefix (infrastructure.md §6).
 
 The limits are checked here, when the URL is asked for, so a file this project can't use is
-refused before it is uploaded rather than after. The worker checks again what only it can see —
-a PDF's page count (T030) — because a policy can't count pages.
+refused before it is uploaded rather than after. They are read from `ocr/intake.py`, which is
+also where the worker reads them: it checks again, against the bytes, what only it can see — the
+file's real type and a PDF's page count, neither of which a policy can look at (REQ-003).
 """
 
 import json
@@ -24,19 +25,11 @@ from tokelo.api.responses import Response, error, json_response
 from tokelo.core.keys import upload_key
 from tokelo.core.model import Document, DocumentKind, DocumentStatus
 from tokelo.core.store import Store
+from tokelo.ocr.intake import KINDS, MEGABYTE, Refused, one_of
 
 type Event = Mapping[str, Any]
 
-MEGABYTE = 1024 * 1024
 LIFETIME = timedelta(minutes=15)  # NFR-006: the URL is short-lived, whatever else changes
-
-# What each kind accepts (api.md §6, REQ-003). A kind that isn't here can't be uploaded at all.
-KINDS: dict[DocumentKind, tuple[frozenset[str], int]] = {
-    DocumentKind.LEASE: (frozenset({"application/pdf", "image/jpeg", "image/png"}), 20 * MEGABYTE),
-    DocumentKind.PHOTO: (frozenset({"image/jpeg", "image/png"}), 20 * MEGABYTE),
-    DocumentKind.NOTICE: (frozenset({"application/pdf", "image/jpeg", "image/png"}), 20 * MEGABYTE),
-    DocumentKind.CHAT: (frozenset({"text/plain"}), 5 * MEGABYTE),
-}
 
 _store: Store | None = None
 _s3: Any = None
@@ -57,10 +50,6 @@ def s3_for() -> Any:
     return _s3
 
 
-class Refused(Exception):
-    """The file can't be used, and the tenant is told why (REQ-003)."""
-
-
 def asked_for(event: Event) -> tuple[DocumentKind, str, int]:
     """The request, checked (REQ-003). Raises Refused, with what to tell the tenant."""
     try:
@@ -75,20 +64,20 @@ def asked_for(event: Event) -> tuple[DocumentKind, str, int]:
     except ValueError as e:
         raise Refused(
             f"'{body.get('kind')}' isn't a kind this project takes: "
-            f"it has to be {_or([str(k) for k in KINDS])}."
+            f"it has to be {one_of([str(k) for k in KINDS])}."
         ) from e
 
-    types, limit = KINDS[kind]
+    limits = KINDS[kind]
     content_type = str(body.get("content_type", ""))
-    if content_type not in types:
+    if content_type not in limits.types:
         named = f"the content type {content_type}" if content_type else "no content type"
-        raise Refused(f"A {kind} with {named}: it has to be {_or(sorted(types))}.")
+        raise Refused(f"A {kind} with {named}: it has to be {one_of(sorted(limits.types))}.")
 
     size = body.get("size_bytes")
     if not isinstance(size, int) or isinstance(size, bool) or size < 1:
         raise Refused("An upload needs its size in bytes, and an empty file is no use.")
-    if size > limit:
-        raise Refused(f"A {kind} may be at most {limit // MEGABYTE} MB.")
+    if size > limits.size:
+        raise Refused(f"A {kind} may be at most {limits.size // MEGABYTE} MB.")
 
     # `filename` is in the request and is deliberately not kept: a file's name is the tenant's
     # (and often their landlord's) and the system has no use for it. The key is the document's ID.
@@ -131,7 +120,7 @@ def request_upload(event: Event) -> Response:
         Conditions=[
             {"key": key},
             {"Content-Type": content_type},
-            ["content-length-range", 1, KINDS[kind][1]],
+            ["content-length-range", 1, KINDS[kind].size],
         ],
         ExpiresIn=int(LIFETIME.total_seconds()),
     )
@@ -145,11 +134,6 @@ def request_upload(event: Event) -> Response:
             "expires_at": _stamp(expires_at),
         },
     )
-
-
-def _or(options: list[str]) -> str:
-    """Join as `a, b or c`. A refusal is read by a tenant, not parsed by a machine."""
-    return " or ".join([", ".join(options[:-1]), options[-1]] if len(options) > 1 else options)
 
 
 def _stamp(when: datetime) -> str:
