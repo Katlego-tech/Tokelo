@@ -440,13 +440,19 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 4 — US2 Keep tamper-evident inspection evidence
 
-- [ ] T037 [US2] Fingerprint each evidence file as it's stored
+- [x] T037 [US2] Fingerprint each evidence file as it's stored
       Req:     REQ-008, REQ-011
       Design:  docs/design/evidence.md
-      Files:   src/tokelo/evidence/digest.py, tests/evidence/test_digest.py
+      Files:   src/tokelo/evidence/digest.py, src/tokelo/evidence/handler.py,
+               tests/evidence/test_digest.py, tests/fakes.py
       Verify:  the tests are written first and fail; then each file's SHA-256 and time of storage are
                recorded, with an audit entry
-      Done:    the `evidence` worker takes the digest from the stored object, not from the client
+      Done:    the `evidence` worker takes the digest from the stored object, not from the client —
+               by version, streamed a chunk at a time so a 20 MB photo isn't held whole, and with
+               `stored_at` taken from the object's own LastModified rather than whenever the queue
+               got round to it. An object bigger than its kind allows fails with the reason, caught
+               by a HEAD before a byte is read. The digest is written under a condition, so a
+               redelivery cannot change it and the audit entry cannot double
 - [ ] T038 [US2] Record each photo's capture metadata, and never invent it
       Req:     REQ-009
       Design:  docs/design/evidence.md

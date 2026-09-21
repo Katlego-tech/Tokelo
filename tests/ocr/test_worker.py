@@ -17,11 +17,10 @@ route this test needs and the one a lease from an agent takes anyway (ADR-0009).
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
 
 import pytest
-from botocore.exceptions import ClientError
 
+from fakes import Bucket, batch, s3_record
 from tokelo.core import keys
 from tokelo.core.model import (
     AuditAction,
@@ -37,36 +36,6 @@ TENANT = "11111111-1111-4111-8111-111111111111"
 DOCUMENT = "33333333-3333-4333-8333-333333333333"
 BUCKET = "tokelo-test-documents-000000000000"
 LEASE_KEY = keys.upload_key(TENANT, DocumentKind.LEASE, DOCUMENT)
-
-
-class Bucket:
-    """S3, as far as this worker can tell: objects by key, and a version on each."""
-
-    def __init__(self) -> None:
-        self.objects: dict[str, bytes] = {}
-        self.versions: dict[str, str] = {}
-
-    def put(self, key: str, body: bytes, version: str = "v1") -> None:
-        self.objects[key] = body
-        self.versions[key] = version
-
-    # the two calls the worker makes, spelt as boto3 spells them
-    def get_object(self, Bucket: str, Key: str, VersionId: str | None = None) -> dict[str, Any]:  # noqa: N803
-        if Key not in self.objects or (VersionId and VersionId != self.versions[Key]):
-            raise ClientError(
-                {"Error": {"Code": "NoSuchKey", "Message": "The specified key does not exist."}},
-                "GetObject",
-            )
-        body = self.objects[Key]
-        return {"Body": type("Body", (), {"read": staticmethod(lambda: body)})()}
-
-    def put_object(self, **call: Any) -> dict[str, Any]:
-        body = call["Body"]
-        self.put(call["Key"], body if isinstance(body, bytes) else bytes(body))
-        return {}
-
-    def page_jobs(self) -> list[str]:
-        return sorted(k for k in self.objects if k.startswith("jobs/page/"))
 
 
 @pytest.fixture
@@ -109,29 +78,6 @@ def uploaded(store, bucket):
     return upload
 
 
-def record(key: str, *, receives: int = 1, message_id: str = "m1", version: str = "v1") -> dict:
-    """One SQS record carrying an EventBridge Object Created, as Lambda delivers it."""
-    return {
-        "messageId": message_id,
-        "body": json.dumps(
-            {
-                "detail-type": "Object Created",
-                "source": "aws.s3",
-                "detail": {
-                    "bucket": {"name": BUCKET},
-                    "object": {"key": key, "size": 2048, "version-id": version},
-                },
-            }
-        ),
-        "attributes": {"ApproximateReceiveCount": str(receives)},
-        "eventSource": "aws:sqs",
-    }
-
-
-def batch(*records: dict) -> dict:
-    return {"Records": list(records)}
-
-
 @pytest.mark.req("REQ-017")
 def test_the_health_check_still_answers(worker):
     assert worker({"realm": "health"}) == {"ok": True}
@@ -145,7 +91,7 @@ def test_a_lease_that_carries_its_own_words_is_read_and_analysed_in_one_invocati
     job finishes the whole lease itself (ocr.md §4). What the tenant gets is flags."""
     body = uploaded()
 
-    assert worker(batch(record(LEASE_KEY))) == {"batchItemFailures": []}
+    assert worker(batch(s3_record(LEASE_KEY))) == {"batchItemFailures": []}
 
     stored = store.get_document(TENANT, DOCUMENT)
     assert stored is not None
@@ -167,8 +113,8 @@ def test_the_upload_is_recorded_in_the_audit_log_once(worker, store, uploaded):
     """REQ-011. The entry belongs to the storing, which happens once however often the message
     is delivered — so a redelivery cannot add a second."""
     uploaded()
-    worker(batch(record(LEASE_KEY)))
-    worker(batch(record(LEASE_KEY, message_id="m2")))
+    worker(batch(s3_record(LEASE_KEY)))
+    worker(batch(s3_record(LEASE_KEY, message_id="m2")))
 
     entries = store.list_audit(store.get_tenant(TENANT)["audit_subject"])
     uploads = [e for e in entries if e.action is AuditAction.UPLOAD]
@@ -182,7 +128,7 @@ def test_a_scan_is_fanned_out_one_job_per_page(worker, store, bucket, uploaded):
     Lambda's fifteen minutes (ADR-0003), so each page becomes its own job."""
     uploaded("scanned.pdf")
 
-    assert worker(batch(record(LEASE_KEY))) == {"batchItemFailures": []}
+    assert worker(batch(s3_record(LEASE_KEY))) == {"batchItemFailures": []}
 
     assert bucket.page_jobs() == [
         keys.page_job_key(DOCUMENT, 1),
@@ -229,14 +175,14 @@ def test_the_page_job_that_finishes_the_lease_runs_the_analysis(worker, store, b
         )
     store.set_lease(TENANT, DOCUMENT, 2, 0, LeaseStatus.READING)
 
-    worker(batch(record(keys.page_job_key(DOCUMENT, 1))))
+    worker(batch(s3_record(keys.page_job_key(DOCUMENT, 1))))
     half = store.get_document(TENANT, DOCUMENT)
     assert half is not None and half.document.lease is not None
     assert half.document.lease.pages_done == 1
     assert half.document.lease.status is LeaseStatus.READING
     assert half.clauses == []
 
-    worker(batch(record(keys.page_job_key(DOCUMENT, 2), message_id="m2")))
+    worker(batch(s3_record(keys.page_job_key(DOCUMENT, 2), message_id="m2")))
     whole = store.get_document(TENANT, DOCUMENT)
     assert whole is not None and whole.document.lease is not None
     assert whole.document.lease.pages_done == 2
@@ -253,7 +199,7 @@ def test_a_file_that_is_not_a_lease_is_failed_with_its_reason(worker, store, buc
     uploaded()
     bucket.put(LEASE_KEY, b"PK\x03\x04\x14\x00\x06\x00" + b"\x00" * 300)
 
-    assert worker(batch(record(LEASE_KEY))) == {"batchItemFailures": []}
+    assert worker(batch(s3_record(LEASE_KEY))) == {"batchItemFailures": []}
 
     stored = store.get_document(TENANT, DOCUMENT)
     assert stored is not None
@@ -269,7 +215,7 @@ def test_a_lease_whose_object_is_gone_is_finished_with_quietly(worker, store, up
     nothing to mark, so the message is done with — not retried three times into the alarm."""
     uploaded()
 
-    assert worker(batch(record(LEASE_KEY, version="v-gone"))) == {"batchItemFailures": []}
+    assert worker(batch(s3_record(LEASE_KEY, version="v-gone"))) == {"batchItemFailures": []}
 
     stored = store.get_document(TENANT, DOCUMENT)
     assert stored is not None
@@ -281,10 +227,10 @@ def test_the_same_lease_delivered_twice_leaves_one_lease(worker, store, uploaded
     """ADR-0007. SQS delivers at least once. The second delivery must not double the pages, the
     clauses or the counter, or a tenant reads their lease twice over."""
     uploaded()
-    worker(batch(record(LEASE_KEY)))
+    worker(batch(s3_record(LEASE_KEY)))
     once = store.get_document(TENANT, DOCUMENT)
 
-    worker(batch(record(LEASE_KEY, message_id="m2", receives=2)))
+    worker(batch(s3_record(LEASE_KEY, message_id="m2", receives=2)))
     twice = store.get_document(TENANT, DOCUMENT)
 
     assert once is not None and twice is not None
@@ -305,9 +251,9 @@ def test_a_lease_no_page_of_which_could_be_read_fails_and_says_so(
     uploaded("photo-unreadable.jpg", content_type="image/jpeg")
     monkeypatch.setattr(pages, "read", lambda *_: pages.Read(text="", source="ocr", readable=False))
 
-    worker(batch(record(LEASE_KEY)))
+    worker(batch(s3_record(LEASE_KEY)))
     assert bucket.page_jobs() == [keys.page_job_key(DOCUMENT, 1)]
-    worker(batch(record(keys.page_job_key(DOCUMENT, 1), message_id="m2")))
+    worker(batch(s3_record(keys.page_job_key(DOCUMENT, 1), message_id="m2")))
 
     stored = store.get_document(TENANT, DOCUMENT)
     assert stored is not None
@@ -346,7 +292,7 @@ def test_a_page_job_that_names_a_lease_its_key_does_not_match_is_refused(
         ).encode(),
     )
 
-    answer = worker(batch(record(forged)))
+    answer = worker(batch(s3_record(forged)))
     assert answer == {"batchItemFailures": [{"itemIdentifier": "m1"}]}
     stored = store.get_document(TENANT, DOCUMENT)
     assert stored is not None and stored.pages == []
@@ -356,5 +302,5 @@ def test_a_page_job_that_names_a_lease_its_key_does_not_match_is_refused(
 def test_a_message_the_ocr_worker_has_no_business_with_is_not_guessed_at(worker):
     """A dossier job on the lease queue could only be a misconfiguration. It is reported as a
     failure so it drains to the dead-letter queue, where somebody can see it."""
-    answer = worker(batch(record(keys.dossier_job_key(DOCUMENT))))
+    answer = worker(batch(s3_record(keys.dossier_job_key(DOCUMENT))))
     assert answer == {"batchItemFailures": [{"itemIdentifier": "m1"}]}

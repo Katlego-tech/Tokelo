@@ -19,6 +19,11 @@ extend-exclude = ["scripts/realm"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
 
+[tool.ruff.lint.isort]
+# `fakes` is this repo's own test stand-ins (tests/fakes.py, on the pytest path), not a package
+# from PyPI, so it sorts with the project's imports rather than above them.
+known-first-party = ["tokelo", "fakes"]
+
 [tool.pyright]
 include = ["src", "tests"]
 extraPaths = ["src"]
@@ -26,7 +31,9 @@ pythonVersion = "3.14"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# `tests` too, so the lanes can share one set of stand-ins (tests/fakes.py) instead of
+# each keeping its own copy of a fake S3.
+pythonpath = ["src", "tests"]
 # Each lane names its own test file after what it holds, so two lanes may both have a
 # `test_flags.py` — the flags the `ocr` worker writes and the flags the API serves. Under the
 # default import mode those collide on the module name; importlib gives each its own.
