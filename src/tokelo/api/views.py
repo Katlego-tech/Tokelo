@@ -54,6 +54,10 @@ def lease_flags(stored: StoredDocument) -> dict[str, Any]:
     lease = stored.document.lease
     return {
         "status": str(lease.status) if lease else "",
+        # The count the worker took from the file itself (REQ-003), which is what makes the next
+        # line mean something: "page 3 couldn't be read" is a different thing in a four-page
+        # lease and a thirty-page one.
+        "page_count": lease.page_count if lease else 0,
         "unreadable_pages": sorted(page.number for page in stored.pages if not page.readable),
         "notice": NOTICE,
         "clauses": [clause_view(c) for c in sorted(stored.clauses, key=lambda c: c.ordinal)],

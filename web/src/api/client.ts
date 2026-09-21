@@ -9,7 +9,13 @@
 //    waits and tries again, up to four times, and tells the app it is waiting so the banner can
 //    say so (NFR-002). A screen that had to do this itself would do it four different ways.
 
-import type { ApiError, Config, DocumentView, UploadTicket } from "./types";
+import type {
+  ApiError,
+  Config,
+  DocumentView,
+  LeaseFlags,
+  UploadTicket,
+} from "./types";
 
 export const RETRIES = 4;
 
@@ -122,6 +128,16 @@ export function getDocument(
   waking?: Waking,
 ): Promise<DocumentView> {
   return call<DocumentView>({ path: `/api/documents/${id}`, token, waking });
+}
+
+/** A lease's flags. While the workers are still reading it the API answers 409 `still_reading`
+ *  rather than half the clauses, and the screen waits (api.md §6). */
+export function getLeaseFlags(
+  id: string,
+  token: () => Promise<string>,
+  waking?: Waking,
+): Promise<LeaseFlags> {
+  return call<LeaseFlags>({ path: `/api/leases/${id}/flags`, token, waking });
 }
 
 /** The file itself goes straight to storage with the fields the API signed — never through the

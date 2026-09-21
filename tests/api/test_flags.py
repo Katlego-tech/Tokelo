@@ -140,6 +140,7 @@ def test_a_lease_comes_back_as_its_clauses_in_order(api, analysed):
 
     body = body_of(answer)
     assert body["status"] == "analysed"
+    assert body["page_count"] == 2, "what the screen states beside the unreadable pages"
     assert body["notice"] == NOTICE
     assert [c["label"] for c in body["clauses"]] == ["7.2", "8.2"]
     assert body["clauses"][0]["first_page"] == 1

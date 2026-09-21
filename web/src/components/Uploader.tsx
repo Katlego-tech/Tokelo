@@ -11,6 +11,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { Link } from "react-router";
 import { CameraIcon, FileTextIcon, LockIcon, XIcon } from "lucide-react";
 
 import { ApiFailure, getDocument, putFile, requestUpload } from "@/api/client";
@@ -191,6 +192,15 @@ export function Uploader({
       {stage.name === "processing" || stage.name === "done" ? (
         <Notice title="Processing" role="status">
           We have your file. You can leave this page.
+          {kind === "lease" ? (
+            <>
+              {" "}
+              <Link className="underline" to={`/lease/${stage.document.id}`}>
+                See its flags
+              </Link>{" "}
+              — the screen waits while we read it.
+            </>
+          ) : null}
         </Notice>
       ) : null}
 

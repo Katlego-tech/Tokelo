@@ -9,6 +9,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 import { useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { EvidenceNew } from "./routes/EvidenceNew";
+import { Lease } from "./routes/Lease";
 import { LeaseNew } from "./routes/LeaseNew";
 import { SignIn } from "./routes/SignIn";
 import { SignUp } from "./routes/SignUp";
@@ -60,6 +61,7 @@ function Screens() {
           path="/lease/new"
           element={<SignedIn>{<LeaseNew />}</SignedIn>}
         />
+        <Route path="/lease/:id" element={<SignedIn>{<Lease />}</SignedIn>} />
         <Route
           path="/evidence/new"
           element={<SignedIn>{<EvidenceNew />}</SignedIn>}

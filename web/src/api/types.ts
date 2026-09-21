@@ -38,3 +38,36 @@ export type Config = {
   user_pool_id: string;
   client_id: string;
 };
+
+// A lease's flags (api.md §6, `LeaseFlags`). `finding` is there instead of flags when nothing
+// matched, and says what was checked — never that the clause is lawful (REQ-007).
+export type SectionRef = {
+  id: string;
+  act: string;
+  section: string;
+  title: string;
+};
+
+export type FlagView = {
+  rule_id: string;
+  explanation: string;
+  sections: SectionRef[];
+};
+
+export type ClauseView = {
+  label: string;
+  first_page: number;
+  text: string;
+  flags: FlagView[];
+  finding?: string;
+};
+
+export type LeaseStatus = "reading" | "analysed" | "failed";
+
+export type LeaseFlags = {
+  status: LeaseStatus;
+  page_count: number;
+  unreadable_pages: number[];
+  notice: string;
+  clauses: ClauseView[];
+};

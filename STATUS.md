@@ -40,7 +40,7 @@ _Last updated: 2026-09-21 — by Katlego (via Claude Code)_
 | `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | ✅ Done |
 | `release` (T021: v0.1.2 staged) | Katlego | Claude Code | 🔵 In review — PR #26 waits for the UAT sign-off |
 | `core` + `api` (T023–T026: the store, tenant-scoped reads, pre-signed uploads, the job spine) | Katlego | Claude Code | ✅ Done |
-| `web` (T027: the privacy notice, sign-up, sign-in and the uploader) | Katlego | Claude Code | ✅ Done |
+| `web` (T027, T035: the notice, sign-up, sign-in, the uploader, a lease's flags) | Katlego | Claude Code | ✅ Done |
 | `legal` (T022: the curated sections of the four sources) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T028–T033: the samples, the reader, the splitter, the catalogue, the intake, the flags) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T057: the worker — the lease job, the fan-out, the analysis) | Katlego | Claude Code | ✅ Done |
@@ -60,8 +60,9 @@ Three things for Katlego, none of them blocking Phase 2:
    email): the dead-letter alarms have nowhere to go until then.
 
 Phase 3 is nearly done: the lease check works end to end in code — an uploaded lease is checked,
-read, split, flagged and stored by the `ocr` worker (T057). What is left is the screen that
-shows it (T035) and timing it on staging (T036).
+read, split, flagged and stored by the `ocr` worker (T057). The screen that shows it is in too
+(T035). What is left in Phase 3 is T036, which times a real lease on staging and so waits for a
+release.
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
 
@@ -149,6 +150,13 @@ shows it (T035) and timing it on staging (T036).
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-21 — Katlego (via Claude Code) — T035: `/lease/:id`, the screen a tenant came for.
+  Every clause with its number, its page, the lease's own words, and either a flag with the
+  section it rests on or the API's own "no issue found by these checks". It waits on the 409
+  while the workers read rather than showing half a lease, and names the pages that defeated
+  the reader above every flag. axe clean in both states. api.md §6 gained `page_count` first,
+  in its own PR, because the wireframe states it and the view didn't send it. Phase 3 is done
+  but for T036, which needs staging. Next: `v0.2.0`, or Phase 4 from T037. Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T034: `GET /api/leases/{id}/flags`. The whole lease,
   clause by clause, each flag with its explanation and the curated section it rests on, the
   unreadable pages by number, and the legal-information notice on every answer. Another
