@@ -1,0 +1,187 @@
+# The rule catalogue (T032; docs/design/ocr.md §3).
+#
+# Each rule cites sections from docs/legal/ and its explanation is written from those sections
+# and nothing else. An explanation says what the law requires; it never tells a tenant that a
+# clause is lawful, unlawful, void or enforceable — that is for the Tribunal or a court, and
+# saying it here would turn information into advice (REQ-006, REQ-007).
+#
+# `example` is a clause the rule must catch; `counter_example` one it must not. Both are checked
+# when the catalogue loads, so a rule that has drifted from its own words cannot run.
+
+catalogue_version = "2026-09-21.1"
+
+# ---------------------------------------------------------------- the deposit ---
+[[rule]]
+id = "deposit-no-interest"
+section_ids = ["RHA-5"]
+any_of = [
+  'deposit[^.]{0,120}?(no|not|shall not|will not|never)\s+(bear|earn|accrue|attract)[^.]{0,40}interest',
+  '(no|not any)\s+interest[^.]{0,120}?(deposit|paid to the tenant|payable to the tenant)',
+  'deposit[^.]{0,120}?interest[^.]{0,40}(retained|kept|forfeited)\s+by\s+the\s+landlord',
+]
+none_of = ['interest-bearing account', 'together with (any )?interest']
+explanation = """
+The Rental Housing Act says a deposit must be put into an interest-bearing account with a \
+financial institution, at a rate no lower than a savings account with that institution, and that \
+the interest belongs to the tenant when the deposit is repaid. This clause says the opposite \
+about interest.
+"""
+example = "The deposit shall not bear interest and no interest shall be payable to the tenant."
+counter_example = "The deposit is held in an interest-bearing account and repaid together with interest."
+
+[[rule]]
+id = "deposit-refund-delayed"
+section_ids = ["RHA-5"]
+any_of = [
+  'deposit[^.]{0,160}?(refund|repaid|returned|paid back)[^.]{0,60}?(within|after)\s+(\d{2,3}|thirty|sixty|ninety|three months|six months)',
+  'deposit[^.]{0,160}?(refund|repaid|returned)[^.]{0,60}?(at the landlord.s discretion|when the landlord (decides|sees fit))',
+]
+explanation = """
+The Rental Housing Act sets the times for repaying a deposit: seven days after the lease ends \
+where there is nothing to repair, fourteen days after repairs where the tenant was at the \
+outgoing inspection, and twenty-one days where the tenant did not attend. This clause sets a \
+different time or leaves it to the landlord.
+"""
+example = "The deposit shall be refunded within 60 days of the tenant vacating the premises."
+counter_example = "The deposit is refunded within seven days of the expiry of the lease."
+
+[[rule]]
+id = "joint-inspection-waived"
+section_ids = ["RHA-5"]
+any_of = [
+  '\b(no|without)\b[^.]{0,60}?\binspections?\b[^.]{0,80}(required|conducted|necessary|take place|be held|carried out)',
+  '\binspections?\b[^.]{0,60}(waived|dispensed with|not required|shall not be (conducted|held))',
+  '(tenant|lessee)[^.]{0,80}waives?[^.]{0,60}inspection',
+]
+explanation = """
+The Rental Housing Act requires the landlord and the tenant to inspect the dwelling together \
+before the tenant moves in, to record any defects, and to inspect it together again within three \
+days before the lease ends. Those inspections are what a later dispute about damage is decided \
+on. This clause removes one or both of them.
+"""
+example = "No incoming or outgoing inspection shall be required or conducted."
+counter_example = "The parties shall jointly inspect the dwelling before occupation and again before the lease ends."
+
+# ------------------------------------------------- dispossession and eviction ---
+[[rule]]
+id = "lock-out-or-seizure"
+section_ids = ["RHA-4", "GT-REG-9"]
+any_of = [
+  '(change|replace|alter)[^.]{0,40}locks?[^.]{0,120}(rent|arrears|breach|default|late)',
+  'lock[- ]?(out|ed out)[^.]{0,120}(rent|arrears|breach|default)',
+  '(remove|seize|retain|attach|hold|dispose of)[^.]{0,60}(tenant.s )?(belongings|goods|furniture|possessions|property)[^.]{0,120}(rent|arrears|breach|default|security)',
+  '(disconnect|cut off|switch off|suspend)[^.]{0,60}(water|electricity|power|services)[^.]{0,120}(rent|arrears|default)',
+]
+none_of = ['(court|tribunal) order', 'order of (a )?court', 'order of the Tribunal']
+explanation = """
+The Rental Housing Act gives a tenant the right not to have their home searched, their property \
+searched or their possessions seized, except under a law of general application and after a \
+ruling by the Tribunal or an order of court. Gauteng's Unfair Practices Regulations add that a \
+landlord must not lock a tenant out without an order of court. This clause allows one of those \
+without one.
+"""
+example = "The landlord may change the locks and remove the tenant's belongings if rent is late."
+counter_example = "The landlord may apply to the Tribunal or a court for an order if rent is in arrears."
+
+[[rule]]
+id = "eviction-without-court-order"
+section_ids = ["PIE-4", "PIE-8", "GT-REG-9"]
+any_of = [
+  'evict[^.]{0,140}(without|no need for|dispensing with)[^.]{0,60}(court|order|legal proceedings|recourse to)',
+  '(vacate|eviction|ejectment)[^.]{0,120}(without|no)\s+(court|legal)\s+(order|process|proceedings)',
+  'landlord may[^.]{0,80}(remove|eject|evict)[^.]{0,80}(tenant|occupier)[^.]{0,80}(forthwith|immediately|summarily)',
+]
+none_of = ['order of (a |the )?court', 'court order', 'in terms of the Prevention of Illegal Eviction']
+explanation = """
+The PIE Act says an unlawful occupier may be evicted only on the authority of an order of a \
+competent court, and makes it an offence to evict anyone without one. Gauteng's Unfair Practices \
+Regulations say the same. This clause describes an eviction without a court order.
+"""
+example = "The landlord may evict the tenant without recourse to a court of law."
+counter_example = "The landlord may apply for an eviction order in terms of the Prevention of Illegal Eviction Act."
+
+# ------------------------------------------------------ the shape of the deal ---
+[[rule]]
+id = "fixed-term-no-cancellation"
+section_ids = ["CPA-14"]
+any_of = [
+  '(tenant|lessee)[^.]{0,100}(may not|shall not|cannot|is not entitled to)[^.]{0,60}cancel[^.]{0,140}(fixed|period|term|expiry)',
+  'no (early )?(cancellation|termination)[^.]{0,120}(permitted|allowed|before the (end|expiry))',
+  'cancellation[^.]{0,80}(forfeits?|forfeiture of)[^.]{0,80}(all|the (whole|entire))[^.]{0,40}(deposit|rental)',
+]
+none_of = ['20 \(twenty\) business days', 'twenty business days', '20 business days']
+explanation = """
+The Consumer Protection Act lets a consumer cancel a fixed-term agreement at any time on twenty \
+business days' written notice, whatever the agreement says. The supplier may charge a reasonable \
+cancellation penalty, but not refuse the cancellation. This clause removes that right or \
+penalises it beyond a reasonable amount.
+"""
+example = "The tenant may not cancel this lease before the end of the fixed period."
+counter_example = "The tenant may cancel on 20 business days' written notice, subject to a reasonable penalty."
+
+[[rule]]
+id = "waiver-of-rights"
+section_ids = ["CPA-48", "GT-REG-3", "RHA-5"]
+any_of = [
+  '(tenant|lessee)[^.]{0,80}(waives?|renounces?|abandons?|forgoes?)[^.]{0,120}(rights?|claims?|remedies|recourse)',
+  '(no|not)[^.]{0,40}(liable|liability)[^.]{0,120}(landlord|lessor)[^.]{0,80}(any|whatsoever|howsoever)',
+  '(tenant|lessee)[^.]{0,80}(may not|shall not)[^.]{0,60}(approach|refer|complain to)[^.]{0,60}(tribunal|court)',
+]
+explanation = """
+The Consumer Protection Act deals with terms that require a consumer to waive rights, take on \
+obligations or release the supplier from liability. The Rental Housing Act says its standard \
+lease provisions may not be waived, and Gauteng's regulations say a lease must exclude a term \
+that removes either party's normal recourse. This clause asks the tenant to give something up.
+"""
+example = "The tenant waives all rights under the Rental Housing Act and any other law."
+counter_example = "Nothing in this lease limits either party's rights under the Rental Housing Act."
+
+[[rule]]
+id = "late-payment-penalty"
+section_ids = ["GT-REG-3"]
+any_of = [
+  '(penalty|admin(istration)? (fee|charge)|fine)[^.]{0,120}(late|overdue|arrear)[^.]{0,60}(payment|rent)',
+  '(late|overdue)[^.]{0,40}(payment|rent)[^.]{0,120}(penalty|admin(istration)? (fee|charge)|fine)',
+]
+none_of = ['interest at', 'interest shall be', 'interest on']
+explanation = """
+Gauteng's Unfair Practices Regulations say a lease must exclude a provision that imposes a \
+penalty for late payment of rent, whether the penalty is called an administrative charge or \
+anything else other than interest. This clause charges something other than interest for paying \
+late.
+"""
+example = "A penalty of R500 is payable in respect of any late payment of rent."
+counter_example = "Interest at the prescribed rate is payable on rent that is in arrears."
+
+[[rule]]
+id = "entry-without-notice"
+section_ids = ["RHA-4", "GT-REG-10"]
+any_of = [
+  'landlord[^.]{0,100}(enter|access|inspect)[^.]{0,120}(at any time|without notice|without prior notice|unannounced)',
+  '(enter|access)[^.]{0,60}(the )?(dwelling|premises|property)[^.]{0,100}(without|no)[^.]{0,30}notice',
+]
+none_of = ['reasonable notice', 'notice to the tenant']
+explanation = """
+The Rental Housing Act gives a tenant the right to privacy during the lease, and says the \
+landlord may exercise a right of inspection only in a reasonable manner and after reasonable \
+notice. Gauteng's regulations list the purposes for which a landlord may enter, all of them on \
+reasonable notice. This clause allows entry without it.
+"""
+example = "The landlord may enter the premises at any time without notice to inspect it."
+counter_example = "The landlord may enter on reasonable notice to inspect the dwelling."
+
+[[rule]]
+id = "no-receipt-for-payment"
+section_ids = ["GT-REG-12"]
+any_of = [
+  '(no|not)[^.]{0,40}receipts?[^.]{0,100}(issued|furnished|provided|given)',
+  'receipts?[^.]{0,80}(only|solely)[^.]{0,60}(on|upon) (written )?request',
+]
+explanation = """
+Gauteng's Unfair Practices Regulations require a landlord to furnish a tenant with a written, \
+dated receipt for every payment, showing the address, what the payment was for and the period it \
+covers. Where rent is paid into a bank account the landlord authorised, the deposit slip counts \
+as that receipt. This clause says receipts are not given as a matter of course.
+"""
+example = "No receipts will be issued for any payments made by the tenant."
+counter_example = "The landlord shall furnish the tenant with a dated receipt for every payment."
