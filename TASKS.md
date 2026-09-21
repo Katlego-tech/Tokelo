@@ -346,14 +346,16 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Files:   src/tokelo/ocr/clauses.py, tests/ocr/test_clauses.py
       Verify:  the tests are written first and fail; then the sample leases split into their numbered clauses
       Done:    each clause keeps its number, its page and its text
-- [ ] T032 [US1] Write the rule catalogue, each rule with its explanation and section
+- [x] T032 [US1] Write the rule catalogue, each rule with its explanation and section
       Req:     REQ-005, REQ-006
       Design:  docs/design/ocr.md
-      Files:   src/tokelo/ocr/rules/*, tests/unit/test_rules.py
+      Files:   src/tokelo/ocr/rules/__init__.py (the loader), src/tokelo/ocr/rules/lease-terms.toml,
+               tests/unit/test_rules.py
       Verify:  the tests are written first and fail; then each rule flags its example and not its
                counter-example, and every rule cites a section from T022's curated set
-      Done:    rules for joint inspections, the deposit's interest and refund times, unlawful
-               dispossession, fixed-term cancellation, unfair terms and waivers, and eviction only by court order
+      Done:    10 rules — the seven the task named, plus late-payment penalties, entry without
+               notice and receipts. A rule citing a section outside docs/legal/, or failing its own
+               example, is refused when the catalogue loads rather than found in front of a tenant
 - [ ] T033 [US1] Flag the clauses, and never call one lawful
       Req:     REQ-005, REQ-007
       Design:  docs/design/ocr.md
