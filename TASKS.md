@@ -453,13 +453,20 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                got round to it. An object bigger than its kind allows fails with the reason, caught
                by a HEAD before a byte is read. The digest is written under a condition, so a
                redelivery cannot change it and the audit entry cannot double
-- [ ] T038 [US2] Record each photo's capture metadata, and never invent it
+- [x] T038 [US2] Record each photo's capture metadata, and never invent it
       Req:     REQ-009
       Design:  docs/design/evidence.md
-      Files:   src/tokelo/evidence/exif.py, tests/evidence/test_exif.py
+      Files:   src/tokelo/evidence/exif.py, src/tokelo/evidence/handler.py,
+               tests/evidence/test_exif.py, tests/fixtures/photos/
       Verify:  the tests are written first and fail; then capture time, device and GPS are read
                where present, and "not recorded" where absent
-      Done:    stored with the file's record
+      Done:    stored with the file's record, and on the timeline at the time the photo was taken
+               — a photo that doesn't know when it was taken gets no entry rather than one dated
+               to the upload. The EXIF is read from the first chunk the digest already streamed
+               (a JPEG caps that segment at 64 KB), so a 20 MB photo is never held whole and
+               there is no second download. A file that can't be read records nothing and is not
+               a failure. The coordinates store as Decimal: DynamoDB has no float and boto3
+               refuses one, which `Capture.item()` had been handing it
 - [ ] T039 [US2] Verify that a file is unchanged
       Req:     REQ-010, REQ-011
       Design:  docs/design/evidence.md, docs/design/api.md

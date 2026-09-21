@@ -15,8 +15,12 @@ The order is evidence.md §4's, and each step is there for a reason:
 4. **Record it, once**, with the time storage took the file rather than the time this ran.
 5. **Audit the upload**, under the tenant's pseudonym (REQ-011).
 
-A photo's capture metadata (T038) and the timeline entries a notice or a chat export make (T041)
-hang off step 4, and are not here yet.
+6. **For a photo, record what it says about itself** — its capture time, the phone, where it was
+   taken ([exif.py](exif.py), REQ-009) — and put it on the tenant's timeline at the time it was
+   taken, if it knows one. Nothing is invented: a photo with no time gets no entry rather than
+   one dated to the upload.
+
+The timeline entries a notice or a chat export make are T041's, and are not here yet.
 """
 
 from collections.abc import Mapping
@@ -28,9 +32,15 @@ from botocore.exceptions import ClientError
 from tokelo.core import jobs
 from tokelo.core.health import is_health_check, unknown
 from tokelo.core.jobs import Gone, Job
-from tokelo.core.model import AuditAction, DocumentKind, DocumentStatus
+from tokelo.core.model import (
+    AuditAction,
+    DocumentKind,
+    DocumentStatus,
+    TimelineEntry,
+    TimelineSource,
+)
 from tokelo.core.store import Store
-from tokelo.evidence import digest
+from tokelo.evidence import digest, exif
 from tokelo.ocr.intake import KINDS, MEGABYTE
 
 type Event = Mapping[str, Any]
@@ -108,7 +118,33 @@ def work(job: Job) -> None:
     )
     if first:
         record_upload(store, tenant_id, document_id, kind, taken)
+    if kind is DocumentKind.PHOTO:
+        record_capture(store, tenant_id, document_id, taken)
     store.set_document_status(tenant_id, document_id, DocumentStatus.PROCESSED)
+
+
+def record_capture(store: Store, tenant_id: str, document_id: str, taken: digest.Taken) -> None:
+    """What the photograph carried, and its place on the tenant's timeline (REQ-009, REQ-012).
+
+    Both writes land on the same key each time, so a redelivery rewrites them rather than adding
+    a second (ADR-0007). A photo that doesn't know when it was taken gets **no** entry: the
+    upload time is not a stand-in for a capture time, and a timeline is worth having only if
+    every date on it came off the evidence.
+    """
+    capture = exif.of(taken.head)
+    store.set_capture(tenant_id, document_id, capture)
+    if capture.captured_at is None:
+        return
+    store.add_timeline_entry(
+        tenant_id,
+        TimelineEntry(
+            id=document_id,
+            occurred_at=capture.captured_at,
+            source=TimelineSource.CAPTURE,
+            summary="Photograph taken",
+            document_id=document_id,
+        ),
+    )
 
 
 def record_upload(

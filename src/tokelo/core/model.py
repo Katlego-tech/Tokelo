@@ -117,7 +117,17 @@ class Capture:
     longitude: float | None = None
 
     def item(self) -> dict[str, Any]:
-        return {k: v for k, v in self.__dict__.items() if v is not None}
+        """A field the photo didn't carry is left out, not stored as null.
+
+        The coordinates go in as `Decimal`: DynamoDB has no float, and boto3 refuses one rather
+        than rounding it quietly. `Decimal(str(...))` and not `Decimal(float)`, so 28.188 is
+        stored as 28.188 and not as the binary expansion nearest to it.
+        """
+        return {
+            k: Decimal(str(v)) if isinstance(v, float) else v
+            for k, v in self.__dict__.items()
+            if v is not None
+        }
 
     @classmethod
     def read(cls, item: dict[str, Any]) -> Capture:
