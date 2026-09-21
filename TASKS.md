@@ -254,14 +254,17 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 2 — Foundational (blocking)
 
-- [ ] T022 [FND] Curate the legal sources: the sections the rules and answers may cite
+- [x] T022 [FND] Curate the legal sources: the sections the rules and answers may cite
       Req:     REQ-006
       Files:   docs/legal/*.md, src/tokelo/core/sources.py, tests/unit/test_sources.py
       Contract:sources.section(id) → text and official source; sources.ids() → the curated set
       Verify:  the test is written first and fails; then every ID is unique, and each section has
                its text and where it's from
-      Done:    the Rental Housing Act 50 of 1999, the Consumer Protection Act 68 of 2008 (sections 14
-               and 48) and the PIE Act 19 of 1998, as far as the rules and topics need them
+      Done:    15 sections: the Rental Housing Act ss 4, 5, 13 (as amended by Act 43 of 2007; Act 35
+               of 2014 is unproclaimed and excluded), the Consumer Protection Act ss 14 and 48, the
+               PIE Act ss 1, 4, 5, 6, 8, and Gauteng's Unfair Practices Regulations 3, 9, 10, 12, 13.
+               Each carries its source, its date and its amendment history; the PIE Act's currency
+               rests on no amending Act being traced, which T052 must confirm
 - [x] T023 [FND] Write the store: the item types, the keys and the conditional writes
       Req:     REQ-011
       Design:  docs/design/domain-model.md
@@ -508,7 +511,9 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Req:     none — lifecycle gates (GATES.md)
       Files:   REQUIREMENTS.md (states), GATES.md
       Verify:  `realm trace` shows every requirement in the first release approved, with its tasks
-               and tests; `realm gates` passes
+               and tests; `realm gates` passes; and the curated law is re-checked — the PIE Act's
+               currency confirmed against a point-in-time source, and the Rental Housing Amendment
+               Act 35 of 2014 still unproclaimed (docs/legal/README.md)
       Done:    both gates have dated entries with their evidence
 - [ ] T053 [POL] Release v1.0.0: staging, UAT, production, promote (with Katlego's go-ahead at each step)
       Req:     none — the release (GATES.md, Release)
