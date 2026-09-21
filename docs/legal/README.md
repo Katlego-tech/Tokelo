@@ -66,15 +66,19 @@ The older gazettes are scans. Two things matter:
   scan exists, the section is transcribed from the page images and the page range recorded, so
   every line can be checked.
 
-## What is still outstanding (T022)
+## What is curated, and how current each one is
 
-| Source | State |
-|---|---|
-| Rental Housing Act 50 of 1999, ss 4, 5, 13 | **curated** from SAFLII's consolidation (in `source/`), as amended by Act 43 of 2007. Act 35 of 2014 has never been proclaimed, so its deletions of s 4(2)–(5) and its insertion of ss 4A and 4B are **not** in these files |
-| Consumer Protection Act 68 of 2008, ss 14, 48 | the gazette extracts cleanly, but it is the Act **as enacted**; a consolidation as at the National Credit Amendment Act 19 of 2014 is needed before these are curated |
-| PIE Act 19 of 1998, ss 1, 4, 5, 6, 8 | the same: the gazette is clean, its currency is not yet established |
-| Unfair Practices Regulations, 2001 (Gauteng) | the province's own PDF is a legible typeset scan; to be transcribed, page range recorded |
+| Source | Sections | Text from | Currency |
+|---|---|---|---|
+| Rental Housing Act 50 of 1999 | 4, 5, 13 | SAFLII consolidation (`source/rha1999171.pdf`) | as amended by Act 43 of 2007. **Act 35 of 2014 has never been proclaimed**, so its deletion of s 4(2)–(5) and its insertion of ss 4A and 4B are not here |
+| Consumer Protection Act 68 of 2008 | 14, 48 | SAFLII consolidation (`source/cpa2008246.pdf`) | updated to 13 March 2015; neither section carries an amendment note |
+| PIE Act 19 of 1998 | 1, 4, 5, 6, 8 | the gazette (`source/pie-a19-98-gazette.pdf`) | **the weakest of the four.** No amending Act was traced, but that is an absence of evidence rather than a consolidation. Bills were tabled in 2005 and 2023; neither was traced as enacted |
+| Unfair Practices Regulations, 2001 (Gauteng) | 3, 9, 10, 12, 13 | transcribed from the province's scan (`source/gauteng-unfair-practices-regulations-2001.pdf`) | none traced. **Gauteng only** — a tenant elsewhere has the Acts, not these, and an explanation citing one must say so |
 
-`tests/unit/test_sources.py` holds an expected-to-fail test naming the four. It passes the day
-the set is complete, which turns the suite red until the marker comes off — so this table cannot
-quietly go stale.
+### Before a release shows any of this to a tenant
+
+- **Confirm the PIE Act's currency** against a point-in-time source. It is the one section set here resting on "nothing found" rather than a publisher's consolidation (T052).
+- **Check the Rental Housing Amendment Act 35 of 2014 has still not been proclaimed.** The day it commences, ss 4A and 4B become law, this set is wrong, and every rule citing RHA-4 or RHA-5 needs re-reading.
+- **Say "Gauteng" wherever a regulation is cited.** The Acts are national; these regulations are not.
+
+Each of those is in the section files' own `amendments` field as well, so the code can show it and no reader has to come here to find out.

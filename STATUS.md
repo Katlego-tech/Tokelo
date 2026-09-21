@@ -46,12 +46,14 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 
 Three things for Katlego, none of them blocking Phase 2:
 
-1. **Sign off UAT on PR #26** (or say what to try first) — that's where the `v0.1.2` record waits.
+1. **Cut `v0.2.0`** when you want to walk the app on staging: everything since `v0.1.2` — the
+   store, the uploads, the web app — is merged but undeployed.
+2. **Sign off UAT on PR #26** (or say what to try first) — that's where the `v0.1.2` record waits.
    The next release will carry the web app, so a walk-through on staging can be part of it: create
    an account, confirm the emailed code, and upload a lease.
-2. **Turn on** Settings → Actions → General → Workflow permissions → *"Allow GitHub Actions to
+3. **Turn on** Settings → Actions → General → Workflow permissions → *"Allow GitHub Actions to
    create and approve pull requests"*, so the pipeline opens its own record PRs.
-3. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
+4. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
    email): the dead-letter alarms have nowhere to go until then.
 
 Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
@@ -150,6 +152,10 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   the conditional writes), the first /api/ reads scoped to the tenant in the token, and pre-signed
   POST uploads that never let a file's bytes through the API. 26 tests against DynamoDB Local.
   Next: T026. Blocked on: nothing.
+- 2026-09-21 — Katlego (via Claude Code) — T022: the curated law — 15 sections across the Rental
+  Housing Act, the Consumer Protection Act, the PIE Act and Gauteng's Unfair Practices
+  Regulations, each with its source, date and amendment history. Phase 2 is done. Next: Phase 3,
+  from T028. Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T027: the web app's first screens — the privacy notice
   before the account, sign-up with its emailed code, sign-in, and the uploader that posts a file
   straight to storage. 21 screen tests, axe clean on all four screens. Next: T022 (the statutes'

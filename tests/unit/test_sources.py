@@ -17,10 +17,6 @@ ACTS = {
 }
 
 
-# Until the consolidated texts are in hand (docs/legal/README.md), the set is empty and this is
-# the shape of what is missing. strict=True: the day curation lands, this test passes, the suite
-# goes red for an unexpected pass, and the marker comes off. It cannot be forgotten.
-@pytest.mark.xfail(strict=True, reason="T022: the curated sections aren't in yet")
 @pytest.mark.req("REQ-006")
 def test_the_set_covers_the_law_the_specification_names():
     """SPEC.md promises checks against three Acts, and the flags cite the Gauteng regulations
