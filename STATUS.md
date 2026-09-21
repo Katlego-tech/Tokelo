@@ -150,6 +150,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-21 — Katlego (via Claude Code) — `v0.2.0` staged and rejected by DAST on one new
+  ZAP warning: Timestamp Disclosure [10096], five ten-digit numbers in the app's bundle. They
+  are SHA-256 round constants from @aws-crypto/sha256-js, which aws-amplify uses for Cognito
+  sign-in — hex in the source, decimal after esbuild. Decided in zap-rules.tsv with that
+  reason and the scan re-run clean. `v0.2.1` carries it. Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T035: `/lease/:id`, the screen a tenant came for.
   Every clause with its number, its page, the lease's own words, and either a flag with the
   section it rests on or the API's own "no issue found by these checks". It waits on the 409
