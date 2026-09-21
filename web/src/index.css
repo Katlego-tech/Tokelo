@@ -24,6 +24,34 @@
   --color-header: #1f2933;
 }
 
+/* The type scale. Four sizes, named for what they are rather than how big they are, so a screen
+ * picks a role and not a number — and so the whole app changes in one place when a size is
+ * wrong on a small phone. */
+@utility text-screen-title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@utility text-panel-title {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 700;
+}
+@utility text-body {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+@utility text-note {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+@utility text-caption {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.02em;
+}
+
 /* A focus ring that is visible on white and on the header alike: accessibility is not a state
  * to be styled away (NFR-009, WCAG 2.1 AA). */
 @layer base {

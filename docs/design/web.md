@@ -91,7 +91,7 @@ sequenceDiagram
     participant A as api
     participant S as S3
     T->>W: chooses a PDF, or takes several photos
-    W->>W: several photos: joined into one PDF (jsPDF), A4, JPEG at 85%
+    W->>W: several photos: shown as pages to check, one removable, then joined into one PDF (jsPDF), A4, JPEG at 85%
     W->>W: checks the type, at most 30 pages, at most 20 MB (advice only: the server decides)
     W->>A: POST /api/uploads {kind, content_type, size_bytes, filename}
     A-->>W: {document_id, url, fields, expires_at}
@@ -201,6 +201,7 @@ flowchart TD
     Layout --> SignUp & SignIn & LeaseNew & Lease & Evidence & Dossier & Ask & Account
     LeaseNew --> Uploader
     Evidence --> Uploader
+    Uploader --> Pages[Pages: the chosen pages, each removable]
     Uploader --> PhotoJoiner[PhotoJoiner: jsPDF]
     Uploader --> Progress
     Lease --> ClauseCard --> SectionRef
@@ -241,6 +242,8 @@ screens it would link to (T035 onwards).
 | Accessibility per screen | **axe in each screen's tests,** as well as pa11y in the release | pa11y alone: in the release it can only reach the public pages, not the signed-in ones |
 | TypeScript | **6.0.3** | 7.0.2, the newest: `typescript-eslint` doesn't support it yet |
 | `cn()` | **clsx + tailwind-merge**, as shadcn's components used until this month | the new `cn` package the CLI now writes in: it was published nine hours after this project's cooldown, and is three weeks old. Two lines aren't worth a fresh runtime dependency |
+| The mark | **an inline SVG**: a page with its corner turned and a tick inside it, and the same shape as the favicon | a wordmark alone, or a fetched image: the CSP allows no outside request, and this is a few hundred bytes that take the colour they sit on |
+| Type | **four named sizes** (`text-screen-title`, `text-panel-title`, `text-body`, `text-note`, `text-caption`) | a size chosen per component: a phone shows the drift immediately, and nothing can be corrected in one place |
 | How a screen is composed | **a light canvas, the screen on a white sheet** — shadcn's admin blocks' pattern (the reference Katlego gave, 2026-09-21): a section title with a muted line under it, panels on their own surface inside the sheet, and what is happening shown as a chip on a small tile | everything flush on white: on a phone a form, a notice and a progress bar then read as separate things floating on a page |
 | Analytics | **none** | any third-party script: tenants' documents are personal, and the CSP stays `'self'` |
 | Fonts | **Geist, bundled** (`@fontsource-variable/geist`, ~29 kB for the Latin subset) | a font loaded from someone else's server: the CSP is `'self'`, and it would also record every tenant who opened their lease. Bundled, it is served from this app's own assets |

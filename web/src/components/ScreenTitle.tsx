@@ -16,7 +16,7 @@ export function ScreenTitle({
         {title}
       </h1>
       {children ? (
-        <p className="mt-1.5 text-sm text-muted-foreground">{children}</p>
+        <p className="text-body mt-1.5 text-muted-foreground">{children}</p>
       ) : null}
     </header>
   );

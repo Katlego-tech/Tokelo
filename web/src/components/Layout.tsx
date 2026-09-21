@@ -8,6 +8,7 @@ import { type ReactNode } from "react";
 import { Link } from "react-router";
 
 import { useAuth } from "@/auth/AuthContext";
+import { Mark } from "@/components/Mark";
 import { LegalNotice } from "@/components/LegalNotice";
 import { WakingBanner } from "@/components/WakingBanner";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,11 @@ export function Layout({
     <div className="min-h-dvh bg-muted/60">
       <header className="sticky top-0 z-10 bg-header">
         <div className="mx-auto flex max-w-md items-center justify-between px-5 py-3.5">
-          <Link to="/" className="text-lg font-bold tracking-tight text-white">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-lg font-bold tracking-tight text-white"
+          >
+            <Mark className="size-6 text-white/90" />
             Tokelo
           </Link>
           {status === "signed-in" ? (
