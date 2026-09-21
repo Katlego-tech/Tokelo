@@ -319,12 +319,17 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 3 — US1 Check a lease against the statutes
 
-- [ ] T028 [US1] Build the synthetic sample leases and the OCR accuracy test (ADR-0009's measurement)
+- [x] T028 [US1] Build the synthetic sample leases and the OCR accuracy test (ADR-0009's measurement)
       Req:     NFR-005, NFR-004
       Design:  docs/design/ocr.md
       Files:   tests/fixtures/leases/ (English only: digital, scanned, phone photo, each with its known text), tests/ocr/test_accuracy.py
-      Verify:  the test runs and fails because no OCR exists yet
-      Done:    it measures the character error rate and the time per page for each form
+      Verify:  the tests run and are expected-to-fail (strict) because no reader exists yet: the
+               day T029 lands they pass, the suite goes red for an unexpected pass, and the markers
+               come off
+      Done:    one lease in lease.txt, built by build.py into three forms — a digital PDF, an
+               office scan, and two phone photographs with keystone, one-sided light and grain.
+               The test measures the character error rate per page against NFR-005's 5% and 15%,
+               and the seconds per page against NFR-004's 30
 - [ ] T029 [US1] Read every page, and say which couldn't be read
       Req:     REQ-004, NFR-004, NFR-005
       Design:  docs/design/ocr.md
@@ -340,12 +345,14 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  the tests are written first and fail; then PDF, JPEG and PNG of at most 20 MB and 30
                pages are accepted, and anything else is refused with its reason
       Done:    checked when the URL is requested and again in the worker
-- [ ] T031 [US1] Split a lease's text into clauses
+- [x] T031 [US1] Split a lease's text into clauses
       Req:     REQ-005
       Design:  docs/design/ocr.md
       Files:   src/tokelo/ocr/clauses.py, tests/ocr/test_clauses.py
-      Verify:  the tests are written first and fail; then the sample leases split into their numbered clauses
-      Done:    each clause keeps its number, its page and its text
+      Verify:  the tests are written first and fail; then the sample lease splits into 20 clauses,
+               and the catalogue flags the ten planted ones and leaves the fair ones alone
+      Done:    each clause keeps its number, its page and its text. A bare section number needs its
+               full stop, so '28 February 2027 is…' is not clause 28
 - [x] T032 [US1] Write the rule catalogue, each rule with its explanation and section
       Req:     REQ-005, REQ-006
       Design:  docs/design/ocr.md

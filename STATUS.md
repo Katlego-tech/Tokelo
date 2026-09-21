@@ -152,6 +152,10 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   the conditional writes), the first /api/ reads scoped to the tenant in the token, and pre-signed
   POST uploads that never let a file's bytes through the API. 26 tests against DynamoDB Local.
   Next: T026. Blocked on: nothing.
+- 2026-09-21 — Katlego (via Claude Code) — T028 and T031: one sample lease in three forms
+  (digital, scanned, photographed), the accuracy test that will grade the reader against NFR-004
+  and NFR-005, and the clause splitter. End to end on the sample: 20 clauses, the ten planted
+  ones flagged, the fair ones untouched. Next: T029, the reader itself. Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T032: the rule catalogue — 10 rules over the curated
   law, each with the sentence a tenant reads, checked against its own example and counter-example
   when it loads. Next: T028's sample leases, then T029's OCR. Blocked on: nothing.
