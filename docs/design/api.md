@@ -156,7 +156,7 @@ DocumentView      = {id, kind, status, content_type, size_bytes, sha256|null, st
                      capture: {captured_at|"not recorded", device|"not recorded",
                                latitude|"not recorded", longitude|"not recorded"} (photos),
                      failure_reason|null}
-LeaseFlags        = {status, unreadable_pages: [int], notice: NOTICE,
+LeaseFlags        = {status, page_count, unreadable_pages: [int], notice: NOTICE,
                      clauses: [{label, first_page, text,
                                 flags: [{rule_id, explanation, sections: [SectionRef]}]
                                        or [] with finding: "no issue found by these checks"}]}
@@ -170,6 +170,12 @@ NOTICE            = "This is legal information, not legal advice."
 ```
 
 A clause with no flag says "no issue found by these checks", never "lawful" (REQ-007).
+
+`page_count` is how many pages the lease has, which is what makes `unreadable_pages` mean
+something: "page 3 couldn't be read" is a different thing in a 4-page lease and a 30-page one,
+and the screen states both together ([web/lease.svg](web/lease.svg): "Analysed · 12 pages"). It
+is the count the worker took from the file itself (REQ-003), not a count of what it managed to
+read.
 
 ### The S3 key layout
 
