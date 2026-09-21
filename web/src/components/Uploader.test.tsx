@@ -78,6 +78,11 @@ function json(
   });
 }
 
+async function chooseMany(name: RegExp, files: File[]) {
+  const input = screen.getByLabelText(name) as HTMLInputElement;
+  await userEvent.setup().upload(input, files);
+}
+
 async function choose(name: RegExp, file: File, { asPickerWould = true } = {}) {
   const input = screen.getByLabelText(name) as HTMLInputElement;
   if (asPickerWould) {
@@ -202,5 +207,46 @@ describe("[NFR-009] accessibility", () => {
   it("has no axe violations on the evidence screen", async () => {
     const { container } = renderRoute("/evidence/new", { auth });
     await axeClean(container);
+  });
+});
+
+describe("[REQ-003] photos become one lease, and the tenant sees them first", () => {
+  const photo = (name: string) => new File([name], name, { type: "image/jpeg" });
+
+  it("shows every page chosen, in order, before anything is sent", async () => {
+    const fetch = answers();
+    renderRoute("/lease/new", { auth });
+
+    await chooseMany(/take or choose photos/i, [photo("p1.jpg"), photo("p2.jpg"), photo("p3.jpg")]);
+
+    const pages = await screen.findAllByRole("img");
+    expect(pages.map((p) => p.getAttribute("alt"))).toEqual(["Page 1", "Page 2", "Page 3"]);
+    // Nothing has left the phone yet: a tenant checks the pages first.
+    expect(fetch).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /upload 3 pages/i })).toBeEnabled();
+  });
+
+  it("lets a page that came out blurred be taken out again", async () => {
+    answers();
+    renderRoute("/lease/new", { auth });
+
+    await chooseMany(/take or choose photos/i, [photo("p1.jpg"), photo("p2.jpg")]);
+    await userEvent.setup().click(screen.getByRole("button", { name: /remove page 1/i }));
+
+    const pages = await screen.findAllByRole("img");
+    expect(pages).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /upload 1 page$/i })).toBeInTheDocument();
+  });
+
+  it("refuses more pages than a lease may have, before joining any of them", async () => {
+    answers();
+    renderRoute("/lease/new", { auth });
+
+    await chooseMany(
+      /take or choose photos/i,
+      Array.from({ length: 31 }, (_, n) => photo(`p${n}.jpg`)),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/at most 30 pages/i);
   });
 });

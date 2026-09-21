@@ -36,10 +36,8 @@ export function Notice({
         tone === "destructive" ? "border-destructive" : "border-primary",
       )}
     >
-      <AlertTitle className="text-sm font-bold">{title}</AlertTitle>
-      <AlertDescription className="text-[13px] leading-5">
-        {children}
-      </AlertDescription>
+      <AlertTitle className="text-panel-title">{title}</AlertTitle>
+      <AlertDescription className="text-note">{children}</AlertDescription>
     </Alert>
   );
 }

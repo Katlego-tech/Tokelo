@@ -4,7 +4,14 @@
 // here uploads through the API, and nothing here decides what is allowed: the checks below are
 // advice, so a tenant hears "that won't work" before spending their data, and the server decides
 // for real (api.md §4).
-import React, { useRef, useState } from "react";
+import React, {
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { CameraIcon, FileTextIcon, LockIcon, XIcon } from "lucide-react";
 
 import { ApiFailure, getDocument, putFile, requestUpload } from "@/api/client";
 import type { DocumentKind, DocumentView } from "@/api/types";
@@ -32,6 +39,10 @@ export const LIMITS: Record<DocumentKind, { types: string[]; bytes: number }> =
 
 type Stage =
   | { name: "choosing" }
+  // The pages a tenant has chosen but not sent: the wireframe's thumbnail strip. A photographed
+  // lease is a stack of separate shots, and the one that came out blurred is easier to see here
+  // than after it has been read (docs/design/web/upload.svg).
+  | { name: "reviewing"; pages: File[] }
   | { name: "preparing"; photos: number }
   | { name: "uploading"; percent: number }
   | { name: "processing"; document: DocumentView }
@@ -100,11 +111,22 @@ export function Uploader({
     }
   }
 
-  async function choosePhotos(files: File[]) {
-    setStage({ name: "preparing", photos: files.length });
+  function choosePhotos(files: File[]) {
+    if (files.length > MAX_PAGES) {
+      setStage({
+        name: "refused",
+        why: `A lease may be at most ${MAX_PAGES} pages, and you chose ${files.length}.`,
+      });
+      return;
+    }
+    setStage({ name: "reviewing", pages: files });
+  }
+
+  async function sendPages(pages: File[]) {
+    setStage({ name: "preparing", photos: pages.length });
     try {
       const sheet = canvas.current ?? window.document.createElement("canvas");
-      await send(await joinPhotos(files, sheet));
+      await send(await joinPhotos(pages, sheet));
     } catch (e) {
       setStage({
         name: "refused",
@@ -116,22 +138,38 @@ export function Uploader({
 
   return (
     <div>
-      <p className="mt-2 text-sm text-muted-foreground">
-        A PDF, or photos of each page. Photos are joined into one PDF before
-        upload (at most {MAX_PAGES} pages and 20 MB).
-      </p>
+      <div className="mt-5 grid gap-2.5">
+        <Choose
+          label="Choose a PDF"
+          accept="application/pdf"
+          icon={<FileTextIcon aria-hidden="true" />}
+          onFiles={(files) => void send(files[0])}
+        />
+        <Choose
+          label="Take or choose photos"
+          accept="image/jpeg,image/png"
+          multiple
+          icon={<CameraIcon aria-hidden="true" />}
+          onFiles={(files) => void choosePhotos(files)}
+        />
+        <p className="text-caption text-muted-foreground">
+          A PDF, or photos of each page joined into one — at most {MAX_PAGES}{" "}
+          pages and 20 MB.
+        </p>
+      </div>
 
-      <Choose
-        label="Choose a PDF"
-        accept="application/pdf"
-        onFiles={(files) => void send(files[0])}
-      />
-      <Choose
-        label="Take or choose photos"
-        accept="image/jpeg,image/png"
-        multiple
-        onFiles={(files) => void choosePhotos(files)}
-      />
+      {stage.name === "reviewing" ? (
+        <Pages
+          pages={stage.pages}
+          onRemove={(index) =>
+            setStage({
+              name: "reviewing",
+              pages: stage.pages.filter((_, n) => n !== index),
+            })
+          }
+          onSend={() => void sendPages(stage.pages)}
+        />
+      ) : null}
 
       {stage.name === "preparing" ? (
         <Tile label="Joining your photos">
@@ -165,15 +203,79 @@ export function Uploader({
       {stage.name === "choosing" ? (
         <>
           <Separator className="mt-6" />
-          <p className="mt-4 text-xs text-muted-foreground">
-            Your file goes straight from this phone to storage. It never passes
-            through Tokelo&apos;s API, and only you can read it.
+          <p className="text-note mt-4 flex gap-2 text-muted-foreground">
+            <LockIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>
+              Your file goes straight from this phone to storage. It never
+              passes through Tokelo&apos;s API, and only you can read it.
+            </span>
           </p>
         </>
       ) : null}
 
       <canvas ref={canvas} hidden aria-hidden="true" />
     </div>
+  );
+}
+
+/** The pages a tenant photographed, in the order they took them: the wireframe's strip of
+ *  thumbnails, each one removable, and the size they will add up to. A lease shot page by page
+ *  on a phone always has one that came out blurred, and this is where it is caught. */
+function Pages({
+  pages,
+  onRemove,
+  onSend,
+}: {
+  pages: File[];
+  onRemove: (index: number) => void;
+  onSend: () => void;
+}) {
+  const urls = useMemo(
+    () => pages.map((page) => URL.createObjectURL(page)),
+    [pages],
+  );
+  useEffect(
+    () => () => urls.forEach((url) => URL.revokeObjectURL(url)),
+    [urls],
+  );
+  if (pages.length === 0) return null;
+
+  const total = pages.reduce((bytes, page) => bytes + page.size, 0);
+  return (
+    <section aria-label="The pages you chose" className="mt-5">
+      <div className="flex items-baseline justify-between">
+        <p className="text-panel-title">
+          {pages.length} {pages.length === 1 ? "page" : "pages"}
+        </p>
+        <Badge variant="secondary">→ one PDF, {size(total)}</Badge>
+      </div>
+
+      <ol className="mt-3 grid grid-cols-4 gap-2">
+        {pages.map((page, index) => (
+          <li key={`${page.name}-${index}`} className="relative">
+            <img
+              src={urls[index]}
+              alt={`Page ${index + 1}`}
+              className="aspect-3/4 w-full rounded-lg border border-border bg-muted object-cover"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon-xs"
+              aria-label={`Remove page ${index + 1}`}
+              onClick={() => onRemove(index)}
+              className="absolute top-1 right-1 rounded-full border border-border bg-card/90 shadow-xs"
+            >
+              <XIcon aria-hidden="true" />
+            </Button>
+          </li>
+        ))}
+      </ol>
+
+      <Button size="lg" className="mt-4 h-11 w-full" onClick={onSend}>
+        Upload {pages.length} {pages.length === 1 ? "page" : "pages"}
+      </Button>
+    </section>
   );
 }
 
@@ -198,16 +300,18 @@ function Choose({
   label,
   accept,
   multiple,
+  icon,
   onFiles,
 }: {
   label: string;
   accept: string;
   multiple?: boolean;
+  icon?: ReactNode;
   onFiles: (files: File[]) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
   return (
-    <div className="mt-4">
+    <div>
       <Button
         variant="outline"
         size="lg"
@@ -215,6 +319,7 @@ function Choose({
         className="h-11 w-full"
         onClick={() => input.current?.click()}
       >
+        {icon}
         {label}
       </Button>
       <input
@@ -246,4 +351,11 @@ function describe(type: string): string {
 
 function megabytes(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(1);
+}
+
+/** A size as a tenant would say it: kilobytes until it is worth a decimal point in megabytes. */
+function size(bytes: number): string {
+  return bytes < 1024 * 1024
+    ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+    : `${megabytes(bytes)} MB`;
 }

@@ -16,3 +16,8 @@ class NoResizeObserver implements ResizeObserver {
   disconnect(): void {}
 }
 globalThis.ResizeObserver ??= NoResizeObserver;
+
+// jsdom has no object URLs. A thumbnail is one, so the tests need something that behaves like a
+// browser's: a handle in, a handle out, and nothing kept.
+globalThis.URL.createObjectURL ??= (blob: Blob) => `blob:tokelo/${blob.size}`;
+globalThis.URL.revokeObjectURL ??= () => {};
