@@ -31,6 +31,10 @@ class Taken:
     sha256: str
     size: int
     stored_at: str
+    # The first chunk of the object, kept because a photo's EXIF is in it (exif.py). A JPEG's
+    # APP1 segment sits right after the start marker and the format caps it at 64 KB, so one
+    # chunk always holds it — and a 20 MB photograph is never held whole.
+    head: bytes = b""
 
 
 def of(s3: Any, bucket: str, key: str, version_id: str | None) -> Taken:
@@ -46,14 +50,18 @@ def of(s3: Any, bucket: str, key: str, version_id: str | None) -> Taken:
     body = s3.get_object(Bucket=bucket, Key=key, **at)["Body"]
     running = hashlib.sha256()
     size = 0
+    first = b""
     while chunk := body.read(CHUNK):
         running.update(chunk)
+        if not first:
+            first = chunk
         size += len(chunk)
 
     return Taken(
         sha256=running.hexdigest(),
         size=size,
         stored_at=stamp(head["LastModified"]),
+        head=first,
     )
 
 
