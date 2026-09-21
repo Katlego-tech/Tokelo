@@ -104,6 +104,9 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   Nothing may create an Organization, a NAT gateway, an interface endpoint or a customer KMS key.
 - **Textract refuses this account** (`SubscriptionRequiredException`), so OCR is open source:
   the PDF's text layer, then Tesseract, English only (ADR-0009).
+- **The OCR numbers rest on synthetic samples.** 4.3% and 6.1% on the sample photographs is
+  comfortably inside NFR-005's 15%, but those pages are clean Helvetica degraded on purpose. A
+  creased, off-white lease under a kitchen light is harder, and T036 is where that gets found out.
 - **An upload on staging has no worker yet.** The spine (T026) carries a job to a worker, but
   the `ocr` and `evidence` lanes have nothing to do with one until T029 and T031. Until then a
   job retries three times and lands in its dead-letter queue, and the alarm is right to fire.
@@ -152,6 +155,10 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   the conditional writes), the first /api/ reads scoped to the tenant in the token, and pre-signed
   POST uploads that never let a file's bytes through the API. 26 tests against DynamoDB Local.
   Next: T026. Blocked on: nothing.
+- 2026-09-21 — Katlego (via Claude Code) — T029: the reader. Text layer first, then Tesseract
+  5.5.0 in the ocr image, with the preprocessing a phone photograph needs. Measured: 0.1–0.2% on
+  the scan, 4.3% and 6.1% on the photographs, all inside NFR-005, and under 3 s a page against
+  NFR-004's 30 — so ADR-0009 stands. Next: T030, then T033. Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T028 and T031: one sample lease in three forms
   (digital, scanned, photographed), the accuracy test that will grade the reader against NFR-004
   and NFR-005, and the clause splitter. End to end on the sample: 20 clauses, the ten planted

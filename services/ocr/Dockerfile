@@ -7,6 +7,13 @@ FROM ghcr.io/astral-sh/uv:0.11.32@sha256:df4cae8f3a96d175e2e5f992e597550000edbe7
 
 FROM python:3.14-slim-trixie@sha256:caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2
 
+# Tesseract 5 and its English model, which is the whole reason this image is Debian's Python and
+# not Lambda's: Amazon Linux 2023 packages no Tesseract (ADR-0009, docs/design/ocr.md §2). English
+# only — no other language model is installed, and none is wanted (ADR-0009).
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes tesseract-ocr tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
+
 # The runtime client and its dependencies, exactly as uv.lock pins them, every file checked
 # against its hash. uv is only used here, and doesn't stay in the image.
 COPY pyproject.toml uv.lock /tmp/build/
