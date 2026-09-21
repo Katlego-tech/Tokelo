@@ -60,8 +60,8 @@ Three things for Katlego, none of them blocking Phase 2:
    email): the dead-letter alarms have nowhere to go until then.
 
 Phase 3 is nearly done: the lease check works end to end in code — an uploaded lease is checked,
-read, split, flagged and stored by the `ocr` worker (T057). What is left is serving it (T034), the
-screen that shows it (T035) and timing it on staging (T036).
+read, split, flagged and stored by the `ocr` worker (T057). What is left is the screen that
+shows it (T035) and timing it on staging (T036).
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
 
@@ -149,6 +149,11 @@ screen that shows it (T035) and timing it on staging (T036).
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-21 — Katlego (via Claude Code) — T034: `GET /api/leases/{id}/flags`. The whole lease,
+  clause by clause, each flag with its explanation and the curated section it rests on, the
+  unreadable pages by number, and the legal-information notice on every answer. Another
+  tenant's lease is a 404, not a 403; a lease still being read is a 409, not half of itself.
+  Next: T035, the screen that shows them. Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T057: the `ocr` worker wired end to end. A lease
   upload is checked, fingerprinted, and read — a digital one finished in that same invocation
   from its text layer, a scan fanned out one job per page — and whichever invocation makes

@@ -405,13 +405,17 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                message on the wrong queue then does the right thing or nothing
       Note:    numbered after T056 because the gap was found in Phase 3: T028–T033 built every
                piece of this lane and no task wired them to a job
-- [ ] T034 [US1] Serve a lease's flags
+- [x] T034 [US1] Serve a lease's flags
       Req:     REQ-005, REQ-006, REQ-007
       Design:  docs/design/api.md
       Files:   src/tokelo/api/leases.py, tests/api/test_flags.py
       Contract:GET /api/leases/{id}/flags → the flags, each with its explanation, section and the legal-information notice
       Verify:  the tests are written first and fail; then they pass
-      Done:    only the lease's own tenant can read them (REQ-001)
+      Done:    only the lease's own tenant can read them (REQ-001) — another tenant's lease is the
+               same 404 as one that never was, because a 403 would confirm it exists. A lease
+               still being read is 409, not half its clauses, which would read as a lease with
+               fewer problems than it has. A clause with no flag carries the finding, imported
+               from where the worker wrote it so the two can't drift (REQ-007)
 - [ ] T035 [US1] Web: upload a lease and read its flags
       Req:     REQ-003, REQ-005, NFR-009
       Design:  docs/design/web.md, docs/design/web/lease.svg
