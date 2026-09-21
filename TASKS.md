@@ -416,12 +416,18 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                still being read is 409, not half its clauses, which would read as a lease with
                fewer problems than it has. A clause with no flag carries the finding, imported
                from where the worker wrote it so the two can't drift (REQ-007)
-- [ ] T035 [US1] Web: upload a lease and read its flags
+- [x] T035 [US1] Web: upload a lease and read its flags
       Req:     REQ-003, REQ-005, NFR-009
       Design:  docs/design/web.md, docs/design/web/lease.svg
       Files:   web/src/…
       Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
-      Done:    matches the reference, with live data from staging
+      Done:    `/lease/:id` matches the reference, and the uploader links to it. While the workers
+               are still reading, the screen waits on the API's 409 rather than showing half a
+               lease — half its clauses would read as a lease with fewer problems than it has. The
+               pages nobody could read are named by number above every flag, and a clause nothing
+               matched carries the API's own finding, so the screen and the rules can't drift into
+               saying different things. 12 screen tests, axe clean reading and read. Live data
+               from staging waits on `v0.2.0` (T036)
 - [ ] T036 [US1] Time a lease end to end on staging
       Req:     NFR-003, NFR-004
       Files:   tests/e2e/test_lease_timing.py
