@@ -27,7 +27,10 @@ pythonVersion = "3.14"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "--strict-markers"
+# Each lane names its own test file after what it holds, so two lanes may both have a
+# `test_flags.py` — the flags the `ocr` worker writes and the flags the API serves. Under the
+# default import mode those collide on the module name; importlib gives each its own.
+addopts = "--strict-markers --import-mode=importlib"
 markers = [
     "req(*ids): the requirements this test verifies",
     "docker: runs a container (DynamoDB Local); needs Docker",

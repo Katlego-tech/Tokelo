@@ -9,9 +9,14 @@ empty string or a null the app has to interpret — it says so, in the words the
 
 from typing import Any
 
-from tokelo.core.model import Document, DocumentKind
+from tokelo.core.model import Clause, Document, DocumentKind, StoredDocument
+from tokelo.ocr.flags import NO_ISSUE
 
 NOT_RECORDED = "not recorded"
+
+# On every answer that carries law, in the same words wherever it appears (api.md §6; the
+# non-negotiable in PLAN.md). Tokelo says what the law requires; it does not advise anyone.
+NOTICE = "This is legal information, not legal advice."
 
 
 def document_view(document: Document) -> dict[str, Any]:
@@ -38,3 +43,43 @@ def document_view(document: Document) -> dict[str, Any]:
 
 def _number(value: float | None) -> float | str:
     return NOT_RECORDED if value is None else value
+
+
+def lease_flags(stored: StoredDocument) -> dict[str, Any]:
+    """api.md §6's `LeaseFlags`: the whole lease, clause by clause, with the notice.
+
+    The pages nobody could read are named by their numbers, so a tenant re-photographs the one
+    page that failed rather than the lease (REQ-004).
+    """
+    lease = stored.document.lease
+    return {
+        "status": str(lease.status) if lease else "",
+        "unreadable_pages": sorted(page.number for page in stored.pages if not page.readable),
+        "notice": NOTICE,
+        "clauses": [clause_view(c) for c in sorted(stored.clauses, key=lambda c: c.ordinal)],
+    }
+
+
+def clause_view(clause: Clause) -> dict[str, Any]:
+    """One clause as a tenant is shown it. A clause nothing matched carries the finding instead
+    of a flag — never that it is lawful, which is REQ-007 and the reason `NO_ISSUE` is imported
+    from where the worker wrote it rather than spelt out again here."""
+    view: dict[str, Any] = {
+        "label": clause.label,
+        "first_page": clause.first_page,
+        "text": clause.text,
+        "flags": [flag_view(f) for f in clause.flags],
+    }
+    if not clause.flags:
+        view["finding"] = NO_ISSUE
+    return view
+
+
+def flag_view(flag: dict[str, Any]) -> dict[str, Any]:
+    """What the tenant reads and what it rests on. The catalogue's version is kept on the stored
+    flag so an old answer stays readable, and is not part of what the API promises."""
+    return {
+        "rule_id": flag.get("rule_id", ""),
+        "explanation": flag.get("explanation", ""),
+        "sections": flag.get("sections", []),
+    }
