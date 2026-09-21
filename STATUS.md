@@ -43,7 +43,7 @@ _Last updated: 2026-09-21 — by Katlego (via Claude Code)_
 | `web` (T027: the privacy notice, sign-up, sign-in and the uploader) | Katlego | Claude Code | ✅ Done |
 | `legal` (T022: the curated sections of the four sources) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T028–T033: the samples, the reader, the splitter, the catalogue, the intake, the flags) | Katlego | Claude Code | ✅ Done |
-| `ocr` (T057: wiring the worker — the lease job, the fan-out, the analysis) | — | — | ⬜ To Do |
+| `ocr` (T057: the worker — the lease job, the fan-out, the analysis) | Katlego | Claude Code | ✅ Done |
 
 ## ⏭️ Next action
 
@@ -59,9 +59,9 @@ Three things for Katlego, none of them blocking Phase 2:
 4. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
    email): the dead-letter alarms have nowhere to go until then.
 
-Phase 3 is under way: the intake, the reader, the clause splitter and the rule catalogue are in.
-T057 wires them into the `ocr` worker, which is what finally gives an upload on staging somewhere
-to go.
+Phase 3 is nearly done: the lease check works end to end in code — an uploaded lease is checked,
+read, split, flagged and stored by the `ocr` worker (T057). What is left is serving it (T034), the
+screen that shows it (T035) and timing it on staging (T036).
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
 
@@ -113,12 +113,12 @@ to go.
 - **The OCR numbers rest on synthetic samples.** 4.3% and 6.1% on the sample photographs is
   comfortably inside NFR-005's 15%, but those pages are clean Helvetica degraded on purpose. A
   creased, off-white lease under a kitchen light is harder, and T036 is where that gets found out.
-- **An upload on staging has no worker yet.** The spine (T026) carries a job to a worker, but
-  every piece of the `ocr` lane is now built — the intake, the reader, the splitter, the
-  catalogue and the flags — and nothing calls them from a job. **That was a hole in the plan:**
-  T028–T033 built the lane and no task wired it, so T057 was written to. Until it lands an
-  upload on staging still retries three times into its dead-letter queue, and the alarm is right
-  to fire. The `evidence` lane has the same shape, but T037 says so in its own `Done`.
+- **An uploaded *lease* now has a worker** (T057), but a photo, a notice or a chat export still
+  doesn't: the `evidence` lane's pieces arrive with T037 and T038. Until then those three kinds
+  retry three times into their dead-letter queue, and the alarm is right to fire.
+- **Staging runs `v0.1.2`, the skeleton.** Everything in Phase 2 and Phase 3 — the store, the
+  uploads, the web app, and now the whole lease check — is merged and undeployed. Nothing above
+  has been seen on AWS yet; `v0.2.0` is what would put it there.
 - **Lambda's account concurrency is 10.** The design needs 9 (the `api`, plus 2 per trigger), so
   no function may reserve concurrency (docs/design/infrastructure.md §10).
 - **Aurora is not available to this account.** A free-plan account can only create an Aurora
@@ -149,6 +149,13 @@ to go.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-21 — Katlego (via Claude Code) — T057: the `ocr` worker wired end to end. A lease
+  upload is checked, fingerprinted, and read — a digital one finished in that same invocation
+  from its text layer, a scan fanned out one job per page — and whichever invocation makes
+  pages_done equal page_count runs the analysis, settled by an atomic counter rather than a lock.
+  A refused file fails with its reason; a redelivered job changes nothing. US1 is code-complete
+  but for the API and the screen. Next: T034 (serve a lease's flags), then T035. Blocked on:
+  nothing — `v0.2.0` is what would put any of Phase 2 or 3 on staging.
 - 2026-09-21 — Katlego (via Claude Code) — T033: the flags. Every rule run against every clause
   of a lease, each flag carrying the sentence a tenant reads, the sections it rests on and the
   catalogue's version; a clause nothing matched says "no issue found by these checks" and never

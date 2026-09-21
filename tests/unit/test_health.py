@@ -45,6 +45,14 @@ def test_each_worker_answers_the_health_contract(worker):
 
 @pytest.mark.parametrize("worker", WORKERS)
 def test_each_worker_refuses_an_event_it_does_not_know(worker):
+    """Not an SQS batch and not the health check: a scheduled rule, a console test, a
+    misconfiguration. Raised rather than shrugged at, so Lambda records a failed invocation.
+
+    An SQS batch is a different thing: a worker with jobs of its own reads it, and a record it
+    can't use is reported as that record's failure so it drains to the dead-letter queue instead
+    of taking its batch-mates with it (core/jobs.py). The `ocr` worker's version of this test is
+    tests/ocr/test_worker.py::test_a_message_the_ocr_worker_has_no_business_with_is_not_guessed_at.
+    """
     worker_handler = importlib.import_module(f"tokelo.{worker}.handler").handler
     with pytest.raises(UnknownEvent):
-        worker_handler({"Records": [{"eventSource": "aws:sqs", "body": "{}"}]})
+        worker_handler({"source": "aws.events", "detail-type": "Scheduled Event"})

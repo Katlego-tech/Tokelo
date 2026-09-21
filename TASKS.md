@@ -384,7 +384,7 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                time. Every clause comes back, flagged or not: a tenant reads their own lease, not
                a list of its worst lines. A flag copies the explanation, the sections and the
                catalogue's version, so what was shown stays readable after the rules improve
-- [ ] T057 [US1] Wire the `ocr` worker: the lease job, the fan-out and the analysis
+- [x] T057 [US1] Wire the `ocr` worker: the lease job, the fan-out and the analysis
       Req:     REQ-003, REQ-004, REQ-005, REQ-017
       Design:  docs/design/ocr.md §4, §6; docs/design/infrastructure.md §4
       Files:   src/tokelo/ocr/handler.py, src/tokelo/core/store.py, tests/ocr/test_worker.py
@@ -396,10 +396,15 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                an analysed lease with its clauses and flags, a refused file becomes a failed
                document carrying its reason, and a redelivered job changes nothing
       Done:    an upload on staging has somewhere to go — the dead-letter alarm stops being the
-               expected outcome of uploading a lease
+               expected outcome of uploading a lease. A digital lease is finished in the one
+               invocation that takes it in, because a text layer costs nothing to read; a scan
+               becomes one job per page. `store.finished_page` is the atomic counter the race is
+               settled in, and `store.put_page` now answers whether it wrote, so the count can
+               only move on a real insert. The routing is by the key's shape, not the queue's ARN
+               (ocr.md §7 corrected, with the reason): EventBridge routed on that same key, and a
+               message on the wrong queue then does the right thing or nothing
       Note:    numbered after T056 because the gap was found in Phase 3: T028–T033 built every
-               piece of this lane and no task wired them to a job. Needs an atomic `pages_done + 1`
-               that answers the new value, for the race in ocr.md §4
+               piece of this lane and no task wired them to a job
 - [ ] T034 [US1] Serve a lease's flags
       Req:     REQ-005, REQ-006, REQ-007
       Design:  docs/design/api.md
