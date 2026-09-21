@@ -169,12 +169,17 @@ type from the client (§ Threats).
 
 | Path | New? | Responsibility |
 | --- | --- | --- |
-| `src/tokelo/ocr/handler.py` | new | the entry point: the lease or page job by the queue's ARN; the health answer |
+| `src/tokelo/ocr/handler.py` | new | the entry point: the lease or page job **by the key's shape**; the fan-out; the analysis; the health answer (T057) |
 | `src/tokelo/ocr/intake.py` | new | the real type and the page count (T030) |
 | `src/tokelo/ocr/pages.py` | new | the text layer, rendering, preprocessing, Tesseract (T029) |
 | `src/tokelo/ocr/clauses.py` | new | §6's splitting (T031) |
 | `src/tokelo/ocr/rules/__init__.py`, `src/tokelo/ocr/rules/*.toml` | new | loading and checking the catalogue; the rules (T032) |
 | `src/tokelo/ocr/flags.py` | new | running the rules, storing the flags (T033) |
+
+The key, not the queue's ARN: EventBridge routed the object to its queue on that same key, so the
+two cannot disagree in production — and if a message ever does reach the wrong queue, a worker
+that reads the key does the right thing or nothing, while one that trusts the ARN reads a lease
+as a page job. `keys.parse` already says which a key is, so it is also one fewer thing to pass in.
 | `services/ocr/Dockerfile` | new | §2's base image, the apt packages, `awslambdaric`, pinned by digest |
 | `tests/fixtures/leases/`, `tests/ocr/` | new | the synthetic samples and their known text (T028) |
 

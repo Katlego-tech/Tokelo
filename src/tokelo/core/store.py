@@ -178,15 +178,37 @@ class Store:
             ExpressionAttributeValues={":status": str(status)},
         )
 
-    def put_page(self, tenant_id: str, document_id: str, page: Page) -> None:
-        """Keyed by its number, so a redelivered job rewrites the same item (ADR-0007)."""
-        self._table.put_item(
-            Item={
+    def put_page(self, tenant_id: str, document_id: str, page: Page) -> bool:
+        """Insert one page, once. True when this call wrote it and False when it was already
+        there (ADR-0007).
+
+        The answer is what the fan-out counts on: `pages_done` may only move when a page was
+        really inserted, or a job delivered twice would move the lease past its own last page
+        (ocr.md §4).
+        """
+        return self._put_once(
+            {
                 "pk": model.tenant_pk(tenant_id),
                 "sk": model.page_sk(document_id, page.number),
             }
             | page.item()
         )
+
+    def finished_page(self, tenant_id: str, document_id: str) -> int:
+        """One more page read, and the new total.
+
+        This is the number two invocations race for: whoever sees it reach `page_count` runs the
+        analysis (ocr.md §4). The update is atomic and answers what it wrote, so exactly one
+        caller can ever see the count arrive — no lock, and no second analysis.
+        """
+        answer = self._table.update_item(
+            Key={"pk": model.tenant_pk(tenant_id), "sk": model.document_sk(document_id)},
+            UpdateExpression="SET lease.pages_done = lease.pages_done + :one",
+            ConditionExpression="attribute_exists(lease)",
+            ExpressionAttributeValues={":one": 1},
+            ReturnValues="UPDATED_NEW",
+        )
+        return model.whole(answer["Attributes"]["lease"]["pages_done"])
 
     def put_clause(self, tenant_id: str, document_id: str, clause: Clause) -> None:
         self._table.put_item(
