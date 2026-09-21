@@ -44,6 +44,7 @@ _Last updated: 2026-09-21 — by Katlego (via Claude Code)_
 | `legal` (T022: the curated sections of the four sources) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T028–T033: the samples, the reader, the splitter, the catalogue, the intake, the flags) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T057: the worker — the lease job, the fan-out, the analysis) | Katlego | Claude Code | ✅ Done |
+| `evidence` (T037: the digest, and the worker that takes it) | Katlego | Claude Code | ✅ Done |
 
 ## ⏭️ Next action
 
@@ -114,12 +115,17 @@ release.
 - **The OCR numbers rest on synthetic samples.** 4.3% and 6.1% on the sample photographs is
   comfortably inside NFR-005's 15%, but those pages are clean Helvetica degraded on purpose. A
   creased, off-white lease under a kitchen light is harder, and T036 is where that gets found out.
-- **An uploaded *lease* now has a worker** (T057), but a photo, a notice or a chat export still
-  doesn't: the `evidence` lane's pieces arrive with T037 and T038. Until then those three kinds
-  retry three times into their dead-letter queue, and the alarm is right to fire.
-- **Staging runs `v0.1.2`, the skeleton.** Everything in Phase 2 and Phase 3 — the store, the
-  uploads, the web app, and now the whole lease check — is merged and undeployed. Nothing above
-  has been seen on AWS yet; `v0.2.0` is what would put it there.
+- **Every uploaded kind now has a worker.** A lease reaches `ocr` (T057); a photo, a notice and
+  a chat export reach `evidence` (T037), which fingerprints them. What those three still lack is
+  what is *read* out of them: a photo's capture metadata (T038) and the timeline entries a notice
+  or an export makes (T041).
+- **Staging runs `v0.2.1`** (2026-09-21): the store, the uploads, the web app and the whole lease
+  check, with every release check green. Its record is PR #47, waiting for a UAT sign-off.
+  `v0.2.0` staged first and was rejected by DAST over ZAP rule 10096, which read SHA-256 round
+  constants in the bundle as Unix timestamps; that is decided in `docs/release/zap-rules.tsv`.
+- **The `ocr` image carries 284 known vulnerabilities** against 5 for the other three (the
+  v0.2.1 record). That is the Debian base Tesseract forces (ADR-0009); nobody has assessed them
+  yet, and production should not happen before somebody has.
 - **Lambda's account concurrency is 10.** The design needs 9 (the `api`, plus 2 per trigger), so
   no function may reserve concurrency (docs/design/infrastructure.md §10).
 - **Aurora is not available to this account.** A free-plan account can only create an Aurora
@@ -150,6 +156,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-21 — Katlego (via Claude Code) — T037: the evidence worker. Every photo, notice and
+  chat export fingerprinted from the stored object by version, streamed so a 20 MB photo is
+  never held whole, dated by the object's own LastModified, and audited once under the
+  tenant's pseudonym. The lanes now share one fake S3 (tests/fakes.py) instead of a copy
+  each. Next: T038, the capture metadata. Blocked on: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — `v0.2.0` staged and rejected by DAST on one new
   ZAP warning: Timestamp Disclosure [10096], five ten-digit numbers in the app's bundle. They
   are SHA-256 round constants from @aws-crypto/sha256-js, which aws-amplify uses for Cognito
