@@ -3,7 +3,7 @@
 > Source of truth for "what's going on right now." Read first, update last. Treat updating it as
 > part of "done."
 
-_Last updated: 2026-09-20 — by Katlego (via Claude Code)_
+_Last updated: 2026-09-21 — by Katlego (via Claude Code)_
 
 ---
 
@@ -41,6 +41,8 @@ _Last updated: 2026-09-20 — by Katlego (via Claude Code)_
 | `release` (T021: v0.1.2 staged) | Katlego | Claude Code | 🔵 In review — PR #26 waits for the UAT sign-off |
 | `core` + `api` (T023–T026: the store, tenant-scoped reads, pre-signed uploads, the job spine) | Katlego | Claude Code | ✅ Done |
 | `web` (T027: the privacy notice, sign-up, sign-in and the uploader) | Katlego | Claude Code | ✅ Done |
+| `legal` (T022: the curated sections of the four sources) | Katlego | Claude Code | ✅ Done |
+| `ocr` (T028–T032: the samples, the reader, the splitter, the catalogue, the intake) | Katlego | Claude Code | ✅ Done |
 
 ## ⏭️ Next action
 
@@ -56,7 +58,9 @@ Three things for Katlego, none of them blocking Phase 2:
 4. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
    email): the dead-letter alarms have nowhere to go until then.
 
-Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
+Phase 3 is under way: the intake, the reader, the clause splitter and the rule catalogue are in.
+T033 wires them into the `ocr` worker, which is what finally gives an upload on staging somewhere
+to go.
 
 ## 🗓️ Timeline to `TBD (before 2027-02-26)`
 
@@ -66,8 +70,9 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
 |-------|------|---------------|--------|
 | Phase 0 | Design: the ADRs, the requirements, a design doc per lane (T001–T010) | to 2026-09-19 | ✅ |
 | Phase 1 | Setup: the skeletons, the AWS bootstrap, the seed, staging's infrastructure (T011–T021) | 2026-09-19 → 2026-09-20 | ✅ |
-| Phase 2 | Foundational: the curated sources, the store, sign-in, uploads, the event path | next | ⬜ |
-| Phases 3–7 | US1 the lease check, US2 evidence, US3 the dossier, US4 the navigator, then hardening | | ⬜ |
+| Phase 2 | Foundational: the curated sources, the store, sign-in, uploads, the event path | 2026-09-20 → 2026-09-21 | ✅ |
+| Phase 3 | US1: the lease check — the samples, the reader, the clauses, the rules, the intake | 2026-09-21 → | 🟡 |
+| Phases 4–7 | US2 evidence, US3 the dossier, US4 the navigator, then hardening | | ⬜ |
 
 ## 🧱 What's built so far
 
@@ -108,8 +113,10 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
   comfortably inside NFR-005's 15%, but those pages are clean Helvetica degraded on purpose. A
   creased, off-white lease under a kitchen light is harder, and T036 is where that gets found out.
 - **An upload on staging has no worker yet.** The spine (T026) carries a job to a worker, but
-  the `ocr` and `evidence` lanes have nothing to do with one until T029 and T031. Until then a
-  job retries three times and lands in its dead-letter queue, and the alarm is right to fire.
+  the `ocr` and `evidence` lanes have nothing to do with one until their workers are wired in
+  (T033 and T038). The pieces exist — the intake, the reader, the splitter, the catalogue — but
+  nothing calls them from a job yet, so an upload on staging still retries three times and lands
+  in its dead-letter queue, and the alarm is right to fire.
 - **Lambda's account concurrency is 10.** The design needs 9 (the `api`, plus 2 per trigger), so
   no function may reserve concurrency (docs/design/infrastructure.md §10).
 - **Aurora is not available to this account.** A free-plan account can only create an Aurora
@@ -140,6 +147,11 @@ Then Phase 2 begins at T022 (the curated legal sections) and T023 (the store).
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-21 — Katlego (via Claude Code) — T030: what this project will take. One table of
+  kinds, types and sizes, read both when the URL is signed and when the worker opens the file —
+  and the worker reads the type out of the bytes, so a .docx renamed .pdf, a 31-page PDF and an
+  image claiming 900 million pixels are all refused with a reason a tenant can read. Next: T033,
+  the flags. Blocked on: nothing.
 - 2026-09-19 — Katlego (via Claude Code) — T011–T016: the manifest and tests, the four services,
   the web skeleton, branch protection, the AWS bootstrap. Next: the seed. Blocked on: nothing.
 - 2026-09-20 — Katlego (via Claude Code) — T017: `v0.0.0` archived to ECR after SecretRealm
