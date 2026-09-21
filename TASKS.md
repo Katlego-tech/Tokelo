@@ -330,14 +330,18 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                office scan, and two phone photographs with keystone, one-sided light and grain.
                The test measures the character error rate per page against NFR-005's 5% and 15%,
                and the seconds per page against NFR-004's 30
-- [ ] T029 [US1] Read every page, and say which couldn't be read
+- [x] T029 [US1] Read every page, and say which couldn't be read
       Req:     REQ-004, NFR-004, NFR-005
       Design:  docs/design/ocr.md
       Files:   src/tokelo/ocr/pages.py, services/ocr/Dockerfile, tests/ocr/test_pages.py
-      Verify:  T028's test passes: character error rate ≤ 5% on scans and ≤ 15% on photos, and
-               under 30 s a page; an unreadable page is reported by its number
-      Done:    the text layer is used where present. If Tesseract misses NFR-005, the task is
-               blocked, and a new ADR proposes PaddleOCR
+      Verify:  T028's tests pass, measured in the ocr image against Tesseract 5.5.0: the text
+               layer 0.1–0.2%, the scan 0.1–0.2%, the photographs 4.3% and 6.1% — against NFR-005's
+               5% and 15% — and 0.2–2.8 s a page against NFR-004's 30. The unreadable page is
+               reported as unreadable rather than guessed at
+      Done:    the text layer is used where present. Tesseract holds NFR-005 on the synthetic
+               samples, so ADR-0009 stands and no PaddleOCR ADR is needed. The samples are a floor,
+               not a promise: a photograph of a creased lease under a kitchen light is harder, and
+               T036 reads a real one end to end on staging
 - [ ] T030 [US1] Accept or refuse a lease file
       Req:     REQ-003
       Design:  docs/design/api.md, docs/design/ocr.md

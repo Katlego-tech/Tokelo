@@ -13,12 +13,17 @@ Two numbers decide it:
 * **seconds per page** — NFR-004 allows 30, which is what keeps a lease's flags inside the two
   minutes NFR-003 promises.
 
-The test is marked expected-to-fail until T029 writes the reader. `strict=True`: the day it
-reads, this passes, the suite goes red for an unexpected pass, and the marker comes off — so
-nobody has to remember that the measurement exists.
+The reader runs inside the `ocr` image, where Tesseract 5.5.0 is (tests/ocr/conftest.py), so
+these numbers are the engine that will read a tenant's lease and not whatever the machine running
+the tests happens to have.
+
+**The samples are synthetic.** They are a page of clean Helvetica, rendered, then degraded on
+purpose — keystone, one-sided light, a shadow across the middle, soft focus and hard compression.
+That is a floor, not a promise: a photograph of a creased, off-white lease under a kitchen light
+is harder than anything here, and the day real samples exist these numbers should be read again
+(T036 times a real lease end to end on staging).
 """
 
-import time
 from pathlib import Path
 
 import pytest
@@ -58,32 +63,13 @@ def character_error_rate(read: str, known: str) -> float:
     return previous[-1] / max(1, len(b))
 
 
-def read_form(form: str, page: int) -> tuple[str, float]:
-    """One page of one sample, and how long it took. The reader is T029's."""
-    # T029 writes this module; until it does, the tests above are expected to fail.
-    from tokelo.ocr import pages  # pyright: ignore[reportAttributeAccessIssue]
-
-    if form == "photo":
-        data, content_type = (LEASES / f"photo-{page}.jpg").read_bytes(), "image/jpeg"
-        page_number = 1
-    else:
-        data, content_type = (LEASES / f"{form}.pdf").read_bytes(), "application/pdf"
-        page_number = page
-
-    started = time.monotonic()
-    result = pages.read(data, content_type, page_number)
-    return result.text, time.monotonic() - started
-
-
-@pytest.mark.xfail(strict=True, reason="T029 hasn't written the reader yet")
 @pytest.mark.req("NFR-005")
 @pytest.mark.parametrize("form", ["digital", "scanned", "photo"])
-def test_each_form_is_read_accurately_enough_to_check_its_clauses(form):
+def test_each_form_is_read_accurately_enough_to_check_its_clauses(form, reader):
     known = known_pages()
     rates = []
     for number, expected in enumerate(known, start=1):
-        text, _ = read_form(form, number)
-        rates.append(character_error_rate(text, expected))
+        rates.append(character_error_rate(reader(form, number)["text"], expected))
 
     worst = max(rates)
     assert worst <= ALLOWED[form], (
@@ -92,32 +78,26 @@ def test_each_form_is_read_accurately_enough_to_check_its_clauses(form):
     )
 
 
-@pytest.mark.xfail(strict=True, reason="T029 hasn't written the reader yet")
 @pytest.mark.req("NFR-004")
 @pytest.mark.parametrize("form", ["scanned", "photo"])
-def test_a_page_is_read_inside_the_time_a_tenant_waits(form):
+def test_a_page_is_read_inside_the_time_a_tenant_waits(form, reader):
     """The scanned and photographed forms are the ones that reach Tesseract; the digital one is
     a text layer and costs nothing worth measuring."""
     for number in range(1, len(known_pages()) + 1):
-        _, seconds = read_form(form, number)
+        seconds = reader(form, number)["seconds"]
         assert seconds < SECONDS_A_PAGE, (
             f"{form} page {number} took {seconds:.1f}s, and NFR-004 allows {SECONDS_A_PAGE}s"
         )
 
 
-@pytest.mark.xfail(strict=True, reason="T029 hasn't written the reader yet")
 @pytest.mark.req("REQ-004")
-def test_the_reader_says_which_form_the_text_came_from():
+def test_the_reader_says_which_form_the_text_came_from(reader):
     """A digital lease must be read from its text layer, not rendered and guessed at: it is
     exact, and it is free (ADR-0009)."""
-    from tokelo.ocr import pages  # pyright: ignore[reportAttributeAccessIssue]
-
-    digital = pages.read((LEASES / "digital.pdf").read_bytes(), "application/pdf", 1)
-    assert digital.source == "text_layer"
-    assert digital.readable is True
-
-    photo = pages.read((LEASES / "photo-1.jpg").read_bytes(), "image/jpeg", 1)
-    assert photo.source == "ocr"
+    digital = reader("digital", 1)
+    assert digital["source"] == "text_layer"
+    assert digital["readable"] is True
+    assert reader("photo", 1)["source"] == "ocr"
 
 
 def test_the_samples_are_the_lease_that_was_written():

@@ -26,6 +26,11 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 
+def in_the_dark(value: float) -> int:
+    """What a page looks like photographed in a room with the light off."""
+    return int(value * 0.22) + 8
+
+
 def photocopied(value: float) -> int:
     """The grey a photocopier leaves on white paper."""
     return min(255, int(value * 0.94) + 12)
@@ -116,7 +121,7 @@ def photographed(images: list[Image.Image], stem: str) -> None:
         width, height = image.size
 
         # Held over the page rather than square to it: the far edge is narrower than the near.
-        keystone = width * 0.085
+        keystone = width * 0.13
         page = image.transform(
             (width, height),
             Image.Transform.QUAD,
@@ -124,7 +129,7 @@ def photographed(images: list[Image.Image], stem: str) -> None:
             resample=Image.Resampling.BICUBIC,
             fillcolor=245,
         )
-        page = page.rotate(-1.4, resample=Image.Resampling.BICUBIC, fillcolor=245, expand=False)
+        page = page.rotate(-2.6, resample=Image.Resampling.BICUBIC, fillcolor=245, expand=False)
 
         # One window on the left: bright at that edge, falling away to the other.
         gradient = Image.linear_gradient("L").resize((width, height)).rotate(-90, expand=False)
@@ -132,11 +137,34 @@ def photographed(images: list[Image.Image], stem: str) -> None:
         page = ImageChops.multiply(page, shading).point(lifted)
 
         # A hand-held camera at arm's length, and the grain a phone sensor leaves indoors.
-        page = page.filter(ImageFilter.GaussianBlur(1.1))
+        # A shadow where the phone itself blocks the window, which is the thing that breaks a
+        # single threshold over the whole page.
+        shadow = Image.new("L", (width, height), 255)
+        ImageDraw.Draw(shadow).polygon(
+            [
+                (0, int(height * 0.34)),
+                (width, int(height * 0.21)),
+                (width, int(height * 0.52)),
+                (0, int(height * 0.66)),
+            ],
+            fill=150,
+        )
+        page = ImageChops.multiply(page, shadow.filter(ImageFilter.GaussianBlur(60))).point(lifted)
+        page = page.filter(ImageFilter.GaussianBlur(1.9))
         grain = Image.effect_noise((width, height), 14).point(softened)
         page = ImageChops.add(page, grain, scale=1.0, offset=-128)
 
-        page.convert("L").save(HERE / f"{stem}-{number}.jpg", quality=62, dpi=(DPI, DPI))
+        page.convert("L").save(HERE / f"{stem}-{number}.jpg", quality=42, dpi=(DPI, DPI))
+
+
+def unreadable(image: Image.Image, out: Path) -> None:
+    """A page nobody can read: shot in the dark, at arm's length, while moving.
+
+    REQ-004 says an unreadable page is reported by its number rather than guessed at, and a rule
+    that never sees one has never been tested.
+    """
+    page = image.filter(ImageFilter.GaussianBlur(9)).point(in_the_dark)
+    page.convert("L").save(out, quality=28, dpi=(DPI, DPI))
 
 
 def main() -> int:
@@ -144,6 +172,7 @@ def main() -> int:
     images = rendered(HERE / "digital.pdf")
     scanned(images, HERE / "scanned.pdf")
     photographed(images, "photo")
+    unreadable(images[0], HERE / "photo-unreadable.jpg")
     made = sorted(p.name for p in HERE.iterdir() if p.suffix in {".pdf", ".jpg"})
     print("built:", ", ".join(made))
     return 0
