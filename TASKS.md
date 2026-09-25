@@ -247,6 +247,12 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                and "release: v0.1.2 staged" is open for the UAT sign-off (v0.1.0 and v0.1.1 were
                rejected by the DAST check; ECR's tags are immutable, so each fix took a version)
       Done:    staging runs signed images built from main
+- [x] T058 [DSN] Give the repo its README, carrying the elective's verification code
+      Req:     none — docs (the WeThinkCode_ Cohort 2025 elective's submission check)
+      Files:   README.md
+      Verify:  `grep -F WTC-5JF7FDRM README.md` finds the code; `bash scripts/gate.sh` passes
+      Done:    README.md on `main` explains the project and carries `WTC-5JF7FDRM`, where the
+               elective's daily check looks for it
 
 **Checkpoint:** four healthy services on staging, deployed by the pipeline; the gate is required on `main`.
 

@@ -3,7 +3,7 @@
 > Source of truth for "what's going on right now." Read first, update last. Treat updating it as
 > part of "done."
 
-_Last updated: 2026-09-21 — by Katlego (via Claude Code)_
+_Last updated: 2026-09-25 — by Katlego (via Claude Code)_
 
 ---
 
@@ -156,6 +156,9 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-25 — Katlego (via Claude Code) — T058: README.md added (the repo had none): the overview,
+  where to start, the quick start, and the WeThinkCode_ submission code `WTC-5JF7FDRM`. Next:
+  merge the PR so the daily check finds the code on `main`. Blocked: nothing.
 - 2026-09-21 — Katlego (via Claude Code) — T038: what a photograph says about itself. Capture
   time with its offset, the phone, and the coordinates with the right sign for the southern
   and eastern hemispheres — read from the first chunk the digest already streamed, so a 20 MB
