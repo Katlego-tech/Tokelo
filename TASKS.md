@@ -508,13 +508,24 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 5 — US3 Compile a dispute dossier
 
-- [ ] T041 [US3] Put notices and WhatsApp exports on the timeline
+- [x] T041 [US3] Put notices and WhatsApp exports on the timeline
       Req:     REQ-012
-      Design:  docs/design/dossier.md
-      Files:   src/tokelo/dossier/timeline.py, tests/dossier/test_timeline.py, tests/fixtures/timeline/
+      Design:  docs/design/dossier.md, docs/design/evidence.md §4, §6
+      Files:   src/tokelo/dossier/timeline.py, tests/dossier/test_timeline.py, tests/fixtures/timeline/,
+               src/tokelo/evidence/handler.py, src/tokelo/core/store.py,
+               tests/evidence/test_timeline_entries.py, services/evidence/Dockerfile, pyproject.toml
       Verify:  the tests are written first and fail; then a synthetic WhatsApp .txt export and
                notices become dated entries
-      Done:    entries sort into time order
+      Done:    entries sort into time order. The `evidence` worker writes them at upload: an export
+               one entry per message (SAST read into UTC, continuation lines joined, summaries cut
+               to 500), batched; a notice dated by its photograph, then its PDF's creation date,
+               then labelled "uploaded on". An export with no message fails with the reason and
+               keeps its digest. A photo's entry is now in UTC like the rest (it carried the
+               photograph's offset, which the text sort key would misorder). The evidence image
+               now installs Pillow and pypdf from uv.lock: without Pillow, T038's EXIF read
+               would have raised on Lambda for every photo. A delivery that fails after the
+               digest is now retried to the end (the worker stopped at any digest, so the retry
+               was acknowledged and the entries never written)
 - [ ] T042 [US3] Request a dossier, and refuse an empty one
       Req:     REQ-013
       Design:  docs/design/api.md

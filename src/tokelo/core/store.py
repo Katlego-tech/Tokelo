@@ -247,6 +247,20 @@ class Store:
             | entry.item()
         )
 
+    def add_timeline_entries(self, tenant_id: str, entries: list[TimelineEntry]) -> None:
+        """Many entries at once: a WhatsApp export can hold thousands of messages, and a put
+        each would be thousands of round trips. Same keys as `add_timeline_entry`, so a
+        redelivery rewrites them rather than adding more (ADR-0007)."""
+        with self._table.batch_writer(overwrite_by_pkeys=["pk", "sk"]) as batch:
+            for entry in entries:
+                batch.put_item(
+                    Item={
+                        "pk": model.tenant_pk(tenant_id),
+                        "sk": model.timeline_sk(entry.occurred_at, entry.id),
+                    }
+                    | entry.item()
+                )
+
     def list_timeline(self, tenant_id: str) -> list[TimelineEntry]:
         """In the order things happened: the time is in the sort key (§3)."""
         items = self._query(model.tenant_pk(tenant_id), "TIMELINE#")
