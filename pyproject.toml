@@ -55,6 +55,12 @@ dev = [
     "reportlab>=5.0.1",    # tests only: it makes the digital sample lease, from known text
     "ruff>=0.16.7",
 ]
+# The `evidence` image is Lambda's own Python, which has boto3 but nothing to read an image or a
+# PDF with: Pillow reads a photograph's EXIF (T038), pypdf a notice's creation date (T041).
+evidence-image = [
+    "pillow>=12.3.0",
+    "pypdf>=6.18.1",
+]
 # The `ocr` image is Debian's Python, not Lambda's, so it needs the runtime client and the SDK.
 # The other three run on public.ecr.aws/lambda/python, which ships boto3 already.
 ocr-image = [

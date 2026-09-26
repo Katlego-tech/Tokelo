@@ -477,6 +477,10 @@ dev = [
     { name = "reportlab" },
     { name = "ruff" },
 ]
+evidence-image = [
+    { name = "pillow" },
+    { name = "pypdf" },
+]
 ocr-image = [
     { name = "awslambdaric" },
     { name = "boto3" },
@@ -499,6 +503,10 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "reportlab", specifier = ">=5.0.1" },
     { name = "ruff", specifier = ">=0.16.7" },
+]
+evidence-image = [
+    { name = "pillow", specifier = ">=12.3.0" },
+    { name = "pypdf", specifier = ">=6.18.1" },
 ]
 ocr-image = [
     { name = "awslambdaric", specifier = ">=4.0.3" },

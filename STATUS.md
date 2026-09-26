@@ -47,6 +47,7 @@ _Last updated: 2026-09-26 — by Katlego (via Claude Code)_
 | `evidence` (T037, T038: the digest, the capture metadata, and the worker) | Katlego | Claude Code | ✅ Done |
 | `evidence` + `api` (T039: verify that a file is unchanged) | Katlego | Claude Code | 🔵 In review |
 | `api` (T059: the tenant's row on their first upload, so uploads are audited) | Katlego | Claude Code | 🔵 In review |
+| `dossier` + `evidence` (T041: notices and WhatsApp exports on the timeline) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -158,6 +159,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-26 — Katlego (via Claude Code) — T041: notices and WhatsApp exports are on the
+  timeline, written by the `evidence` worker at upload. Found on the way: the evidence image
+  never installed Pillow, so T038's EXIF read would have failed every photo on Lambda; it now
+  installs Pillow and pypdf from uv.lock, and the handler answers health in the Lambda
+  emulator. Next: stop here (three tasks, as asked); T040 is next on the board. Blocked: nothing.
 - 2026-09-26 — Katlego (via Claude Code) — T059: `POST /api/uploads` now makes the tenant's
   row, so the workers' upload audit entries are written (REQ-011). Uploads made on staging
   before this stay unaudited. Next: T041. Blocked: nothing.

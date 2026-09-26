@@ -20,7 +20,10 @@ The order is evidence.md §4's, and each step is there for a reason:
    taken, if it knows one. Nothing is invented: a photo with no time gets no entry rather than
    one dated to the upload.
 
-The timeline entries a notice or a chat export make are T041's, and are not here yet.
+7. **For a notice or a chat export, put it on the timeline** ([timeline.py](../dossier/timeline.py),
+   REQ-012): a notice at the date it carries, or labelled as uploaded on when it carries none; an
+   export one entry per message. An export with no message in it fails, with the reason, and
+   keeps its digest: it is still the file the tenant uploaded.
 """
 
 from collections.abc import Mapping
@@ -40,6 +43,7 @@ from tokelo.core.model import (
     TimelineSource,
 )
 from tokelo.core.store import Store
+from tokelo.dossier import timeline
 from tokelo.evidence import digest, exif
 from tokelo.ocr.intake import KINDS, MEGABYTE
 
@@ -117,7 +121,39 @@ def work(job: Job) -> None:
         record_upload(store, tenant_id, document_id, kind, taken)
     if kind is DocumentKind.PHOTO:
         record_capture(store, tenant_id, document_id, taken)
+    elif kind is DocumentKind.NOTICE:
+        record_notice(store, tenant_id, document.document.content_type, job, taken)
+    elif kind is DocumentKind.CHAT:
+        try:
+            entries = timeline.chat_entries(document_id, whole(job, taken))
+        except timeline.NotAnExport as refusal:
+            store.set_document_status(
+                tenant_id, document_id, DocumentStatus.FAILED, failure_reason=str(refusal)
+            )
+            return
+        store.add_timeline_entries(tenant_id, entries)
     store.set_document_status(tenant_id, document_id, DocumentStatus.PROCESSED)
+
+
+def record_notice(
+    store: Store, tenant_id: str, content_type: str, job: Job, taken: digest.Taken
+) -> None:
+    """A notice's one entry (evidence.md §6). A photograph's date is in its first chunk; a PDF's
+    may be anywhere in it, so a PDF is read whole — at most 20 MB, and only a notice's."""
+    data = whole(job, taken) if content_type == "application/pdf" else taken.head
+    assert job.document_id is not None
+    store.add_timeline_entry(
+        tenant_id, timeline.notice_entry(job.document_id, content_type, data, taken.stored_at)
+    )
+
+
+def whole(job: Job, taken: digest.Taken) -> bytes:
+    """The whole object, by the version that was fingerprinted. The digest kept its first chunk,
+    which is the whole of any file no bigger than that; anything bigger is read again."""
+    if len(taken.head) >= taken.size:
+        return taken.head
+    at = {"VersionId": job.version_id} if job.version_id else {}
+    return s3_for().get_object(Bucket=job.bucket, Key=job.key, **at)["Body"].read()
 
 
 def record_capture(store: Store, tenant_id: str, document_id: str, taken: digest.Taken) -> None:
@@ -136,7 +172,9 @@ def record_capture(store: Store, tenant_id: str, document_id: str, taken: digest
         tenant_id,
         TimelineEntry(
             id=document_id,
-            occurred_at=capture.captured_at,
+            # The capture record keeps the photograph's own offset; the timeline is on one clock,
+            # UTC, because its sort key is the time as text (domain-model.md §3).
+            occurred_at=timeline.utc(capture.captured_at),
             source=TimelineSource.CAPTURE,
             summary="Photograph taken",
             document_id=document_id,
