@@ -74,15 +74,22 @@ class Message:
 # ------------------------------------------------------------------ WhatsApp ---
 def messages(text: str) -> list[Message]:
     """The export's messages, in the order it lists them. A line in neither format belongs to the
-    message before it (a multi-line message); before the first message it belongs to nothing."""
+    message before it (a multi-line message); before the first message it belongs to nothing.
+
+    Each message's lines are gathered in a list and joined once, so one message of a hundred
+    thousand lines costs a hundred thousand appends, not a hundred thousand ever-longer copies."""
     found: list[Message] = []
+    lines: list[list[str]] = []
     for raw in text.splitlines():
         line = raw.lstrip(INVISIBLE)
         started = _message(line)
         if started is not None:
             found.append(started)
-        elif found:
-            found[-1].text += "\n" + line
+            lines.append([started.text])
+        elif lines:
+            lines[-1].append(line)
+    for message, parts in zip(found, lines, strict=True):
+        message.text = "\n".join(parts)
     return found
 
 

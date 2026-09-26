@@ -6,8 +6,9 @@ of what the file **is**, taken from the file itself.
 
 The order is evidence.md §4's, and each step is there for a reason:
 
-1. **Stop if it already has a digest.** SQS delivers at least once, and a digest that could be
-   rewritten would be worth nothing (ADR-0007, REQ-008).
+1. **Stop if it is already finished** (`processed` or `failed`). SQS delivers at least once; a
+   delivery that failed part-way is retried to the end, and the digest it already wrote stays as
+   it is (ADR-0007, REQ-008).
 2. **HEAD it first.** The object's real size is the only one worth checking: the upload policy's
    limit is enforced by S3, but a client that got around it would have been believed on its own
    word otherwise (REQ-003).
@@ -90,8 +91,11 @@ def work(job: Job) -> None:
     document = store.get_document(tenant_id, document_id)
     if document is None:
         raise Gone(f"{document_id} is no longer there")
-    if document.document.sha256:
-        return  # already fingerprinted: a redelivery has nothing to do (ADR-0007)
+    if document.document.status in (DocumentStatus.PROCESSED, DocumentStatus.FAILED):
+        return  # finished: a redelivery has nothing to do (ADR-0007)
+    # A digest with the document still `stored` is a delivery that failed after fingerprinting
+    # (a throttled timeline write, say). The retry does the rest: the digest can't change, since
+    # `record_stored` writes it once, and every write after it lands on the same keys.
 
     limit = KINDS[kind].size
     try:

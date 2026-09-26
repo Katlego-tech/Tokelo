@@ -523,7 +523,9 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                keeps its digest. A photo's entry is now in UTC like the rest (it carried the
                photograph's offset, which the text sort key would misorder). The evidence image
                now installs Pillow and pypdf from uv.lock: without Pillow, T038's EXIF read
-               would have raised on Lambda for every photo
+               would have raised on Lambda for every photo. A delivery that fails after the
+               digest is now retried to the end (the worker stopped at any digest, so the retry
+               was acknowledged and the entries never written)
 - [ ] T042 [US3] Request a dossier, and refuse an empty one
       Req:     REQ-013
       Design:  docs/design/api.md

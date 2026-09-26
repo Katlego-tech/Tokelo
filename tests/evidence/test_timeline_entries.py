@@ -167,3 +167,46 @@ def test_a_photos_entry_is_on_the_same_utc_clock_as_everything_else(worker, stor
     assert entry.occurred_at == "2026-03-01T16:04:22Z"
     captured = store.get_document(TENANT, DOCUMENT).document.capture
     assert captured is not None and captured.captured_at == "2026-03-01T18:04:22+02:00"
+
+
+@pytest.mark.req("REQ-012")
+def test_a_failure_after_the_digest_is_retried_not_swallowed(worker, store, uploaded, monkeypatch):
+    """The first delivery records the digest, then fails writing the entries (a throttled batch,
+    say). SQS redelivers; the retry must finish the job — entries written, document processed —
+    rather than see the digest, call it done, and leave the export off the timeline for good."""
+    key = uploaded(
+        DocumentKind.CHAT, (FIXTURES / "timeline" / "android.txt").read_bytes(), "text/plain"
+    )
+    real = store.add_timeline_entries
+    calls = {"n": 0}
+
+    def throttled_once(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("ProvisionedThroughputExceededException")
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(store, "add_timeline_entries", throttled_once)
+
+    first = worker(batch(s3_record(key)))
+    assert first == {"batchItemFailures": [{"itemIdentifier": "m1"}]}
+    assert store.get_document(TENANT, DOCUMENT).document.sha256 is not None
+
+    assert worker(batch(s3_record(key, receives=2))) == {"batchItemFailures": []}
+
+    assert len(store.list_timeline(TENANT)) == 3
+    assert store.get_document(TENANT, DOCUMENT).document.status is DocumentStatus.PROCESSED
+
+
+@pytest.mark.req("REQ-008")
+def test_a_finished_document_is_not_worked_again(worker, store, uploaded, bucket):
+    key = uploaded(
+        DocumentKind.CHAT, (FIXTURES / "timeline" / "android.txt").read_bytes(), "text/plain"
+    )
+    worker(batch(s3_record(key)))
+    bucket.objects.clear()
+    bucket.history.clear()
+
+    # Nothing left to read, and nothing needs reading: the job was done.
+    assert worker(batch(s3_record(key, receives=2))) == {"batchItemFailures": []}
+    assert len(store.list_timeline(TENANT)) == 3

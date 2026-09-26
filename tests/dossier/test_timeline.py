@@ -204,3 +204,19 @@ def test_entries_on_the_same_instant_go_by_upload_order_then_their_own_order():
 def test_times_are_shown_in_sast():
     assert timeline.in_sast("2026-09-15T07:14:00Z") == "2026-09-15 09:14 SAST"
     assert timeline.in_sast("2026-03-01T18:04:22+02:00") == "2026-03-01 18:04 SAST"
+
+
+@pytest.mark.req("REQ-012")
+def test_one_enormous_multi_line_message_is_read_in_linear_time():
+    """A 5 MB export that is one message and a hundred thousand continuation lines."""
+    import time
+
+    body = (
+        "15/09/2026, 09:14 - Thandi: start\n" + "and another line of the same message\n" * 130_000
+    )
+
+    started = time.perf_counter()
+    (message,) = timeline.messages(body)
+    assert time.perf_counter() - started < 2
+
+    assert message.text.count("\n") == 130_000
