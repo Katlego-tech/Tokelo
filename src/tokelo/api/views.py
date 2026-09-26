@@ -87,3 +87,14 @@ def flag_view(flag: dict[str, Any]) -> dict[str, Any]:
         "explanation": flag.get("explanation", ""),
         "sections": flag.get("sections", []),
     }
+
+
+def verification(recorded_sha256: str, computed_sha256: str, verified_at: str) -> dict[str, Any]:
+    """api.md §6's `Verification`: both digests, not only the verdict, so what was compared is on
+    the page for the tenant (and a Tribunal) to see (REQ-010)."""
+    return {
+        "matches": computed_sha256 == recorded_sha256,
+        "recorded_sha256": recorded_sha256,
+        "computed_sha256": computed_sha256,
+        "verified_at": verified_at,
+    }

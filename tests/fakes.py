@@ -36,9 +36,13 @@ class Bucket:
     """S3, as far as a worker can tell: objects by key, each with a version and a time."""
 
     def __init__(self) -> None:
+        # The latest version of each key, which is what a read without a version gets...
         self.objects: dict[str, bytes] = {}
         self.versions: dict[str, str] = {}
         self.modified: dict[str, datetime] = {}
+        # ...and every version ever written, because the bucket is versioned: a later write
+        # doesn't remove the one a digest was taken of (T039).
+        self.history: dict[tuple[str, str], bytes] = {}
 
     def put(
         self, key: str, body: bytes, version: str = "v1", modified: datetime = STORED_AT
@@ -46,14 +50,18 @@ class Bucket:
         self.objects[key] = body
         self.versions[key] = version
         self.modified[key] = modified
+        self.history[(key, version)] = body
 
     def _find(self, key: str, version_id: str | None) -> bytes:
-        if key not in self.objects or (version_id and version_id != self.versions[key]):
-            raise ClientError(
-                {"Error": {"Code": "NoSuchKey", "Message": "The specified key does not exist."}},
-                "GetObject",
-            )
-        return self.objects[key]
+        if version_id:
+            if (key, version_id) in self.history:
+                return self.history[(key, version_id)]
+        elif key in self.objects:
+            return self.objects[key]
+        raise ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "The specified key does not exist."}},
+            "GetObject",
+        )
 
     # the calls the workers make, spelt as boto3 spells them
     def get_object(  # noqa: N803

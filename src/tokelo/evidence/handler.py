@@ -49,9 +49,6 @@ type Event = Mapping[str, Any]
 # worker's, and anything else on this queue could only be a misconfigured rule.
 MINE = (DocumentKind.PHOTO, DocumentKind.NOTICE, DocumentKind.CHAT)
 
-# S3's ways of saying the object isn't there any more — a deleted account, most likely (REQ-016).
-MISSING = ("NoSuchKey", "NoSuchVersion", "404")
-
 _store: Store | None = None
 _s3: Any = None
 
@@ -169,6 +166,6 @@ def record_upload(
 def gone_or_raise(error: ClientError, key: str) -> Exception:
     """An object that isn't there any more is `Gone` — nothing to hash, nothing to mark, and
     nothing three more deliveries would fix (REQ-016). Anything else is a real failure."""
-    if error.response["Error"]["Code"] in MISSING:
+    if error.response["Error"]["Code"] in digest.MISSING:
         return Gone(f"{key} is no longer there")
     return error

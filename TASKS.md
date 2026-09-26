@@ -473,13 +473,17 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                there is no second download. A file that can't be read records nothing and is not
                a failure. The coordinates store as Decimal: DynamoDB has no float and boto3
                refuses one, which `Capture.item()` had been handing it
-- [ ] T039 [US2] Verify that a file is unchanged
+- [x] T039 [US2] Verify that a file is unchanged
       Req:     REQ-010, REQ-011
       Design:  docs/design/evidence.md, docs/design/api.md
       Files:   src/tokelo/api/evidence.py, tests/api/test_verify.py
-      Contract:POST /api/evidence/{id}/verify → {matches, recorded_digest, computed_digest}
+      Contract:POST /api/evidence/{id}/verify → api.md §6's Verification:
+               {matches, recorded_sha256, computed_sha256, verified_at}
       Verify:  the tests are written first and fail; then an unchanged file matches and a changed one doesn't
-      Done:    each verification is an audit entry
+      Done:    each verification is an audit entry. The recorded version is what's read, so an
+               edited photo uploaded over the original can't pass for it; the digest is taken
+               by the same code the worker used (`digest.sha256_of`). A lease, someone else's
+               file, or a version that is gone is a 404; a file not fingerprinted yet is a 409
 - [ ] T040 [US2] Web: upload evidence, see its metadata, and verify it
       Req:     REQ-008, REQ-009, REQ-010, NFR-009
       Design:  docs/design/web.md, docs/design/web/evidence.svg
