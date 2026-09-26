@@ -97,6 +97,11 @@ def request_upload(event: Event) -> Response:
     now = datetime.now(UTC)
     expires_at = now + LIFETIME
 
+    # The tenant's row, made on their first upload and left as it is on every later one (api.md
+    # §4). It holds the pseudonym their audit entries are filed under, and the worker that
+    # fingerprints this file files its upload there, so it must exist before the file can
+    # arrive (REQ-011, T059).
+    store_for().create_tenant(tenant, created_at=_stamp(now))
     store_for().create_document(
         tenant,
         Document(

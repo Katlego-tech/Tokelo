@@ -46,6 +46,7 @@ _Last updated: 2026-09-26 — by Katlego (via Claude Code)_
 | `ocr` (T057: the worker — the lease job, the fan-out, the analysis) | Katlego | Claude Code | ✅ Done |
 | `evidence` (T037, T038: the digest, the capture metadata, and the worker) | Katlego | Claude Code | ✅ Done |
 | `evidence` + `api` (T039: verify that a file is unchanged) | Katlego | Claude Code | 🔵 In review |
+| `api` (T059: the tenant's row on their first upload, so uploads are audited) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -157,6 +158,9 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-26 — Katlego (via Claude Code) — T059: `POST /api/uploads` now makes the tenant's
+  row, so the workers' upload audit entries are written (REQ-011). Uploads made on staging
+  before this stay unaudited. Next: T041. Blocked: nothing.
 - 2026-09-26 — Katlego (via Claude Code) — T039: `POST /api/evidence/{id}/verify` hashes the
   recorded S3 version again and compares, with an audit entry each time. Found on the way: no
   code makes the tenant's row, so the workers' upload audit entries are skipped (REQ-011).

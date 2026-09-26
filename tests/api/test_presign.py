@@ -148,3 +148,58 @@ def test_a_request_that_makes_no_sense_is_refused_not_signed(api):
 def test_an_upload_url_is_never_issued_without_a_verified_claim(api):
     answer = api(post(a_lease(), tenant=None))
     assert answer["statusCode"] == 401
+
+
+@pytest.mark.req("REQ-011")
+def test_the_first_upload_request_makes_the_tenants_row(api, store):
+    """api.md §4: the `api` makes the tenant's row on their first request. It holds the pseudonym
+    their audit entries are filed under, and without it the workers have nowhere to file the
+    upload (T059)."""
+    assert store.get_tenant(TENANT) is None
+
+    api(post(a_lease()))
+
+    tenant = store.get_tenant(TENANT)
+    assert tenant is not None
+    assert tenant["audit_subject"]
+
+
+@pytest.mark.req("REQ-011")
+def test_the_pseudonym_never_changes_under_the_tenants_own_trail(api, store):
+    api(post(a_lease()))
+    first = store.get_tenant(TENANT)["audit_subject"]
+
+    api(post(a_lease()))
+
+    assert store.get_tenant(TENANT)["audit_subject"] == first
+
+
+@pytest.mark.req("REQ-011")
+def test_a_refused_request_writes_nothing(api, store):
+    assert api(post(a_lease(kind="spreadsheet")))["statusCode"] == 422
+    assert store.get_tenant(TENANT) is None
+
+
+@pytest.mark.req("REQ-011")
+def test_an_upload_through_the_api_is_audited_by_the_worker(api, store, monkeypatch):
+    """The defect T059 fixes, end to end: a tenant asks for an upload, the file arrives, and the
+    `evidence` worker files the upload in their audit log. Before T059 nothing made the tenant's
+    row, so the worker found nobody to file it under and skipped it (REQ-011)."""
+    from fakes import Bucket, batch, s3_record
+    from tokelo.core.model import AuditAction
+    from tokelo.evidence import handler as evidence
+
+    bucket = Bucket()
+    monkeypatch.setattr(evidence, "s3_for", lambda: bucket)
+    monkeypatch.setattr(evidence, "store_for", lambda: store)
+
+    photo = {"kind": "photo", "content_type": "image/jpeg", "size_bytes": 2_000}
+    given = json.loads(api(post(photo))["body"])
+    key = f"uploads/{TENANT}/photo/{given['document_id']}"
+    bucket.put(key, b"\xff\xd8\xff\xe0" + b"x" * 1_996)
+
+    evidence.handler(batch(s3_record(key)))
+
+    subject = store.get_tenant(TENANT)["audit_subject"]
+    uploads = [e for e in store.list_audit(subject) if e.action is AuditAction.UPLOAD]
+    assert [e.target_id for e in uploads] == [given["document_id"]]
