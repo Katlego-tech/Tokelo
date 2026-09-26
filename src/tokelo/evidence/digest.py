@@ -20,6 +20,10 @@ import hashlib
 from dataclasses import dataclass
 from typing import Any
 
+# S3's ways of saying an object, or the version asked for, isn't there any more — a deleted
+# account, most likely (REQ-016).
+MISSING = ("NoSuchKey", "NoSuchVersion", "404")
+
 # Big enough that a 20 MB file is a few hundred reads, small enough that it is nothing to hold.
 CHUNK = 1024 * 1024
 
@@ -47,7 +51,19 @@ def of(s3: Any, bucket: str, key: str, version_id: str | None) -> Taken:
     at = {"VersionId": version_id} if version_id else {}
     head = s3.head_object(Bucket=bucket, Key=key, **at)
 
-    body = s3.get_object(Bucket=bucket, Key=key, **at)["Body"]
+    sha256, size, first = _streamed(s3.get_object(Bucket=bucket, Key=key, **at)["Body"])
+    return Taken(sha256=sha256, size=size, stored_at=stamp(head["LastModified"]), head=first)
+
+
+def sha256_of(s3: Any, bucket: str, key: str, version_id: str) -> str:
+    """The digest of one version of the object, taken again: what verifying a file compares with
+    the one recorded when it was stored (REQ-010, T039). The version is required, because the
+    whole point is that a later write to the same key is not what gets hashed."""
+    return _streamed(s3.get_object(Bucket=bucket, Key=key, VersionId=version_id)["Body"])[0]
+
+
+def _streamed(body: Any) -> tuple[str, int, bytes]:
+    """The body's SHA-256, its size and its first chunk, read a chunk at a time."""
     running = hashlib.sha256()
     size = 0
     first = b""
@@ -56,13 +72,7 @@ def of(s3: Any, bucket: str, key: str, version_id: str | None) -> Taken:
         if not first:
             first = chunk
         size += len(chunk)
-
-    return Taken(
-        sha256=running.hexdigest(),
-        size=size,
-        stored_at=stamp(head["LastModified"]),
-        head=first,
-    )
+    return running.hexdigest(), size, first
 
 
 def head_size(s3: Any, bucket: str, key: str, version_id: str | None) -> int:

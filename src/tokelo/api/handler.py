@@ -10,7 +10,7 @@ import os
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from tokelo.api import documents, leases, static, uploads
+from tokelo.api import documents, evidence, leases, static, uploads
 from tokelo.api.auth import Unauthenticated
 from tokelo.api.responses import Response, error, json_response
 
@@ -45,6 +45,8 @@ def api(event: Event) -> Response:
             return documents.get_document(event, document_id)
         case "GET", ["leases", document_id, "flags"]:
             return leases.lease_flags(event, document_id)
+        case "POST", ["evidence", document_id, "verify"]:
+            return evidence.verify(event, document_id)
     return error(404, "not_found", "No such route.")
 
 

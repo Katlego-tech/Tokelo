@@ -3,7 +3,7 @@
 > Source of truth for "what's going on right now." Read first, update last. Treat updating it as
 > part of "done."
 
-_Last updated: 2026-09-25 — by Katlego (via Claude Code)_
+_Last updated: 2026-09-26 — by Katlego (via Claude Code)_
 
 ---
 
@@ -45,6 +45,7 @@ _Last updated: 2026-09-25 — by Katlego (via Claude Code)_
 | `ocr` (T028–T033: the samples, the reader, the splitter, the catalogue, the intake, the flags) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T057: the worker — the lease job, the fan-out, the analysis) | Katlego | Claude Code | ✅ Done |
 | `evidence` (T037, T038: the digest, the capture metadata, and the worker) | Katlego | Claude Code | ✅ Done |
+| `evidence` + `api` (T039: verify that a file is unchanged) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -156,6 +157,10 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-26 — Katlego (via Claude Code) — T039: `POST /api/evidence/{id}/verify` hashes the
+  recorded S3 version again and compares, with an audit entry each time. Found on the way: no
+  code makes the tenant's row, so the workers' upload audit entries are skipped (REQ-011).
+  Next: that fix, then T040. Blocked: nothing.
 - 2026-09-25 — Katlego (via Claude Code) — T058: README.md added (the repo had none): the overview,
   where to start, the quick start, and the WeThinkCode_ submission code `WTC-5JF7FDRM`. Next:
   merge the PR so the daily check finds the code on `main`. Blocked: nothing.
