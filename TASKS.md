@@ -484,6 +484,17 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                edited photo uploaded over the original can't pass for it; the digest is taken
                by the same code the worker used (`digest.sha256_of`). A lease, someone else's
                file, or a version that is gone is a 404; a file not fingerprinted yet is a 409
+- [x] T059 [US2] Make the tenant's row on their first upload, so their uploads are audited
+      Req:     REQ-011
+      Design:  docs/design/api.md §4 (Identity: "On a tenant's first request, it inserts their
+               `Tenant` and `AuditSubject` rows")
+      Files:   src/tokelo/api/uploads.py, tests/api/test_presign.py
+      Verify:  the tests are written first and fail; then an upload requested through the `api`
+               and fingerprinted by the `evidence` worker leaves an `upload` audit entry
+      Done:    `POST /api/uploads` makes the row (idempotently: the pseudonym never changes), so
+               both workers find the tenant and file the upload. Until now nothing called
+               `create_tenant`, and every upload's audit entry was silently skipped. Uploads made
+               before this fix stay unaudited: their events are gone
 - [ ] T040 [US2] Web: upload evidence, see its metadata, and verify it
       Req:     REQ-008, REQ-009, REQ-010, NFR-009
       Design:  docs/design/web.md, docs/design/web/evidence.svg
