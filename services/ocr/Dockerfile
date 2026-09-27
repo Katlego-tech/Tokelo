@@ -25,6 +25,10 @@ RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
 
 WORKDIR /function
 COPY src/tokelo /function/tokelo
+# The curated law, where `sources.root()` looks for it beside the package: the rule catalogue
+# refuses to load a rule whose section it can't find (REQ-006), so without these every lease
+# fails at its analysis (tests/unit/test_images.py).
+COPY docs/legal/sections /function/legal/sections
 
 # No USER: Lambda runs a container image as its own least-privileged user, whatever the image
 # says ("Create a Lambda function using a container image", AWS Lambda docs).

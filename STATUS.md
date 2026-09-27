@@ -3,7 +3,7 @@
 > Source of truth for "what's going on right now." Read first, update last. Treat updating it as
 > part of "done."
 
-_Last updated: 2026-09-26 — by Katlego (via Claude Code)_
+_Last updated: 2026-09-27 — by Katlego (via Claude Code)_
 
 ---
 
@@ -48,6 +48,7 @@ _Last updated: 2026-09-26 — by Katlego (via Claude Code)_
 | `evidence` + `api` (T039: verify that a file is unchanged) | Katlego | Claude Code | ✅ Done |
 | `api` (T059: the tenant's row on their first upload, so uploads are audited) | Katlego | Claude Code | ✅ Done |
 | `dossier` + `evidence` (T041: notices and WhatsApp exports on the timeline) | Katlego | Claude Code | ✅ Done |
+| `ocr` (T057 fix: the curated law in the `ocr` image, so a lease's analysis can load its rules) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -122,6 +123,10 @@ release.
   a chat export reach `evidence` (T037), which fingerprints them. What those three still lack is
   what is *read* out of them: the timeline entries a notice or a chat export makes (T041). A
   photo's own metadata is in (T038).
+- **Every lease on staging fails at its analysis** (found 2026-09-27). The `ocr` image never
+  carried `docs/legal/sections/`, so the rule catalogue finds no curated section and refuses to
+  load (REQ-006). Pages are read; the analysis raises. The fix is in review, and staging keeps
+  the fault until the next release carries it. T036 would have found it.
 - **Staging runs `v0.2.1`** (2026-09-21): the store, the uploads, the web app and the whole lease
   check, with every release check green. Its record is PR #47, waiting for a UAT sign-off.
   `v0.2.0` staged first and was rejected by DAST over ZAP rule 10096, which read SHA-256 round
@@ -159,6 +164,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-27 — Katlego (via Claude Code) — T057 fix: the `ocr` image now carries the
+  curated law. Without it the rule catalogue refused to load, so every lease on staging failed
+  at its analysis. A new test rebuilds each image's files from its Dockerfile and .dockerignore
+  and runs the catalogue against them; the real image, built, loads all 10 rules. Next: T042,
+  T043, then T040. Blocked: nothing.
 - 2026-09-26 — Katlego (via Claude Code) — T041: notices and WhatsApp exports are on the
   timeline, written by the `evidence` worker at upload. Found on the way: the evidence image
   never installed Pillow, so T038's EXIF read would have failed every photo on Lambda; it now
