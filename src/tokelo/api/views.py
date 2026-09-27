@@ -9,7 +9,14 @@ empty string or a null the app has to interpret — it says so, in the words the
 
 from typing import Any
 
-from tokelo.core.model import Clause, Document, DocumentKind, StoredDocument
+from tokelo.core.model import (
+    Clause,
+    Document,
+    DocumentKind,
+    Dossier,
+    DossierStatus,
+    StoredDocument,
+)
 from tokelo.ocr.flags import NO_ISSUE
 
 NOT_RECORDED = "not recorded"
@@ -97,4 +104,26 @@ def verification(recorded_sha256: str, computed_sha256: str, verified_at: str) -
         "recorded_sha256": recorded_sha256,
         "computed_sha256": computed_sha256,
         "verified_at": verified_at,
+    }
+
+
+def dossier_view(
+    dossier: Dossier, download_url: str | None, expires_at: str | None
+) -> dict[str, Any]:
+    """api.md §6's `DossierView`. What describes the PDF is null until there is one, and the
+    reason is null unless it failed: a field that doesn't apply yet says so, rather than carrying
+    whatever a half-finished attempt left behind."""
+    ready = dossier.status is DossierStatus.READY
+    return {
+        "id": dossier.id,
+        "status": str(dossier.status),
+        "requested_at": dossier.requested_at,
+        "page_count": dossier.page_count if ready else None,
+        "size_bytes": dossier.size_bytes if ready else None,
+        "sha256": dossier.sha256 if ready else None,
+        "failure_reason": (
+            dossier.failure_reason if dossier.status is DossierStatus.FAILED else None
+        ),
+        "download_url": download_url,
+        "expires_at": expires_at,
     }
