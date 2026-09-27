@@ -201,8 +201,10 @@ The worker checks ownership again in the tenant's partition, and never trusts th
 ### What a dossier may hold
 
 `POST /api/dossiers` takes a document only when it is the tenant's and **finished**: stored,
-fingerprinted, and done with by its worker. That means a lease whose reading is `analysed`, or a
-photo, notice or chat export that is `processed`. Anything else is refused with its reason:
+fingerprinted, and `processed`, which its worker marks it when it is done with it. A lease is
+`processed` together with its reading becoming `analysed` (T033). A photo, a notice or a chat
+export is `processed` once its digest, its capture details and its timeline entries are written
+(T037, T038, T041). Anything else is refused with its reason:
 - a document still being read would put half a lease's flags, or half an export's messages, into
   a PDF that looks complete
 - a `failed` document has nothing to show
