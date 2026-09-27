@@ -528,12 +528,18 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                was acknowledged and the entries never written)
 - [ ] T042 [US3] Request a dossier, and refuse an empty one
       Req:     REQ-013
-      Design:  docs/design/api.md
-      Files:   src/tokelo/api/dossiers.py, tests/api/test_dossier_request.py
-      Contract:POST /api/dossiers {record_ids} → 202 {dossier_id}; the job request is an object in S3 (ADR-0003)
-      Verify:  the tests are written first and fail; then an empty selection, or one of more than
-               150 documents, is refused with its reason
-      Done:    the request reaches the `dossier` queue
+      Design:  docs/design/api.md §4 (a dossier request), §6 (what a dossier may hold, the view,
+               download links)
+      Files:   src/tokelo/api/dossiers.py, src/tokelo/api/handler.py, src/tokelo/api/views.py,
+               src/tokelo/core/model.py, tests/api/test_dossier_request.py
+      Contract:POST /api/dossiers {document_ids} → 202 {dossier_id}; the job request is an object in
+               S3 (ADR-0003), api.md §6's shape. GET /api/dossiers/{id} → api.md §6's DossierView
+      Verify:  the tests are written first and fail; then an empty selection, one of more than 150
+               documents, and one naming a document that isn't the tenant's or isn't finished are
+               each refused with the reason; a ready dossier's link names its recorded version and
+               expires in 5 minutes
+      Done:    the request reaches the `dossier` queue as its job object, and the tenant can follow
+               the dossier to its download
 - [ ] T043 [US3] Compile the dossier PDF
       Req:     REQ-013, REQ-011
       Design:  docs/design/dossier.md

@@ -81,7 +81,10 @@ classDiagram
         +string sk "DOSSIER#uuid"
         +string status
         +string s3_key
+        +string s3_version_id
         +string sha256
+        +number page_count
+        +number size_bytes
         +string requested_at
         +string ready_at
         +string failure_reason
