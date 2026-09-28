@@ -52,6 +52,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `api` + `dossier` (T042: request a dossier, follow it to its download; the T025 upload-signing fix) | Katlego | Claude Code | ✅ Done |
 | `dossier` (T043: compile the dossier PDF) | Katlego | Claude Code | ✅ Done |
 | `web` (T040: the evidence screen, with verify) | Katlego | Claude Code | ✅ Done |
+| `web` (T044: build and download a dossier) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -173,6 +174,10 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T044: `/dossier`. Choose finished records, see
+  how many chosen photos include their location, build, wait, download (a fresh link if the
+  5 minutes have run out). Matches dossier.svg by eye; 8 tests, axe clean. Phase 5 is done in
+  code. Next: T045, the navigator's topics. Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — PRs #55–#59 merged; their branches and
   `docs/readme` deleted. #51 (configure-aws-credentials 6.3.0, pin checked against the tag)
   merged. Release records #47 (v0.2.1: fails UAT) and #26 (v0.1.2: superseded) closed without

@@ -26,6 +26,9 @@
      never stands for "fine" anywhere a tenant could read it about a clause (REQ-007). 5:1 on
      white, inside WCAG AA for text. */
   --color-verified: #15803d;
+  /* The dossier's location warning (web/dossier.svg): a caution, not a refusal, so not the red.
+     5:1 on white. */
+  --color-caution: #b45309;
 }
 
 /* The type scale. Four sizes, named for what they are rather than how big they are, so a screen

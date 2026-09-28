@@ -33,6 +33,22 @@ export type Verification = {
   verified_at: string;
 };
 
+// A dossier (api.md §6, `DossierView`). What describes the PDF is null until it is ready; the
+// link is a fresh 5-minute one on every read.
+export type DossierStatus = "requested" | "compiling" | "ready" | "failed";
+
+export type DossierView = {
+  id: string;
+  status: DossierStatus;
+  requested_at: string;
+  page_count: number | null;
+  size_bytes: number | null;
+  sha256: string | null;
+  failure_reason: string | null;
+  download_url: string | null;
+  expires_at: string | null;
+};
+
 export type UploadTicket = {
   document_id: string;
   url: string;
