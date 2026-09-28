@@ -26,8 +26,13 @@ It doesn't cover:
 
 ## 3. Domain model
 
-The worker reads the tables above, and writes `Dossier.status`, `s3_key`, `sha256` and
-`ready_at`, and an `AuditEntry`. Nothing new.
+The worker reads the tables above. It writes these, and an `AuditEntry`:
+- `Dossier.status` and `failure_reason`
+- what describes the PDF it stored: `s3_key`, `s3_version_id`, `sha256`, `page_count`,
+  `size_bytes` and `ready_at`
+
+`page_count`, `size_bytes` and `sha256` are what the dossier screen states
+([api.md](api.md) §6). `s3_version_id` is what the download link names.
 
 ## 4. Flow
 
@@ -39,25 +44,38 @@ sequenceDiagram
     participant S as S3
     Q->>X: Object Created: jobs/dossier/{dossier_id}.json
     X->>S: GET the job object
-    X->>D: the Dossier; stop if it isn't 'requested' (ADR-0007)
-    X->>D: every DossierItem's Document: the dossier's tenant's, and stored? Otherwise failed
+    X->>D: the Dossier; stop if it is ready or failed (ADR-0007)
+    X->>D: every document the Dossier names: the dossier's tenant's, and finished? Otherwise failed
     X->>D: Dossier compiling
     X->>D: the timeline entries, capture metadata and lease flags for the selection
     X->>S: GET each selected file, by its recorded version
     X->>X: build the PDF (§6), in /tmp
-    X->>S: PUT dossiers/{tenant}/{dossier_id}.pdf
-    X->>D: Dossier ready: s3_key, sha256 of the PDF, ready_at; AuditEntry dossier
+    X->>S: PUT dossiers/{tenant}/{dossier_id}.pdf: its version
+    X->>D: Dossier ready, if it is still compiling: s3_key, s3_version_id, sha256, page_count, size_bytes, ready_at
+    X->>D: AuditEntry dossier, only if that write made it ready
 ```
 
 **Failure paths:**
-- **A selected document isn't the tenant's, or isn't stored:** `failed`, with the reason. This is
-  checked again here, whatever the job object says.
+- **A selected document isn't the tenant's, or isn't finished** ([api.md](api.md) §6):
+  `failed`, with the reason. This is checked again here. The documents are the ones the `Dossier`
+  item names, in the tenant's partition, whatever the job object says.
 - **A file's digest no longer matches its recorded one:** the dossier is still built, and that
   file's page says **"does not match the digest recorded when it was stored"** in red. Hiding it
   would be worse than showing it.
 - **Over 150 documents, or the PDF would pass 100 MB:** `failed` ("too many records"). The `api`
   refuses over 150 before it gets here ([api.md](api.md) §6).
-- **A job is delivered twice:** the dossier is no longer `requested`, so the worker stops.
+- **A job is delivered again after a failure** (a throttled read, a timeout): the dossier is still
+  `compiling`, so the worker builds it again from the start. Stopping at `compiling` would leave
+  the dossier there for good, with nothing in the dead-letter queue. Only `ready` and `failed`
+  are finished.
+- **A job is delivered twice at once:** both deliveries build the dossier and store it.
+  - `ready` is written only if the dossier is still `compiling`, so only one of them records its
+    PDF. That one records its version, its digest and its size, and writes the audit entry.
+  - The download link names that version. So the recorded digest is always the digest of the
+    file the tenant downloads, even if the other build stored different bytes after it.
+- **The third delivery fails:** the dossier is marked `failed` ("This dossier couldn't be built.
+  Please try again."), and the message still goes to the dead-letter queue, as every job's does
+  ([infrastructure.md](infrastructure.md) §4).
 
 ## 5. State
 
@@ -65,9 +83,10 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> requested: POST /api/dossiers
     requested --> compiling: worker starts
-    requested --> failed: the job object couldn't be written
-    compiling --> ready: PDF stored
-    compiling --> failed: a check or the build failed
+    requested --> failed: the job object couldn't be written, or a check failed
+    compiling --> compiling: a retry after a failed attempt
+    compiling --> ready: PDF stored, and recorded once
+    compiling --> failed: a check failed, or the third attempt did
     ready --> [*]
     failed --> [*]
 ```

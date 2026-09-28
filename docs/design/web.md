@@ -58,8 +58,8 @@ package, direct or transitive, is newer than a week (T014):
 ## 3. Domain model
 
 The app holds no domain of its own. Its TypeScript types mirror [api.md](api.md) §6's views
-exactly (`DocumentView`, `LeaseFlags`, `Verification`, `TimelineEntryView`, `Answer`,
-`Outside`, `Error`), in `web/src/api/types.ts`. A field that isn't in a view isn't in a type.
+exactly (`DocumentView`, `LeaseFlags`, `Verification`, `TimelineEntryView`, `DossierView`,
+`Answer`, `Outside`, `Error`), in `web/src/api/types.ts`. A field that isn't in a view isn't in a type.
 
 ## 4. Flow
 

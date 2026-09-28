@@ -7,6 +7,8 @@ The image is pinned by digest, like every other image this project runs."""
 import socket
 import subprocess
 import time
+import urllib.error
+import urllib.request
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -27,6 +29,27 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
+def answers(endpoint: str) -> bool:
+    """True once DynamoDB itself answers. An open port isn't enough: Docker's port proxy accepts
+    a connection before the database behind it is listening, and then resets it, which failed
+    whichever test happened to run first."""
+    request = urllib.request.Request(
+        endpoint,
+        data=b"{}",
+        headers={
+            "X-Amz-Target": "DynamoDB_20120810.ListTables",
+            "Content-Type": "application/x-amz-json-1.0",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=2):
+            return True
+    except urllib.error.HTTPError:
+        return True  # refused for want of a signature: an answer all the same
+    except urllib.error.URLError, ConnectionError, TimeoutError:
+        return False
+
+
 @pytest.fixture(scope="session")
 def dynamodb_local() -> Iterator[str]:
     """The endpoint DynamoDB Local answers on, for this test session only."""
@@ -44,9 +67,8 @@ def dynamodb_local() -> Iterator[str]:
     try:
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
-            with socket.socket() as s:
-                if s.connect_ex(("127.0.0.1", port)) == 0:
-                    break
+            if answers(endpoint):
+                break
             time.sleep(0.2)
         else:
             raise AssertionError(f"DynamoDB Local didn't answer on {endpoint} within a minute")

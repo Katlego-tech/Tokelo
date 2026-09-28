@@ -81,8 +81,8 @@ sequenceDiagram
     participant E as EventBridge
     participant Q as dossier queue
     W->>A: POST /api/dossiers {document_ids}
-    A->>D: check every ID is the tenant's, and stored
-    A->>D: INSERT Dossier (requested), DossierItems
+    A->>D: check every ID is the tenant's, and finished (§6)
+    A->>D: PUT Dossier (requested), with its document_ids
     A->>S: PUT jobs/dossier/{dossier_id}.json (through the gateway endpoint)
     A-->>W: 202 {dossier_id}
     S->>E: Object Created
@@ -132,8 +132,8 @@ Every `/api/` endpoint needs a valid token, and answers JSON. The web app's file
 | `GET /api/leases/{id}/flags` | none | `200 LeaseFlags` | `404`; `409` still reading | REQ-004 to REQ-007 |
 | `POST /api/evidence/{id}/verify` | none | `200 Verification` | `404`; `409` not stored yet | REQ-010 |
 | `GET /api/timeline` | none | `200 {"entries": [TimelineEntryView]}` | none | REQ-012 |
-| `POST /api/dossiers` | `{"document_ids": [uuid]}` | `202 {"dossier_id"}` | `422` empty, more than 150 documents, or an ID not the tenant's or not stored | REQ-013 |
-| `GET /api/dossiers/{id}` | none | `200 {"status", "download_url"?, "expires_at"?}` | `404` | REQ-013 |
+| `POST /api/dossiers` | `{"document_ids": [uuid]}` | `202 {"dossier_id"}` | `422` empty, more than 150 documents, or an ID not the tenant's or not finished | REQ-013 |
+| `GET /api/dossiers/{id}` | none | `200 DossierView` | `404` | REQ-013 |
 | `POST /api/navigator` | `{"question"}` | `200 Answer` or `200 Outside` | `422` empty | REQ-014 |
 | `DELETE /api/account` | none | `202` | none | REQ-016 |
 
@@ -162,6 +162,8 @@ LeaseFlags        = {status, page_count, unreadable_pages: [int], notice: NOTICE
                                        or [] with finding: "no issue found by these checks"}]}
 SectionRef        = {id, act, section, title}                  -- from the curated set only (REQ-006)
 Verification      = {matches: bool, recorded_sha256, computed_sha256, verified_at}
+DossierView       = {id, status, requested_at, page_count|null, size_bytes|null, sha256|null,
+                     failure_reason|null, download_url|null, expires_at|null}
 TimelineEntryView = {id, occurred_at, source, summary, document_id}
 Answer            = {topic, answer, sections: [SectionRef], notice: NOTICE}
 Outside           = {outside: true, message, refer_to: "the Rental Housing Tribunal"}
@@ -196,10 +198,36 @@ The worker checks ownership again in the tenant's partition, and never trusts th
  "document_ids": ["uuid", "..."], "requested_at": "2026-10-01T09:00:00Z"}
 ```
 
+### What a dossier may hold
+
+`POST /api/dossiers` takes a document only when it is the tenant's and **finished**: stored,
+fingerprinted, and `processed`, which its worker marks it when it is done with it. A lease is
+`processed` together with its reading becoming `analysed` (T033). A photo, a notice or a chat
+export is `processed` once its digest, its capture details and its timeline entries are written
+(T037, T038, T041). Anything else is refused with its reason:
+- a document still being read would put half a lease's flags, or half an export's messages, into
+  a PDF that looks complete
+- a `failed` document has nothing to show
+- a `requested` or `expired` one was never uploaded
+
+The IDs are UUIDs; anything else is refused before the store is asked.
+
+### The dossier's view
+
+`DossierView` is what the dossier screen shows ([web/dossier.svg](web/dossier.svg)): "Ready ·
+Dispute dossier, 38 pages, 9.2 MB · SHA-256: 51c2…a9e4 · Download (link valid for 5 minutes)".
+- `page_count`, `size_bytes` and `sha256` describe the PDF the worker stored. They are null until
+  the dossier is `ready`.
+- `failure_reason` is null unless the dossier is `failed`. Then it holds the reason in words a
+  tenant can act on ("too many records").
+
 ### Download links
 
-`GET /api/dossiers/{id}` gives a pre-signed GET that expires in 5 minutes, for the tenant's own
-dossier only.
+`download_url` is a pre-signed GET for the tenant's own dossier, **by the version the worker
+recorded** ([dossier.md](dossier.md) §4). The digest on the screen is then always the digest of
+the file the link gives. It expires 5 minutes after it's issued (`expires_at`), and both fields
+are null until the dossier is `ready`. Each `GET /api/dossiers/{id}` issues a fresh link, so a
+tenant who comes back later asks again rather than keeping an old one.
 
 ## 7. Structure
 
