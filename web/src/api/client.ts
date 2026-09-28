@@ -13,7 +13,9 @@ import type {
   ApiError,
   Config,
   DocumentView,
+  Answer,
   DossierView,
+  Outside,
   LeaseFlags,
   UploadTicket,
   Verification,
@@ -184,6 +186,21 @@ export function getDossier(
   waking?: Waking,
 ): Promise<DossierView> {
   return call<DossierView>({ path: `/api/dossiers/${id}`, token, waking });
+}
+
+/** Ask the rights navigator (api.md §6). An empty or overlong question is refused (422). */
+export function askNavigator(
+  question: string,
+  token: () => Promise<string>,
+  waking?: Waking,
+): Promise<Answer | Outside> {
+  return call<Answer | Outside>({
+    path: "/api/navigator",
+    method: "POST",
+    body: { question },
+    token,
+    waking,
+  });
 }
 
 /** A lease's flags. While the workers are still reading it the API answers 409 `still_reading`

@@ -628,12 +628,19 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                separate, and a test keeps them there. The api image now carries the curated
                sections and the topics; the image test checks it loads all eight. The question
                is never stored or logged
-- [ ] T047 [US4] Web: ask a question
+- [x] T047 [US4] Web: ask a question
       Req:     REQ-014, NFR-009
-      Design:  docs/design/web.md, docs/design/web/navigator.svg
-      Files:   web/src/…
+      Design:  docs/design/web.md §6 (the navigator screen), docs/design/web/navigator.svg
+      Files:   web/src/routes/Ask.tsx, web/src/routes/Ask.test.tsx,
+               web/src/components/AnswerCard.tsx, web/src/components/SectionRef.tsx,
+               web/src/routes/Lease.tsx, web/src/api/client.ts, web/src/api/types.ts,
+               web/src/App.tsx, web/src/test/render.tsx
       Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
-      Done:    matches the reference, with live data from staging
+      Done:    `/ask` matches the reference, checked by eye at phone width for both replies: the
+               topic's written answer with the sections it rests on and the notice, or "Outside
+               what Tokelo covers" with the API's message. A refused question shows the API's
+               reason. `SectionRef` is now shared with the lease screen. 7 screen tests, axe
+               clean for both replies. Live data from staging waits on a release
 
 **Checkpoint:** US4 is independently demoable on staging.
 

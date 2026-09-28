@@ -16,10 +16,11 @@ import { Link, useParams } from "react-router";
 import { AlertTriangleIcon, ScaleIcon } from "lucide-react";
 
 import { ApiFailure, getLeaseFlags } from "@/api/client";
-import type { ClauseView, LeaseFlags, SectionRef } from "@/api/types";
+import type { ClauseView, LeaseFlags } from "@/api/types";
 import { useAuth } from "@/auth/AuthContext";
 import { Notice } from "@/components/Notice";
 import { ScreenTitle } from "@/components/ScreenTitle";
+import { SectionRef } from "@/components/SectionRef";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -215,7 +216,7 @@ function ClauseCard({ clause }: { clause: ClauseView }) {
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {flag.sections.map((section) => (
                     <li key={section.id}>
-                      <Section section={section} />
+                      <SectionRef section={section} />
                     </li>
                   ))}
                 </ul>
@@ -230,21 +231,6 @@ function ClauseCard({ clause }: { clause: ClauseView }) {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-/** What a flag rests on, in full: a tenant can look this up, which is the whole point of
- *  citing it (REQ-006). */
-function Section({ section }: { section: SectionRef }) {
-  return (
-    <span className="block rounded-md border border-border bg-muted/50 px-2.5 py-1.5">
-      <span className="text-caption block font-medium text-foreground">
-        Section {section.section} · {section.title}
-      </span>
-      <span className="text-caption block text-muted-foreground">
-        {section.act}
-      </span>
-    </span>
   );
 }
 
