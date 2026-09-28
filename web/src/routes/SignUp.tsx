@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/auth/AuthContext";
 import { ScreenTitle } from "@/components/ScreenTitle";
 import { Notice } from "@/components/Notice";
+import { PrivacyNotice } from "@/components/PrivacyNotice";
 import { TextField } from "@/components/TextField";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -93,11 +94,7 @@ export function SignUp() {
         else&apos;s.
       </ScreenTitle>
 
-      <Notice title="Privacy notice">
-        Your documents are stored by AWS in Ireland (EU), which takes them out
-        of South Africa under POPIA section 72. Only you can see them, and you
-        can delete everything at any time.
-      </Notice>
+      <PrivacyNotice />
 
       <div className="mt-4 flex items-center gap-3">
         <Checkbox

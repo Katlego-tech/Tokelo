@@ -7,6 +7,7 @@
 // serves staging and production (ADR-0010).
 import {
   confirmSignUp,
+  deleteUser,
   fetchAuthSession,
   signIn as amplifySignIn,
   signOut as amplifySignOut,
@@ -99,6 +100,13 @@ export function AuthProvider({
     setStatus("signed-out");
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    await deleteUser(); // Cognito removes the user, and Amplify forgets the session
+    setPending(null);
+    setEmail(null);
+    setStatus("signed-out");
+  }, []);
+
   const token = useCallback(async () => {
     const session = await fetchAuthSession();
     const accessToken = session.tokens?.accessToken?.toString();
@@ -107,8 +115,17 @@ export function AuthProvider({
   }, []);
 
   const auth: Auth = useMemo(
-    () => ({ status, email, signUp, confirm, signIn, signOut, token }),
-    [status, email, signUp, confirm, signIn, signOut, token],
+    () => ({
+      status,
+      email,
+      signUp,
+      confirm,
+      signIn,
+      signOut,
+      deleteAccount,
+      token,
+    }),
+    [status, email, signUp, confirm, signIn, signOut, deleteAccount, token],
   );
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;

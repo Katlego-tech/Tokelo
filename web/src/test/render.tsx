@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 
 import { AuthContext, type Auth } from "../auth/AuthContext";
 import { Layout } from "../components/Layout";
+import { Account } from "../routes/Account";
 import { Ask } from "../routes/Ask";
 import { Dossier } from "../routes/Dossier";
 import { Evidence } from "../routes/Evidence";
@@ -30,6 +31,7 @@ export function renderRoute(
             <Route path="/evidence" element={<Evidence />} />
             <Route path="/dossier" element={<Dossier pollMs={5} />} />
             <Route path="/ask" element={<Ask />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/evidence/new" element={<EvidenceNew />} />
           </Routes>
         </Layout>

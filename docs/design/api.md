@@ -89,6 +89,39 @@ sequenceDiagram
     E->>Q: the dossier job
 ```
 
+### Deleting an account (T048, REQ-016)
+
+```mermaid
+sequenceDiagram
+    participant W as Web app
+    participant A as api
+    participant D as Database
+    participant S as S3
+    participant C as Cognito
+    W->>A: DELETE /api/account (after the tenant types DELETE)
+    A->>D: the Tenant row: its audit pseudonym, read while it still exists
+    A->>S: every version and delete marker under uploads/{tenant}/ and dossiers/{tenant}/, deleted
+    A->>D: the tenant's whole partition, deleted (the Tenant row, and with it the pseudonym's mapping)
+    A->>D: AuditEntry delete_account, under the pseudonym: how many files and records went
+    A-->>W: 202
+    W->>C: deleteUser, with the tenant's own token
+    W->>W: signed out, on the sign-in screen
+```
+
+- **Files before records.** If the files can't all be deleted, the call fails and the records
+  still say what is stored, so the tenant can try again. Records deleted first would leave files
+  that nothing points to.
+- **The audit entry is written last, and names nobody.** It is filed under the pseudonym, whose
+  only mapping to the tenant was the row just deleted. So the audit log keeps every entry, this
+  one included, and none of them can be traced back (REQ-011, REQ-016).
+- **It can be called again.** A second call finds nothing, deletes nothing, and answers 202. So a
+  tenant whose Cognito deletion failed after the 202 can simply try again.
+- **The Cognito user is deleted by the web app, with the tenant's own token,** so the `api`
+  needs no permission over the user pool.
+- **What stays for a while:** a dossier job object (`jobs/dossier/*.json`) names the tenant's ID,
+  and expires with the `jobs/` lifecycle within 7 days ([infrastructure.md](infrastructure.md)).
+  A job that reaches a worker after the deletion finds nothing and is done with (`Gone`).
+
 ### Reaching the store
 
 There is no connection to open: the function calls DynamoDB over HTTPS through the gateway

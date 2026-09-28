@@ -14,6 +14,9 @@ export type Auth = {
   confirm: (code: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Delete the sign-in itself, with the tenant's own token (api.md §4, "Deleting an
+   *  account"). The API deletes the files and records first. */
+  deleteAccount: () => Promise<void>;
   token: () => Promise<string>;
 };
 

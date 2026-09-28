@@ -89,6 +89,36 @@ class Bucket:
         self.put(key, data, version=version)
         return {"VersionId": version}
 
+    def list_object_versions(self, Bucket: str, Prefix: str = "", **_: Any) -> dict[str, Any]:  # noqa: N803
+        """Every version under the prefix, in one page (a real bucket pages at 1,000)."""
+        return {
+            "Versions": [
+                {"Key": key, "VersionId": version}
+                for (key, version) in self.history
+                if key.startswith(Prefix)
+            ],
+            "DeleteMarkers": [],
+            "IsTruncated": False,
+        }
+
+    def delete_objects(self, Bucket: str, Delete: dict[str, Any]) -> dict[str, Any]:  # noqa: N803
+        """Delete the named versions, as a versioned bucket does when a version is named. `Quiet`
+        is accepted and, as in S3, only changes what is reported."""
+        deleted = []
+        for target in Delete["Objects"]:
+            key, version = target["Key"], target.get("VersionId")
+            self.history.pop((key, version), None)
+            if self.versions.get(key) == version:
+                remaining = [v for (k, v) in self.history if k == key]
+                if remaining:
+                    self.versions[key] = remaining[-1]
+                    self.objects[key] = self.history[(key, remaining[-1])]
+                else:
+                    self.objects.pop(key, None)
+                    self.versions.pop(key, None)
+            deleted.append({"Key": key, "VersionId": version})
+        return {"Deleted": deleted}
+
     def page_jobs(self) -> list[str]:
         return sorted(k for k in self.objects if k.startswith("jobs/page/"))
 

@@ -203,6 +203,20 @@ export function askNavigator(
   });
 }
 
+/** Delete every file and record of the tenant's (api.md §4, "Deleting an account"). Safe to
+ *  call again: a second call finds nothing and answers 202 as before. */
+export async function deleteAccount(
+  token: () => Promise<string>,
+  waking?: Waking,
+): Promise<void> {
+  await call<unknown>({
+    path: "/api/account",
+    method: "DELETE",
+    token,
+    waking,
+  });
+}
+
 /** A lease's flags. While the workers are still reading it the API answers 409 `still_reading`
  *  rather than half the clauses, and the screen waits (api.md §6). */
 export function getLeaseFlags(
