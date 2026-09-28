@@ -7,11 +7,13 @@ FROM public.ecr.aws/lambda/python:3.14@sha256:3f0bbbb2fd963ec4bdb2ec30e587464c91
 # ReportLab, pypdf and Pillow, exactly as uv.lock pins them, every file checked against its hash,
 # into the function's own directory (the base image ships boto3 and nothing else this worker
 # needs). uv is only used here, and doesn't stay in the image.
+# --no-cache: uv's cache is named at random each run, and left in the image it made every build's
+# digest different (T056).
 COPY pyproject.toml uv.lock /tmp/build/
 RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
     uv export --project /tmp/build --frozen --only-group dossier-image --no-emit-project \
         --format requirements-txt --output-file /tmp/build/requirements.txt \
-    && uv pip install --python /var/lang/bin/python --target "${LAMBDA_TASK_ROOT}" \
+    && uv pip install --python /var/lang/bin/python --target "${LAMBDA_TASK_ROOT}" --no-cache \
         --require-hashes --no-deps -r /tmp/build/requirements.txt \
     && rm -rf /tmp/build
 

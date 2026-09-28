@@ -57,10 +57,11 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `api` (T046: answer a question, or say it's outside the topics) | Katlego | Claude Code | 🔵 In review |
 | `web` (T047: ask a question) | Katlego | Claude Code | 🔵 In review |
 | `api` + `web` (T048: delete an account and everything in it) | Katlego | Claude Code | 🔵 In review |
+| `release` (T056: reproducible images) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
-Four things for Katlego:
+Six things for Katlego:
 
 1. **Cut `v0.2.2`.** Staging runs `v0.2.1`, and two of its faults are fixed on `main` but not
    deployed: every lease fails at its analysis (#55), and web uploads are refused by the page's
@@ -73,6 +74,15 @@ Four things for Katlego:
    create and approve pull requests"*, so the pipeline opens its own record PRs.
 4. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
    email): the dead-letter alarms have nowhere to go until then.
+5. **Decide T050.** The task puts a dead-letter-rate objective (at most 1% over 7 days) in
+   `docs/ops/slo.toml` for the watch window to read. The kit's `slo.toml` holds only HTTP
+   objectives, and `load_slos` refuses any objective for a worker ("workers have no URL"). So
+   either the kit learns queue objectives (a SecretRealm change), or the objective becomes a
+   CloudWatch metric-math alarm in `alarms.tf`, with the watch window not reading it.
+6. **Unblock T049.** `perf/upload-url.js` calls `POST /api/uploads`, which needs a signed-in
+   tenant: a Cognito test user whose password goes in the `PERF_ENV` secret. The web app's
+   client allows SRP only, which k6 can't do easily, so the test user needs a client that
+   allows `USER_PASSWORD_AUTH` (an infra change). `perf/first-request.js` needs neither.
 
 Phase 3 is nearly done: the lease check works end to end in code — an uploaded lease is checked,
 read, split, flagged and stored by the `ocr` worker (T057). The screen that shows it is in too
@@ -178,6 +188,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T056: the ocr image builds twice to one digest.
+  Its apt step left varying logs and caches, and uv left its randomly named cache; both go
+  now. The evidence and dossier images had lost reproducibility the same way (T041, T043), and
+  are fixed with it. Checked with the release's own builder. T049 and T050 need Katlego (see
+  Next action). Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — T048: deleting an account. The api deletes every
   version of the tenant's files, then their partition, and leaves an audit entry that maps to
   nobody. The web app then deletes the Cognito user with the tenant's own token. `/account`

@@ -696,14 +696,19 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  the release record shows every check passed and the UAT sign-off; production is
                applied through realm-infra; the promote workflow succeeds and the watch window holds
       Done:    the Release gate has its dated entry
-- [ ] T056 [POL] Make the `ocr` image reproducible
+- [x] T056 [POL] Make the `ocr` image reproducible
       Req:     none — supply chain (the kit's DESIGN.md §9: build twice, compare digests)
-      Files:   services/ocr/Dockerfile
+      Files:   services/ocr/Dockerfile, services/evidence/Dockerfile, services/dossier/Dockerfile
       Verify:  the release record's Images table says Reproducible: yes for `ocr`, as it does for the
                other three
       Done:    two builds of the same commit give the same digest. The apt install T029 adds is what
                differs (v0.1.0 to v0.1.2, 2026-09-20); SOURCE_DATE_EPOCH and a pinned package set are
-               the usual answer
+               the usual answer. Found by diffing two builds' layers: the apt step left logs and
+               caches that differ each run (apt and dpkg logs, ldconfig's aux-cache, fontconfig's
+               caches), and uv left its cache, whose directory names are random, in the image.
+               Both go now, and ocr, evidence and dossier each build twice to one digest with the
+               release's own builder, epoch and timestamp rewriting. evidence and dossier had lost
+               it too, when T041 and T043 added their uv installs; no release had built them since
 - [ ] T054 [POL] Sweep for placeholders: no `TODO`/`FIXME`/stub bodies/hard-coded sample data
       remain outside of tasks that explicitly declared them, and each declared one has an open
       follow-up task ID.
