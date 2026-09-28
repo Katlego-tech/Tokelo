@@ -180,7 +180,7 @@ The key, not the queue's ARN: EventBridge routed the object to its queue on that
 two cannot disagree in production — and if a message ever does reach the wrong queue, a worker
 that reads the key does the right thing or nothing, while one that trusts the ARN reads a lease
 as a page job. `keys.parse` already says which a key is, so it is also one fewer thing to pass in.
-| `services/ocr/Dockerfile` | new | §2's base image, the apt packages, `awslambdaric`, pinned by digest |
+| `services/ocr/Dockerfile` | new | §2's base image, the apt packages, `awslambdaric`, pinned by digest; and `docs/legal/sections/` beside the code, which the rule catalogue checks every citation against when it loads |
 | `tests/fixtures/leases/`, `tests/ocr/` | new | the synthetic samples and their known text (T028) |
 
 ## 8. Decisions & alternatives
