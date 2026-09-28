@@ -38,7 +38,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | Lane | Owner | AI | Status |
 |------|-------|----|--------|
 | `infra` (T018–T020: staging's network, tables, storage, events, identity, API, functions) | Katlego | Claude Code | ✅ Done |
-| `release` (T021: v0.1.2 staged) | Katlego | Claude Code | 🔵 In review — PR #26 waits for the UAT sign-off |
+| `release` (T021: v0.1.2 staged) | Katlego | Claude Code | ✅ Done — staged; its record PR #26 closed as superseded (2026-09-28) |
 | `core` + `api` (T023–T026: the store, tenant-scoped reads, pre-signed uploads, the job spine) | Katlego | Claude Code | ✅ Done |
 | `web` (T027, T035: the notice, sign-up, sign-in, the uploader, a lease's flags) | Katlego | Claude Code | ✅ Done |
 | `legal` (T022: the curated sections of the four sources) | Katlego | Claude Code | ✅ Done |
@@ -48,20 +48,22 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `evidence` + `api` (T039: verify that a file is unchanged) | Katlego | Claude Code | ✅ Done |
 | `api` (T059: the tenant's row on their first upload, so uploads are audited) | Katlego | Claude Code | ✅ Done |
 | `dossier` + `evidence` (T041: notices and WhatsApp exports on the timeline) | Katlego | Claude Code | ✅ Done |
-| `ocr` (T057 fix: the curated law in the `ocr` image, so a lease's analysis can load its rules) | Katlego | Claude Code | 🔵 In review |
-| `api` + `dossier` (T042: request a dossier, follow it to its download; the T025 upload-signing fix) | Katlego | Claude Code | 🔵 In review |
-| `dossier` (T043: compile the dossier PDF) | Katlego | Claude Code | 🔵 In review |
-| `web` (T040: the evidence screen, with verify) | Katlego | Claude Code | 🔵 In review |
+| `ocr` (T057 fix: the curated law in the `ocr` image, so a lease's analysis can load its rules) | Katlego | Claude Code | ✅ Done |
+| `api` + `dossier` (T042: request a dossier, follow it to its download; the T025 upload-signing fix) | Katlego | Claude Code | ✅ Done |
+| `dossier` (T043: compile the dossier PDF) | Katlego | Claude Code | ✅ Done |
+| `web` (T040: the evidence screen, with verify) | Katlego | Claude Code | ✅ Done |
 
 ## ⏭️ Next action
 
-Three things for Katlego, none of them blocking Phase 2:
+Four things for Katlego:
 
-1. **Cut `v0.2.0`** when you want to walk the app on staging: everything since `v0.1.2` — the
-   store, the uploads, the web app — is merged but undeployed.
-2. **Sign off UAT on PR #26** (or say what to try first) — that's where the `v0.1.2` record waits.
-   The next release will carry the web app, so a walk-through on staging can be part of it: create
-   an account, confirm the emailed code, and upload a lease.
+1. **Cut `v0.2.2`.** Staging runs `v0.2.1`, and two of its faults are fixed on `main` but not
+   deployed: every lease fails at its analysis (#55), and web uploads are refused by the page's
+   own CSP (#57). The release also carries the dossier (T042, T043) and the evidence screen
+   (T040). Then walk it on staging: an account, a lease, a photo, verify, a dossier.
+2. **Sign off `v0.2.2`'s UAT in its record PR** once the walk-through passes. The `v0.2.1`
+   (#47) and `v0.1.2` (#26) records were closed without sign-off on 2026-09-28: the first fails
+   UAT on the two faults above, the second is superseded. Their branches stay as the records.
 3. **Turn on** Settings → Actions → General → Workflow permissions → *"Allow GitHub Actions to
    create and approve pull requests"*, so the pipeline opens its own record PRs.
 4. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
@@ -171,6 +173,10 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — PRs #55–#59 merged; their branches and
+  `docs/readme` deleted. #51 (configure-aws-credentials 6.3.0, pin checked against the tag)
+  merged. Release records #47 (v0.2.1: fails UAT) and #26 (v0.1.2: superseded) closed without
+  sign-off. Next: `v0.2.2`, then T044. Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — T040: `/evidence`. Every photo, notice and
   export with its capture details, digest and storage time, and "Verify this file" with its
   answer. It matches evidence.svg, checked in a headless browser; 14 tests, axe clean. web.md
