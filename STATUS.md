@@ -72,6 +72,8 @@ Six things for Katlego:
    UAT on the two faults above, the second is superseded. Their branches stay as the records.
 3. **Turn on** Settings → Actions → General → Workflow permissions → *"Allow GitHub Actions to
    create and approve pull requests"*, so the pipeline opens its own record PRs.
+4. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
+   email): the dead-letter alarms have nowhere to go until then.
 5. **Decide T050.** The task puts a dead-letter-rate objective (at most 1% over 7 days) in
    `docs/ops/slo.toml` for the watch window to read. The kit's `slo.toml` holds only HTTP
    objectives, and `load_slos` refuses any objective for a worker ("workers have no URL"). So
@@ -81,8 +83,6 @@ Six things for Katlego:
    tenant: a Cognito test user whose password goes in the `PERF_ENV` secret. The web app's
    client allows SRP only, which k6 can't do easily, so the test user needs a client that
    allows `USER_PASSWORD_AUTH` (an infra change). `perf/first-request.js` needs neither.
-4. **Subscribe an address** to `tokelo-staging-alerts` (one `aws sns subscribe`, then confirm by
-   email): the dead-letter alarms have nowhere to go until then.
 
 Phase 3 is nearly done: the lease check works end to end in code — an uploaded lease is checked,
 read, split, flagged and stored by the `ocr` worker (T057). The screen that shows it is in too
