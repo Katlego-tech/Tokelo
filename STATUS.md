@@ -55,6 +55,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `web` (T044: build and download a dossier) | Katlego | Claude Code | 🔵 In review |
 | `legal` + `api` (T045: the navigator's curated topics) | Katlego | Claude Code | 🔵 In review |
 | `api` (T046: answer a question, or say it's outside the topics) | Katlego | Claude Code | 🔵 In review |
+| `web` (T047: ask a question) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -176,6 +177,10 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T047: `/ask`. A question, then the curated
+  answer with its sections and notice, or "Outside what Tokelo covers" in the API's words.
+  Matches navigator.svg by eye; 7 tests, axe clean. Phase 6 is done in code. Next: T048,
+  deleting an account. Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — T046: `POST /api/navigator`. Deterministic
   matching (patterns, then word overlap), with the threshold and margin measured and kept
   midway by a test. The out-of-scope set is referred to the Tribunal, and so is a near tie. The

@@ -49,6 +49,20 @@ export type DossierView = {
   expires_at: string | null;
 };
 
+// A navigator reply (api.md §6): a curated topic's written answer, or "outside" (REQ-014).
+export type Answer = {
+  topic: string;
+  answer: string;
+  sections: SectionRef[];
+  notice: string;
+};
+
+export type Outside = {
+  outside: true;
+  message: string;
+  refer_to: string;
+};
+
 export type UploadTicket = {
   document_id: string;
   url: string;

@@ -165,6 +165,15 @@ stateDiagram-v2
   digest."** The two answers to "Verify this file" (REQ-010). A change is an alert, with both
   digests in full.
 
+### The navigator screen (T047)
+
+[navigator.svg](web/navigator.svg)'s outside card reads "Tokelo can't answer this. The Rental
+Housing Tribunal can help with it." The card shows the API's own message instead. It says what
+the Tribunal does in the curated Act's terms (section 13(1)), and doesn't promise the Tribunal
+will take this particular question ([navigator.md](navigator.md) §4, T046). An answer is set as
+the paragraphs and "- " lists it was written in, escaped like every other string. `SectionRef`
+is one component, shared by a lease's flags and an answer.
+
 ### The dossier screen (T044)
 
 [dossier.svg](web/dossier.svg) draws each record as "Lease · 12 pages" or "WhatsApp export · 214
