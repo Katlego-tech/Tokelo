@@ -115,7 +115,10 @@ written from T022's curated sources.
 - an answer over 2,000 characters
 - any mention of case law: the curated sources have none (ADR-0006)
 - a section or regulation number in the answer that the topic doesn't cite (T045): an answer
-  can't quote a number its citations don't back
+  can't quote a number its citations don't back. A section belongs to the Act named most
+  recently before it ("the Rental Housing Act", "the PIE Act", "the Consumer Protection Act"),
+  and one named before any Act is refused: "section 4" is a different section in the Rental
+  Housing Act and in the PIE Act
 - a pattern with nested repetition, like `(a+)+`, which could run for a long time on a crafted
   question (§ Threats)
 

@@ -40,7 +40,10 @@ def write(folder: Path, name: str, text: str) -> None:
 
 
 def a_topic(**changes: str) -> str:
-    fields = {"id": "a-topic", "answer": "The landlord must refund it (section 5(3)(i))."}
+    fields = {
+        "id": "a-topic",
+        "answer": "Under the Rental Housing Act, the landlord must refund it (section 5(3)(i)).",
+    }
     return GOOD.format(**(fields | changes))
 
 
@@ -138,9 +141,11 @@ def test_any_mention_of_case_law_is_refused(tmp_path, citation):
 @pytest.mark.parametrize(
     "answer",
     [
-        "The Tribunal hears it (section 13(1)).",
-        "See sections 5 and 8.",
+        "The Rental Housing Act says the Tribunal hears it (section 13(1)).",
+        "The Rental Housing Act says so: see sections 5 and 8.",
         "Gauteng's regulations say so (regulation 9(3)).",
+        # The number is cited, but for another Act: RHA-5 is cited, the PIE Act's section 5 isn't.
+        "The Rental Housing Act has its rule (section 5), and the PIE Act another (section 5).",
     ],
 )
 def test_an_answer_naming_a_section_it_doesnt_cite_is_refused(tmp_path, answer):
@@ -149,6 +154,15 @@ def test_an_answer_naming_a_section_it_doesnt_cite_is_refused(tmp_path, answer):
     write(tmp_path, "a", a_topic(answer=answer))
 
     with pytest.raises(navigator.BadTopic, match="doesn't cite"):
+        navigator.load(tmp_path)
+
+
+@pytest.mark.req("REQ-006")
+def test_a_section_named_before_its_act_is_refused(tmp_path):
+    """A bare "section 5" says nothing about which Act it is in, so a reader can't check it."""
+    write(tmp_path, "a", a_topic(answer="The landlord must refund it (section 5(3)(i))."))
+
+    with pytest.raises(navigator.BadTopic, match="before naming its Act"):
         navigator.load(tmp_path)
 
 

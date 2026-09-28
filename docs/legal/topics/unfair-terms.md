@@ -16,4 +16,4 @@ The terms the Rental Housing Act puts into every lease, about receipts, the depo
 
 Where the Consumer Protection Act applies, a supplier must not enter into an agreement on terms that are unfair, unreasonable or unjust. A term is unfair if, among other things, it is excessively one-sided in favour of anyone other than the consumer, or so adverse to the consumer as to be inequitable (section 48(1) and 48(2)).
 
-A tenant may lodge a complaint about an unfair practice with the Rental Housing Tribunal (section 13(1)).
+A tenant may lodge a complaint about an unfair practice with the Rental Housing Tribunal (Rental Housing Act, section 13(1)).

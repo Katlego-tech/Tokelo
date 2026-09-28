@@ -130,18 +130,39 @@ def parse(text: str, where: str) -> Topic:
     )
 
 
+# How an answer names each Act, and the prefix of that Act's curated IDs. A section belongs to the
+# Act named most recently before it; the Gauteng regulations are numbered as regulations.
+ACTS = {
+    "Rental Housing Act": "RHA-",
+    "Consumer Protection Act": "CPA-",
+    "PIE Act": "PIE-",
+}
+ACT_NAMED = re.compile("|".join(re.escape(name) for name in ACTS))
+
+
 def _check_numbers(answer: str, section_ids: list[str], where: str) -> None:
-    """Every section or regulation number the answer names is one the topic cites: a regulation
-    among the Gauteng regulations it cites, a section among the Acts'."""
+    """Every section or regulation number the answer names is one the topic cites, for that Act:
+    a regulation among the Gauteng regulations it cites, a section among the sections it cites
+    of the Act named most recently before it. "Section 4" is a different thing in the Rental
+    Housing Act and the PIE Act, and a reader has to know which to look it up."""
     cited = [sources.section(i) for i in section_ids]
-    regulations = {s.number for s in cited if s.id.startswith("GT-REG-")}
-    sections = {s.number for s in cited if not s.id.startswith("GT-REG-")}
-    for kind, numbers in CITED.findall(answer):
+    named_acts = [(m.start(), ACTS[m.group(0)]) for m in ACT_NAMED.finditer(answer)]
+    for found in CITED.finditer(answer):
+        kind, numbers = found.group(1), found.group(2)
         named = set(re.findall(r"(?:^|,\s*|\s+and\s+|\s+to\s+)(\d+)", numbers))
-        allowed = regulations if kind.startswith("regulation") else sections
+        if kind.startswith("regulation"):
+            prefix, act = "GT-REG-", "Gauteng's regulations"
+        else:
+            before = [p for at, p in named_acts if at < found.start()]
+            if not before:
+                raise BadTopic(f"{where} names {kind} {numbers} before naming its Act")
+            prefix = before[-1]
+            act = next(name for name, p in ACTS.items() if p == prefix)
+        allowed = {s.number for s in cited if s.id.startswith(prefix)}
         if missing := named - allowed:
             raise BadTopic(
-                f"{where} names {kind} {', '.join(sorted(missing))}, which it doesn't cite"
+                f"{where} names {kind} {', '.join(sorted(missing))} of the {act}, "
+                "which it doesn't cite"
             )
 
 
