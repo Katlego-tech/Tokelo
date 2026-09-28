@@ -23,9 +23,12 @@ type State =
 
 const EVIDENCE = new Set(["photo", "notice", "chat"]);
 
-/** Newest first. A file still on its way has no storage time yet, and is newest of all. */
+/** Newest first. A file still on its way has no storage time yet, and is newest of all. The
+ *  times are ISO-8601 in UTC, so they order as plain text, compared code point by code point:
+ *  a locale's collation has no say in it. */
 function newestFirst(a: DocumentView, b: DocumentView): number {
-  return (b.stored_at ?? "~").localeCompare(a.stored_at ?? "~");
+  const [x, y] = [a.stored_at ?? "~", b.stored_at ?? "~"];
+  return x < y ? 1 : x > y ? -1 : 0;
 }
 
 export function Evidence({ waking }: { waking?: (b: boolean) => void }) {
