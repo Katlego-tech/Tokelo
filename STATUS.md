@@ -57,6 +57,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `api` (T046: answer a question, or say it's outside the topics) | Katlego | Claude Code | 🔵 In review |
 | `web` (T047: ask a question) | Katlego | Claude Code | 🔵 In review |
 | `api` + `web` (T048: delete an account and everything in it) | Katlego | Claude Code | 🔵 In review |
+| `release` (T056: reproducible images) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -178,6 +179,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T056: the ocr image builds twice to one digest.
+  Its apt step left varying logs and caches, and uv left its randomly named cache; both go
+  now. The evidence and dossier images had lost reproducibility the same way (T041, T043), and
+  are fixed with it. Checked with the release's own builder. T049 and T050 need Katlego (see
+  Next action). Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — T048: deleting an account. The api deletes every
   version of the tenant's files, then their partition, and leaves an audit entry that maps to
   nobody. The web app then deletes the Cognito user with the tenant's own token. `/account`

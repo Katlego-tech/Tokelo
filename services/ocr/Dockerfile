@@ -10,17 +10,25 @@ FROM python:3.14-slim-trixie@sha256:caaf356f40667c496d405780745b9ac25771c189a51d
 # Tesseract 5 and its English model, which is the whole reason this image is Debian's Python and
 # not Lambda's: Amazon Linux 2023 packages no Tesseract (ADR-0009, docs/design/ocr.md §2). English
 # only — no other language model is installed, and none is wanted (ADR-0009).
+#
+# The installed files are the same on every build, but the install also leaves logs and caches
+# that differ each time: apt's and dpkg's logs, ldconfig's aux-cache, and fontconfig's caches.
+# None of them is used at run time, so they go in the same step, and two builds of one commit
+# give one digest (T056).
 RUN apt-get update \
     && apt-get install --no-install-recommends --yes tesseract-ocr tesseract-ocr-eng \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /var/log/apt /var/log/dpkg.log /var/log/alternatives.log \
+        /var/cache/ldconfig/aux-cache /var/cache/fontconfig/* /var/cache/debconf/*-old
 
 # The runtime client and its dependencies, exactly as uv.lock pins them, every file checked
 # against its hash. uv is only used here, and doesn't stay in the image.
+# --no-cache: uv's cache is named at random each run, and left in the image it made every build's
+# digest different (T056).
 COPY pyproject.toml uv.lock /tmp/build/
 RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
     uv export --project /tmp/build --frozen --only-group ocr-image --no-emit-project \
         --format requirements-txt --output-file /tmp/build/requirements.txt \
-    && uv pip install --system --require-hashes --no-deps -r /tmp/build/requirements.txt \
+    && uv pip install --system --no-cache --require-hashes --no-deps -r /tmp/build/requirements.txt \
     && rm -rf /tmp/build
 
 WORKDIR /function
