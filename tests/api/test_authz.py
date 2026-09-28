@@ -64,6 +64,18 @@ def test_a_tenant_reads_their_own_document(api, store):
 
 
 @pytest.mark.req("REQ-001")
+def test_a_document_is_found_by_its_whole_id_and_not_by_the_start_of_it(api, store):
+    """The store reads a document by the start of its sort key, so its pages and clauses come
+    with it (domain-model.md §6). The start of an ID is not the ID: `/api/documents/3` must not
+    answer with whichever document's ID happens to begin with a 3."""
+    store.create_document(MINE, a_document(MINE))
+
+    for prefix in (DOCUMENT[:1], DOCUMENT[:8], DOCUMENT[:-1]):
+        assert api(request(f"/api/documents/{prefix}", MINE))["statusCode"] == 404, prefix
+    assert store.get_document(MINE, DOCUMENT[:8]) is None
+
+
+@pytest.mark.req("REQ-001")
 def test_another_tenants_document_is_404_not_403(api, store):
     store.create_document(MINE, a_document(MINE))
 

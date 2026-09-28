@@ -222,7 +222,15 @@ class Store:
     def get_document(self, tenant_id: str, document_id: str) -> StoredDocument | None:
         """The document, its pages and its clauses, in one query (§6). None when the tenant has
         no such document — including when it is someone else's, which the API answers as 404."""
-        items = self._query(model.tenant_pk(tenant_id), model.document_sk(document_id))
+        sk = model.document_sk(document_id)
+        # `begins_with` is how the pages and clauses come back with the document, and it would
+        # also match any longer ID that starts with this one. Only this document and what lies
+        # under it are kept, so the start of an ID never finds a document.
+        items = [
+            i
+            for i in self._query(model.tenant_pk(tenant_id), sk)
+            if i["sk"] == sk or i["sk"].startswith(f"{sk}#")
+        ]
         document = next((i for i in items if i.get("type") == "document"), None)
         if document is None:
             return None

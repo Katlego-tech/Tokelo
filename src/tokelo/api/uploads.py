@@ -18,8 +18,7 @@ from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import boto3
-
+from tokelo.api import storage
 from tokelo.api.auth import tenant_of
 from tokelo.api.responses import Response, error, json_response
 from tokelo.core.keys import upload_key
@@ -43,10 +42,10 @@ def store_for() -> Store:
 
 
 def s3_for() -> Any:
-    """One S3 client per container. boto3 ships no types; this is the only line that knows."""
+    """One S3 client per container, signing as the browser needs it (storage.py)."""
     global _s3
     if _s3 is None:
-        _s3 = boto3.client("s3")
+        _s3 = storage.client()
     return _s3
 
 

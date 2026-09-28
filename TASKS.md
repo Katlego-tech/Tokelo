@@ -526,11 +526,12 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                would have raised on Lambda for every photo. A delivery that fails after the
                digest is now retried to the end (the worker stopped at any digest, so the retry
                was acknowledged and the entries never written)
-- [ ] T042 [US3] Request a dossier, and refuse an empty one
+- [x] T042 [US3] Request a dossier, and refuse an empty one
       Req:     REQ-013
       Design:  docs/design/api.md §4 (a dossier request), §6 (what a dossier may hold, the view,
                download links)
-      Files:   src/tokelo/api/dossiers.py, src/tokelo/api/handler.py, src/tokelo/api/views.py,
+      Files:   src/tokelo/api/dossiers.py, src/tokelo/dossier/selection.py,
+               src/tokelo/api/handler.py, src/tokelo/api/views.py, src/tokelo/api/storage.py,
                src/tokelo/core/model.py, tests/api/test_dossier_request.py
       Contract:POST /api/dossiers {document_ids} → 202 {dossier_id}; the job request is an object in
                S3 (ADR-0003), api.md §6's shape. GET /api/dossiers/{id} → api.md §6's DossierView
@@ -539,7 +540,11 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                each refused with the reason; a ready dossier's link names its recorded version and
                expires in 5 minutes
       Done:    the request reaches the `dossier` queue as its job object, and the tenant can follow
-               the dossier to its download
+               the dossier to its download. The selection rule lives in `dossier/selection.py`, so
+               the worker checks it again in the same words (T043). An ID that isn't a UUID is
+               refused before the store is asked, since a prefix of a real ID would find it. The
+               link is SigV4 for the bucket's regional host, like the uploads' now (the T025 fix
+               below)
 - [ ] T043 [US3] Compile the dossier PDF
       Req:     REQ-013, REQ-011
       Design:  docs/design/dossier.md

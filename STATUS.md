@@ -49,6 +49,7 @@ _Last updated: 2026-09-27 — by Katlego (via Claude Code)_
 | `api` (T059: the tenant's row on their first upload, so uploads are audited) | Katlego | Claude Code | ✅ Done |
 | `dossier` + `evidence` (T041: notices and WhatsApp exports on the timeline) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T057 fix: the curated law in the `ocr` image, so a lease's analysis can load its rules) | Katlego | Claude Code | 🔵 In review |
+| `api` + `dossier` (T042: request a dossier, follow it to its download; the T025 upload-signing fix) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -127,6 +128,10 @@ release.
   carried `docs/legal/sections/`, so the rule catalogue finds no curated section and refuses to
   load (REQ-006). Pages are read; the analysis raises. The fix is in review, and staging keeps
   the fault until the next release carries it. T036 would have found it.
+- **Uploads from the web app to staging were refused by the page itself** (found 2026-09-27).
+  The upload URL was signed for the bucket's global host, and the page's CSP allows only its
+  regional one. The signature was SigV2 too. The fix is in review with T042. Staging keeps the
+  fault until the next release.
 - **Staging runs `v0.2.1`** (2026-09-21): the store, the uploads, the web app and the whole lease
   check, with every release check green. Its record is PR #47, waiting for a UAT sign-off.
   `v0.2.0` staged first and was rejected by DAST over ZAP rule 10096, which read SHA-256 round
@@ -164,6 +169,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-27 — Katlego (via Claude Code) — T042: `POST /api/dossiers` checks the selection
+  (1 to 150 documents, all the tenant's and finished), records the dossier and writes its job
+  object; `GET /api/dossiers/{id}` answers the new DossierView (its contract PR went first).
+  Found on the way: the upload URL was signed with SigV2 for a host the page's CSP blocks, so
+  web uploads to staging were refused. Fixed with T042. Next: T043. Blocked: nothing.
 - 2026-09-27 — Katlego (via Claude Code) — T057 fix: the `ocr` image now carries the
   curated law. Without it the rule catalogue refused to load, so every lease on staging failed
   at its analysis. A new test rebuilds each image's files from its Dockerfile and .dockerignore

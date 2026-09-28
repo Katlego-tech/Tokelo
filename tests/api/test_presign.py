@@ -97,6 +97,27 @@ def test_the_url_expires_within_fifteen_minutes(api):
     assert 0 < ahead <= 15 * 60
 
 
+@pytest.mark.req("REQ-002")
+def test_the_post_goes_to_the_host_the_page_may_reach_signed_with_sigv4(api):
+    """The browser posts the file itself, with XMLHttpRequest, so the page's Content-Security-
+    Policy decides whether it may. It allows the bucket's regional address and nothing else
+    (static.py). Left to itself, botocore signs for the global `<bucket>.s3.amazonaws.com`, which
+    the page refuses to post to, and it signs with Signature Version 2, which S3 has deprecated."""
+    from tokelo.api import static
+
+    given = json.loads(api(post(a_lease()))["body"])
+
+    host = f"https://{BUCKET}.s3.eu-west-1.amazonaws.com"
+    assert given["url"].rstrip("/") == host
+    csp = static.content_security_policy(
+        {"AWS_REGION": "eu-west-1", "TOKELO_DOCUMENTS_BUCKET": BUCKET}
+    )
+    (connect,) = [d for d in csp.split("; ") if d.startswith("connect-src ")]
+    assert host in connect.split()
+    assert given["fields"]["x-amz-algorithm"] == "AWS4-HMAC-SHA256"
+    assert "AWSAccessKeyId" not in given["fields"]
+
+
 @pytest.mark.req("REQ-003")
 @pytest.mark.parametrize(
     ("change", "reason"),

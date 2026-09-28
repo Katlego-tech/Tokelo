@@ -306,12 +306,19 @@ class TimelineEntry:
 
 @dataclass(frozen=True)
 class Dossier:
+    """A dossier the tenant asked for, and once it's `ready`, the PDF that was stored for it: the
+    version the download link names, and the digest, pages and size the screen states
+    (dossier.md §3)."""
+
     id: str
     status: DossierStatus
     document_ids: list[str]
     requested_at: str
     s3_key: str | None = None
+    s3_version_id: str | None = None
     sha256: str | None = None
+    page_count: int | None = None
+    size_bytes: int | None = None
     ready_at: str | None = None
     failure_reason: str | None = None
 
@@ -323,7 +330,15 @@ class Dossier:
             "document_ids": list(self.document_ids),
             "requested_at": self.requested_at,
         }
-        for name in ("s3_key", "sha256", "ready_at", "failure_reason"):
+        for name in (
+            "s3_key",
+            "s3_version_id",
+            "sha256",
+            "page_count",
+            "size_bytes",
+            "ready_at",
+            "failure_reason",
+        ):
             if getattr(self, name) is not None:
                 item[name] = getattr(self, name)
         return item
@@ -336,7 +351,10 @@ class Dossier:
             document_ids=list(item.get("document_ids", [])),
             requested_at=item["requested_at"],
             s3_key=item.get("s3_key"),
+            s3_version_id=item.get("s3_version_id"),
             sha256=item.get("sha256"),
+            page_count=whole(item["page_count"]) if item.get("page_count") is not None else None,
+            size_bytes=whole(item["size_bytes"]) if item.get("size_bytes") is not None else None,
             ready_at=item.get("ready_at"),
             failure_reason=item.get("failure_reason"),
         )
