@@ -477,6 +477,11 @@ dev = [
     { name = "reportlab" },
     { name = "ruff" },
 ]
+dossier-image = [
+    { name = "pillow" },
+    { name = "pypdf" },
+    { name = "reportlab" },
+]
 evidence-image = [
     { name = "pillow" },
     { name = "pypdf" },
@@ -503,6 +508,11 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "reportlab", specifier = ">=5.0.1" },
     { name = "ruff", specifier = ">=0.16.7" },
+]
+dossier-image = [
+    { name = "pillow", specifier = ">=12.3.0" },
+    { name = "pypdf", specifier = ">=6.18.1" },
+    { name = "reportlab", specifier = ">=5.0.1" },
 ]
 evidence-image = [
     { name = "pillow", specifier = ">=12.3.0" },

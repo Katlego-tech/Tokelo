@@ -20,9 +20,9 @@ extend-exclude = ["scripts/realm"]
 select = ["E", "F", "W", "I", "UP", "B"]
 
 [tool.ruff.lint.isort]
-# `fakes` is this repo's own test stand-ins (tests/fakes.py, on the pytest path), not a package
-# from PyPI, so it sorts with the project's imports rather than above them.
-known-first-party = ["tokelo", "fakes"]
+# `fakes` and `pdfs` are this repo's own test helpers (tests/, on the pytest path), not packages
+# from PyPI, so they sort with the project's imports rather than above them.
+known-first-party = ["tokelo", "fakes", "pdfs"]
 
 [tool.pyright]
 include = ["src", "tests"]
@@ -60,6 +60,13 @@ dev = [
 evidence-image = [
     "pillow>=12.3.0",
     "pypdf>=6.18.1",
+]
+# The `dossier` image is Lambda's own Python too. ReportLab writes Tokelo's pages of a dossier,
+# pypdf copies a lease's and the notices' own pages in, and Pillow fits the photographs (T043).
+dossier-image = [
+    "pillow>=12.3.0",
+    "pypdf>=6.18.1",
+    "reportlab>=5.0.1",
 ]
 # The `ocr` image is Debian's Python, not Lambda's, so it needs the runtime client and the SDK.
 # The other three run on public.ecr.aws/lambda/python, which ships boto3 already.

@@ -112,10 +112,14 @@ def run_in(code_root: Path, script: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-# The images whose code reads the curated law at run time, and what it does with it.
+# The images whose code reads the curated law at run time, and what it does with it. Nothing
+# finds these for itself: a lane that starts citing the law in another image adds it here, or
+# that image goes out without the law, as the ocr image did.
 CITES_THE_LAW = {
     # The rule catalogue checks every section a rule cites when it loads (T032), at analysis.
     "ocr": "from tokelo.ocr import rules; rules.catalogue()",
+    # Part 7 of a dossier reproduces each cited section's text (T043).
+    "dossier": "from tokelo.core import sources; [sources.section(i).text for i in sources.ids()]",
 }
 
 

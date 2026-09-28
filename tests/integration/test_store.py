@@ -1,6 +1,8 @@
 """The store: the keys, the queries and the conditional writes (docs/design/domain-model.md §3,
 §6, §9). Against DynamoDB Local, so the conditions are the engine's, not a stand-in's."""
 
+import uuid
+
 import pytest
 
 from tokelo.core import model
@@ -180,11 +182,15 @@ def test_a_dossier_keeps_the_documents_it_names(store):
             requested_at="2026-09-20T07:00:00Z",
         ),
     )
-    store.finish_dossier(
+    assert store.start_dossier(TENANT, dossier_id)
+    assert store.finish_dossier(
         TENANT,
         dossier_id,
         s3_key=f"dossiers/{TENANT}/{dossier_id}.pdf",
+        s3_version_id="v1",
         sha256=DIGEST,
+        page_count=12,
+        size_bytes=345_678,
         ready_at="2026-09-20T07:05:00Z",
     )
     dossier = store.get_dossier(TENANT, dossier_id)
@@ -192,4 +198,76 @@ def test_a_dossier_keeps_the_documents_it_names(store):
     assert dossier.status is DossierStatus.READY
     assert dossier.document_ids == [DOCUMENT]
     assert dossier.sha256 == DIGEST
+    assert (dossier.s3_version_id, dossier.page_count, dossier.size_bytes) == ("v1", 12, 345_678)
     assert store.get_dossier(OTHER, dossier_id) is None
+
+
+def a_requested_dossier(store) -> str:
+    dossier_id = str(uuid.uuid4())
+    store.create_dossier(
+        TENANT,
+        Dossier(
+            id=dossier_id,
+            status=DossierStatus.REQUESTED,
+            document_ids=[DOCUMENT],
+            requested_at="2026-09-20T07:00:00Z",
+        ),
+    )
+    return dossier_id
+
+
+def finish(store, dossier_id: str, version: str) -> bool:
+    return store.finish_dossier(
+        TENANT,
+        dossier_id,
+        s3_key=f"dossiers/{TENANT}/{dossier_id}.pdf",
+        s3_version_id=version,
+        sha256=version * 32,
+        page_count=1,
+        size_bytes=1,
+        ready_at="2026-09-20T07:05:00Z",
+    )
+
+
+@pytest.mark.req("REQ-013")
+def test_a_dossier_is_made_ready_once_and_the_first_record_stands(store):
+    """dossier.md §4: two deliveries at once each store a PDF; only one is recorded."""
+    dossier_id = a_requested_dossier(store)
+    store.start_dossier(TENANT, dossier_id)
+
+    assert finish(store, dossier_id, "v1") is True
+    assert finish(store, dossier_id, "v2") is False
+
+    dossier = store.get_dossier(TENANT, dossier_id)
+    assert dossier is not None and dossier.s3_version_id == "v1"
+
+
+@pytest.mark.req("REQ-013")
+def test_a_dossier_is_only_made_ready_from_compiling(store):
+    dossier_id = a_requested_dossier(store)
+
+    assert finish(store, dossier_id, "v1") is False
+
+
+@pytest.mark.req("REQ-013")
+def test_a_finished_dossier_is_not_started_again_or_failed_afterwards(store):
+    dossier_id = a_requested_dossier(store)
+    assert store.start_dossier(TENANT, dossier_id)
+    assert store.start_dossier(TENANT, dossier_id)  # a retry after a failed attempt
+    finish(store, dossier_id, "v1")
+
+    assert store.start_dossier(TENANT, dossier_id) is False
+    assert store.fail_dossier(TENANT, dossier_id, "late") is False
+    dossier = store.get_dossier(TENANT, dossier_id)
+    assert dossier is not None and dossier.status is DossierStatus.READY
+
+
+@pytest.mark.req("REQ-013")
+def test_a_failed_dossier_keeps_its_reason_and_isnt_started_again(store):
+    dossier_id = a_requested_dossier(store)
+
+    assert store.fail_dossier(TENANT, dossier_id, "Too many records.") is True
+
+    assert store.start_dossier(TENANT, dossier_id) is False
+    dossier = store.get_dossier(TENANT, dossier_id)
+    assert dossier is not None and dossier.failure_reason == "Too many records."

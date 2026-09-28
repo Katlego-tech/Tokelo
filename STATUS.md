@@ -3,7 +3,7 @@
 > Source of truth for "what's going on right now." Read first, update last. Treat updating it as
 > part of "done."
 
-_Last updated: 2026-09-27 — by Katlego (via Claude Code)_
+_Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 
 ---
 
@@ -50,6 +50,7 @@ _Last updated: 2026-09-27 — by Katlego (via Claude Code)_
 | `dossier` + `evidence` (T041: notices and WhatsApp exports on the timeline) | Katlego | Claude Code | ✅ Done |
 | `ocr` (T057 fix: the curated law in the `ocr` image, so a lease's analysis can load its rules) | Katlego | Claude Code | 🔵 In review |
 | `api` + `dossier` (T042: request a dossier, follow it to its download; the T025 upload-signing fix) | Katlego | Claude Code | 🔵 In review |
+| `dossier` (T043: compile the dossier PDF) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -169,6 +170,13 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T043: the `dossier` worker builds the PDF.
+  It has the eight parts, an index checked against its pages, each file read by its recorded
+  version and hashed again, the curated law reproduced, and copied pages without scripts, links,
+  forms or attachments. It is recorded once with its version, and audited. A 5 MB export was
+  183 s and 1.6 GB; after one-row timeline tables and flowables built only while each part
+  renders, it is 41 s and 380 MB, and a dossier takes at most 5 MB of chat. Next: T040.
+  Blocked: nothing.
 - 2026-09-27 — Katlego (via Claude Code) — T042: `POST /api/dossiers` checks the selection
   (1 to 150 documents, all the tenant's and finished), records the dossier and writes its job
   object; `GET /api/dossiers/{id}` answers the new DossierView (its contract PR went first).
