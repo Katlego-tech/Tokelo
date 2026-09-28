@@ -161,6 +161,25 @@ stateDiagram-v2
 - **"Not recorded."** For any missing capture detail (REQ-009).
 - **"N selected photos include their location."** Shown before a dossier with located photos is
   built.
+- **"Unchanged: matches its stored digest."** and **"Changed: doesn't match its stored
+  digest."** The two answers to "Verify this file" (REQ-010). A change is an alert, with both
+  digests in full.
+
+### The evidence screen (T040)
+
+[evidence.svg](web/evidence.svg) leaves three things to settle:
+- **A card's title.** The wireframe's "Kitchen wall · photo" is a name Tokelo doesn't keep
+  ([api.md](api.md) §6). A card is titled by its kind and when storage took it: "Photo · stored
+  2026-09-01 10:16 SAST".
+- **The thumbnail under the button** is the upload widget's, which lives at `/evidence/new`.
+  The API has no way to fetch an evidence file's bytes, and a list of photos doesn't need one.
+- **Location** is "recorded" or "not recorded", never the coordinates: they are usually the
+  tenant's home.
+
+A digest is shortened to its first and last four characters, as drawn. Leases aren't listed:
+they aren't evidence (REQ-010). Uploads that never arrived (`expired`) aren't listed either. The
+green of "Unchanged" is its own token, `--color-verified` (`#15803d`, 5:1 on white). It is used
+for nothing else, so green never reads as "fine" about a clause (REQ-007).
 
 ### `GET /config.json`
 

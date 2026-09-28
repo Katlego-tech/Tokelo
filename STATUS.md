@@ -51,6 +51,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `ocr` (T057 fix: the curated law in the `ocr` image, so a lease's analysis can load its rules) | Katlego | Claude Code | 🔵 In review |
 | `api` + `dossier` (T042: request a dossier, follow it to its download; the T025 upload-signing fix) | Katlego | Claude Code | 🔵 In review |
 | `dossier` (T043: compile the dossier PDF) | Katlego | Claude Code | 🔵 In review |
+| `web` (T040: the evidence screen, with verify) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -170,6 +171,12 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T040: `/evidence`. Every photo, notice and
+  export with its capture details, digest and storage time, and "Verify this file" with its
+  answer. It matches evidence.svg, checked in a headless browser; 14 tests, axe clean. web.md
+  §6 records what the wireframe left open (no file names, so a card is titled by kind and
+  storage time). The header's menu still isn't built. Next: T044, the dossier screen.
+  Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — T043: the `dossier` worker builds the PDF.
   It has the eight parts, an index checked against its pages, each file read by its recorded
   version and hashed again, the curated law reproduced, and copied pages without scripts, links,

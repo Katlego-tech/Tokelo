@@ -200,7 +200,15 @@ export function Uploader({
               </Link>{" "}
               — the screen waits while we read it.
             </>
-          ) : null}
+          ) : (
+            <>
+              {" "}
+              <Link className="underline" to="/evidence">
+                See your evidence
+              </Link>{" "}
+              — its fingerprint is there once it is taken.
+            </>
+          )}
         </Notice>
       ) : null}
 

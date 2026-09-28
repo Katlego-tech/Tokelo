@@ -15,6 +15,7 @@ import type {
   DocumentView,
   LeaseFlags,
   UploadTicket,
+  Verification,
 } from "./types";
 
 export const RETRIES = 4;
@@ -128,6 +129,34 @@ export function getDocument(
   waking?: Waking,
 ): Promise<DocumentView> {
   return call<DocumentView>({ path: `/api/documents/${id}`, token, waking });
+}
+
+/** Every document the tenant has (api.md §6). The screens choose what they show of it. */
+export async function listDocuments(
+  token: () => Promise<string>,
+  waking?: Waking,
+): Promise<DocumentView[]> {
+  const answer = await call<{ documents: DocumentView[] }>({
+    path: "/api/documents",
+    token,
+    waking,
+  });
+  return answer.documents;
+}
+
+/** Hash the stored file again, by the version its digest was taken of, and compare (REQ-010).
+ *  The API does the hashing: nothing the browser holds is what gets checked. */
+export function verifyEvidence(
+  id: string,
+  token: () => Promise<string>,
+  waking?: Waking,
+): Promise<Verification> {
+  return call<Verification>({
+    path: `/api/evidence/${id}/verify`,
+    method: "POST",
+    token,
+    waking,
+  });
 }
 
 /** A lease's flags. While the workers are still reading it the API answers 409 `still_reading`

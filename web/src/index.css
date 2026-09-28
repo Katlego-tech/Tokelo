@@ -22,6 +22,10 @@
   /* The one thing shadcn has no token for: the header bar, which is the ink colour behind
      white text rather than a surface with foreground text on it. */
   --color-header: #1f2933;
+  /* A file verified unchanged (web/evidence.svg). Green is used for that and nothing else, so it
+     never stands for "fine" anywhere a tenant could read it about a clause (REQ-007). 5:1 on
+     white, inside WCAG AA for text. */
+  --color-verified: #15803d;
 }
 
 /* The type scale. Four sizes, named for what they are rather than how big they are, so a screen
