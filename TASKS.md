@@ -597,13 +597,21 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 6 — US4 Ask a rights question
 
-- [ ] T045 [US4] Write the curated topics, each answer citing its sections
+- [x] T045 [US4] Write the curated topics, each answer citing its sections
       Req:     REQ-014, REQ-006
       Design:  docs/design/navigator.md
-      Files:   docs/legal/topics/*.md, tests/unit/test_topics.py
+      Files:   docs/legal/topics/*.md, src/tokelo/api/navigator.py (loading and checking),
+               tests/unit/test_topics.py
       Verify:  the tests are written first and fail; then every topic cites at least one section,
                and only sections in T022's curated set
-      Done:    the topics include repairs, entry, deposits, lock-outs and services, and eviction
+      Done:    eight topics: repairs, the landlord's entry, deposits, services and lock-outs,
+               eviction, ending a fixed-term lease, unfair terms, and joint inspections. Each is
+               written from the curated sections alone. Where they are silent, so is the answer
+               (no general repair duty is curated), and the CPA's are framed "where the lease is a
+               consumer agreement". The catalogue refuses, at load, an uncurated or missing
+               section, fewer than 3 questions, a duplicate ID, an answer over 2,000 characters,
+               any case law, a section number the topic doesn't cite, and a nested-repetition
+               pattern. Each rule has a test that fails without it
 - [ ] T046 [US4] Answer a question, or say it's outside the topics
       Req:     REQ-014
       Design:  docs/design/navigator.md, docs/design/api.md
