@@ -80,9 +80,14 @@ class Bucket:
         }
 
     def put_object(self, **call: Any) -> dict[str, Any]:
+        """A new version of the key each time, as a versioned bucket makes, and its ID back. The
+        body may be bytes or an open file, as boto3 takes either."""
         body = call["Body"]
-        self.put(call["Key"], body if isinstance(body, bytes) else bytes(body))
-        return {}
+        data = bytes(body) if isinstance(body, bytes | bytearray) else body.read()
+        key = call["Key"]
+        version = f"v{sum(1 for k, _ in self.history if k == key) + 1}"
+        self.put(key, data, version=version)
+        return {"VersionId": version}
 
     def page_jobs(self) -> list[str]:
         return sorted(k for k in self.objects if k.startswith("jobs/page/"))

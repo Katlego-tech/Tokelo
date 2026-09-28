@@ -287,23 +287,86 @@ class Store:
         item = answer.get("Item")
         return Dossier.read(item) if item else None
 
+    def start_dossier(self, tenant_id: str, dossier_id: str) -> bool:
+        """`requested` → `compiling`, or `compiling` again on a retry after a failed attempt. False
+        when the dossier is already `ready` or `failed`: finished, and not to be built again
+        (dossier.md §4, §5)."""
+        return self._dossier_moves(
+            tenant_id,
+            dossier_id,
+            "SET #status = :to",
+            {":to": str(DossierStatus.COMPILING)},
+            DossierStatus.REQUESTED,
+            DossierStatus.COMPILING,
+        )
+
     def finish_dossier(
-        self, tenant_id: str, dossier_id: str, s3_key: str, sha256: str, ready_at: str
-    ) -> None:
-        self._table.update_item(
-            Key={"pk": model.tenant_pk(tenant_id), "sk": model.dossier_sk(dossier_id)},
-            UpdateExpression=(
-                "SET #status = :status, s3_key = :key, sha256 = :sha256, ready_at = :at"
-            ),
-            ConditionExpression="attribute_exists(pk)",
-            ExpressionAttributeNames={"#status": "status"},
-            ExpressionAttributeValues={
-                ":status": str(DossierStatus.READY),
+        self,
+        tenant_id: str,
+        dossier_id: str,
+        s3_key: str,
+        s3_version_id: str,
+        sha256: str,
+        page_count: int,
+        size_bytes: int,
+        ready_at: str,
+    ) -> bool:
+        """`compiling` → `ready`, with the PDF this call stored: its version, digest, pages and
+        size. True when this call made it ready. False when another delivery got there first, and
+        what it recorded stands: the download link names that version, so the digest always
+        describes the file the tenant gets (dossier.md §4)."""
+        return self._dossier_moves(
+            tenant_id,
+            dossier_id,
+            "SET #status = :to, s3_key = :key, s3_version_id = :version, sha256 = :sha256, "
+            "page_count = :pages, size_bytes = :size, ready_at = :at",
+            {
+                ":to": str(DossierStatus.READY),
                 ":key": s3_key,
+                ":version": s3_version_id,
                 ":sha256": sha256,
+                ":pages": page_count,
+                ":size": size_bytes,
                 ":at": ready_at,
             },
+            DossierStatus.COMPILING,
         )
+
+    def fail_dossier(self, tenant_id: str, dossier_id: str, failure_reason: str) -> bool:
+        """→ `failed`, with the reason a tenant reads, unless the dossier is already finished: a
+        late failure never takes back a dossier another delivery made `ready`."""
+        return self._dossier_moves(
+            tenant_id,
+            dossier_id,
+            "SET #status = :to, failure_reason = :reason",
+            {":to": str(DossierStatus.FAILED), ":reason": failure_reason},
+            DossierStatus.REQUESTED,
+            DossierStatus.COMPILING,
+        )
+
+    def _dossier_moves(
+        self,
+        tenant_id: str,
+        dossier_id: str,
+        update: str,
+        values: dict[str, Any],
+        *allowed_from: DossierStatus,
+    ) -> bool:
+        """One of the dossier's transitions, taken only from the states it may be taken from."""
+        allowed = {f":from{n}": str(state) for n, state in enumerate(allowed_from)}
+        try:
+            self._table.update_item(
+                Key={"pk": model.tenant_pk(tenant_id), "sk": model.dossier_sk(dossier_id)},
+                UpdateExpression=update,
+                ConditionExpression=f"#status IN ({', '.join(allowed)})",
+                ExpressionAttributeNames={"#status": "status"},
+                ExpressionAttributeValues=values | allowed,
+            )
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == FAILED_CONDITION:
+                return False
+            raise
 
     def set_dossier_status(
         self,

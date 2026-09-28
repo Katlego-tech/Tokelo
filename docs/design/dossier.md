@@ -64,6 +64,10 @@ sequenceDiagram
   would be worse than showing it.
 - **Over 150 documents, or the PDF would pass 100 MB:** `failed` ("too many records"). The `api`
   refuses over 150 before it gets here ([api.md](api.md) §6).
+- **More than 5 MB of WhatsApp exports:** `failed` ("too many chat messages"), before a file is
+  read. Setting messages is what takes the time: one 5 MB export, the most an upload may be, is
+  about 43,000 messages, set twice, in about 40 s and 380 MB on a laptop (T043). The function
+  has 300 s and 1 GB on a slower CPU.
 - **A job is delivered again after a failure** (a throttled read, a timeout): the dossier is still
   `compiling`, so the worker builds it again from the start. Stopping at `compiling` would leave
   the dossier there for good, with nothing in the dead-letter queue. Only `ready` and `failed`
@@ -100,11 +104,41 @@ stateDiagram-v2
 | 1. Cover | "Dispute dossier", the date it was built, "Prepared with Tokelo", the notice that this is legal information and not legal advice, and how to check a file against its digest (`sha256sum`) |
 | 2. Index | each part and each record, with its page number |
 | 3. Timeline | every entry of the selected records, in time order (below), each with its date and **where the date came from** |
-| 4. The lease | the lease's own pages, then a table of its flagged clauses: the clause, the explanation and the sections |
+| 4. The lease | the lease's own pages, then its flagged clauses: each clause's words, the explanation and the sections. Any page the reader couldn't read is named above them, so the list isn't taken for the whole lease. With no flagged clause: "No issue found by these checks in any clause of this lease" (REQ-007) |
 | 5. Evidence | each photo on its own page, fitted to A4 at up to 150 dpi, with its capture time, device and place (or "not recorded"), its SHA-256, and when it was stored |
-| 6. Communications | each notice's own pages; each WhatsApp export's messages as text, in time order |
+| 6. Communications | each notice's own pages, with the date the timeline gives it and where that date came from; each WhatsApp export's messages as text, in time order, whole (the timeline's are cut to 500 characters) |
 | 7. The law cited | each curated section the lease's flags cite: its ID, title and text, from T022's set |
 | 8. Integrity | every file in the dossier: its name in Tokelo, size, SHA-256 and time stored |
+
+### How the parts are laid out
+
+- **A record's name in Tokelo** is its kind and its place among that kind: "Lease 1", "Photo 2",
+  "Notice 1", "WhatsApp export 1". Tokelo keeps no file names ([api.md](api.md) §6), and a name
+  that described the file would be a claim about the evidence. Within a kind, the first is the
+  earliest on the timeline, then the first uploaded. Each part shows its records in that order,
+  so the records come in time order (REQ-013). Integrity also gives each file's Tokelo ID.
+- **Every record starts on its own page,** with its name, what Tokelo recorded about the file,
+  and its digest. A lease or notice that is a PDF has this as an introductory page, followed by
+  its own pages. A photograph, or a lease or notice that is one, is shown under its details on
+  the same page. A file whose digest no longer matches carries the red line at the top of that
+  page, and in part 8.
+- **The timeline's column headings repeat at the top of every page it runs to.** Each entry is
+  its own one-row table: one long table is re-split at every page, which made a 5 MB export's
+  timeline take minutes and more than a gigabyte.
+- **Tokelo's own pages are numbered at the foot,** with the notice. The copied pages aren't
+  touched, but they are counted, so "page 12" in the index is the twelfth page of the PDF.
+- **A part with nothing chosen is left out,** and the index says so ("none selected"; for part
+  7, "no lease selected"). The cover, the index, the timeline and integrity are always there.
+- **A copied PDF that can't be opened** (damaged, or locked with a password) is named on its
+  introductory page, with its digest, and its pages are left out. **A photo that can't be
+  shown** keeps its page and its digest. Neither fails the dossier.
+- **The law is set line for line,** at whatever size fits the widest line on the page (8 pt at
+  most). The gazette's own breaks and indents are the text's structure, so they are never
+  reflowed. A cited section no longer in the curated set is named, and its text isn't
+  reproduced (REQ-006).
+- **The type is Bitstream Vera,** which ReportLab ships. It has the statutes' curly quotes and
+  dashes. A character it lacks, an emoji in a chat say, shows as an empty box and doesn't stop
+  the build.
 
 ### Ordering the timeline
 
@@ -123,11 +157,12 @@ form fields and embedded files are removed. The rest, the page content, is copie
 
 | Path | New? | Responsibility |
 | --- | --- | --- |
-| `src/tokelo/dossier/handler.py` | new | the entry point, and the health answer |
+| `src/tokelo/dossier/handler.py` | new | the entry point, the health answer, and §4's flow (T043) |
+| `src/tokelo/dossier/selection.py` | new | what a dossier may hold ([api.md](api.md) §6), checked by the `api` at request (T042) and here at build, in the same words |
 | `src/tokelo/dossier/pdf.py` | new | §6's parts, with ReportLab and `pypdf` (T043) |
 | `src/tokelo/dossier/sanitize.py` | new | removing actions and attachments from copied pages |
 | `src/tokelo/dossier/timeline.py` | new | the ordering rules here, and parsing at upload ([evidence.md](evidence.md); T041) |
-| `services/dossier/Dockerfile` | new | Lambda's Python 3.14 base, pinned by digest |
+| `services/dossier/Dockerfile` | new | Lambda's Python 3.14 base, pinned by digest; ReportLab, pypdf and Pillow from `uv.lock` (the `dossier-image` group); and `docs/legal/sections/` beside the code, for part 7 |
 | `tests/dossier/` | new | the parts, the ordering, the sanitising, a mismatched digest |
 
 ## 8. Decisions & alternatives
@@ -144,11 +179,19 @@ Deviations from [docs/architecture-defaults.md](../architecture-defaults.md): no
 
 ## 9. How this is verified
 
-- `tests/dossier/test_pdf.py`, on synthetic records:
+- `tests/dossier/test_pdf.py`, on synthetic records made of the repository's fixtures:
   - the parts appear in order, the index's page numbers are right, and every digest matches its
     fixture
-  - a foreign document ID fails the dossier
   - a mismatched file is marked (REQ-013)
+  - the copied pages are the originals' and unnumbered; Tokelo's are numbered
+- `tests/dossier/test_worker.py`, against DynamoDB Local:
+  - a dossier is built, stored and recorded with its version, digest, pages and size, and
+    audited once
+  - a foreign document ID fails the dossier, and the job object's own list is never what's built
+  - a retry after a failed attempt finishes it, the third failure marks it failed, two builds at
+    once record one PDF
+- `tests/integration/test_store.py`: the dossier's transitions are taken only from the states
+  §5 draws.
 - `tests/dossier/test_timeline.py`: same-instant entries, SAST display, the "uploaded on" label
   (REQ-012).
 - `tests/dossier/test_sanitize.py`: a fixture PDF with JavaScript and an attachment comes out

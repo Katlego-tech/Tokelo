@@ -545,13 +545,26 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                refused before the store is asked, since a prefix of a real ID would find it. The
                link is SigV4 for the bucket's regional host, like the uploads' now (the T025 fix
                below)
-- [ ] T043 [US3] Compile the dossier PDF
+- [x] T043 [US3] Compile the dossier PDF
       Req:     REQ-013, REQ-011
       Design:  docs/design/dossier.md
-      Files:   src/tokelo/dossier/pdf.py, src/tokelo/dossier/sanitize.py, tests/dossier/test_pdf.py, tests/dossier/test_sanitize.py
+      Files:   src/tokelo/dossier/pdf.py, src/tokelo/dossier/sanitize.py,
+               src/tokelo/dossier/handler.py, src/tokelo/core/store.py, src/tokelo/core/jobs.py,
+               services/dossier/Dockerfile, pyproject.toml, uv.lock, tests/dossier/test_pdf.py,
+               tests/dossier/test_sanitize.py, tests/dossier/test_worker.py, tests/pdfs.py,
+               tests/fakes.py, tests/integration/test_store.py, tests/unit/test_images.py
       Verify:  the tests are written first and fail; then the PDF has its index, the records in time
                order, each file's metadata and digest, and the cited sections
-      Done:    stored in S3 for the tenant to download, with an audit entry
+      Done:    stored in S3 for the tenant to download, with an audit entry. The worker builds from
+               the dossier's own list in the tenant's partition, checked again with the api's rule,
+               and never from the job object's. It reads each file by its recorded version, and a
+               file that no longer matches is in, marked red. Only `ready` and `failed` finish it:
+               a retry rebuilds, the third failure marks it failed, and `ready` is written once,
+               with the version the download link names. The copied pages lose their scripts,
+               links, forms and attachments. The image carries ReportLab, pypdf and Pillow from
+               uv.lock and the curated law; built locally, it makes a 13-page dossier from the
+               fixtures. Measured: a 5 MB export (43,385 messages, 4,504 pages) builds in 41 s and
+               380 MB here, so a dossier takes at most 5 MB of chat, refused with its reason
 - [ ] T044 [US3] Web: build and download a dossier
       Req:     REQ-013, NFR-009
       Design:  docs/design/web.md, docs/design/web/dossier.svg

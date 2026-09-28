@@ -99,7 +99,7 @@ def run(event: Event, work: Callable[[Job], None], store: Store) -> dict[str, An
 def _mark_failed(store: Store, job: Job) -> None:
     """Tell the tenant, if there is still something to tell them about."""
     if job.tenant_id is None or job.document_id is None:
-        return  # a job object, not an upload: its document is named inside the object (T042)
+        return  # a dossier job: its key names no tenant, so the dossier worker marks it
     try:
         store.set_document_status(
             job.tenant_id, job.document_id, DocumentStatus.FAILED, failure_reason=FAILED
