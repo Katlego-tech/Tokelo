@@ -54,6 +54,7 @@ export function Dossier({
   const [loadFailed, setLoadFailed] = useState<string | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [building, setBuilding] = useState<Building>({ name: "choosing" });
+  const [linkFailed, setLinkFailed] = useState<string | null>(null);
   const live = useRef(true);
 
   useEffect(() => {
@@ -138,8 +139,16 @@ export function Dossier({
       const expires = Date.parse(dossier.expires_at ?? "");
       if (Number.isFinite(expires) && expires - Date.now() > 10_000) return;
       event.preventDefault();
-      const fresh = await getDossier(dossier.id, token, waking);
-      if (fresh.download_url) window.location.assign(fresh.download_url);
+      setLinkFailed(null);
+      try {
+        const fresh = await getDossier(dossier.id, token, waking);
+        if (!fresh.download_url) throw new Error("no link");
+        window.location.assign(fresh.download_url);
+      } catch (e) {
+        setLinkFailed(
+          why(e, "A fresh download link couldn't be had. Please try again."),
+        );
+      }
     },
     [token, waking],
   );
@@ -222,6 +231,16 @@ export function Dossier({
 
       {building.name === "ready" ? (
         <Ready dossier={building.dossier} onDownload={download} />
+      ) : null}
+
+      {linkFailed ? (
+        <Notice
+          title="The download didn't start"
+          tone="destructive"
+          role="alert"
+        >
+          {linkFailed}
+        </Notice>
       ) : null}
     </>
   );

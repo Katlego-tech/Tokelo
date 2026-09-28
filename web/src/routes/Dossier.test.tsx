@@ -256,6 +256,62 @@ describe("[REQ-013] building and downloading", () => {
   });
 });
 
+describe("[REQ-013] a download link that has run out", () => {
+  const EXPIRED: DossierView = { ...READY, expires_at: "2020-01-01T00:00:00Z" };
+  const FRESH_URL =
+    "https://tokelo-staging-documents.s3.eu-west-1.amazonaws.com/d.pdf?fresh=1";
+
+  it("fetches a fresh link and goes to it, rather than following the dead one", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    const fetch = answers(
+      listed(WALL),
+      json({ dossier_id: DOSSIER_ID }, 202),
+      json(EXPIRED),
+      json({ ...READY, download_url: FRESH_URL }),
+    );
+    renderRoute("/dossier", { auth });
+
+    await userEvent.click(await screen.findByRole("checkbox"));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Build dossier" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("link", {
+        name: "Download (link valid for 5 minutes)",
+      }),
+    );
+
+    await vi.waitFor(() => expect(assign).toHaveBeenCalledWith(FRESH_URL));
+    expect(fetch.mock.calls[3][0]).toBe(`/api/dossiers/${DOSSIER_ID}`);
+  });
+
+  it("says so when a fresh link can't be had", async () => {
+    vi.stubGlobal("location", { ...window.location, assign: vi.fn() });
+    answers(
+      listed(WALL),
+      json({ dossier_id: DOSSIER_ID }, 202),
+      json(EXPIRED),
+      json({ error: { code: "not_found", message: "No such dossier." } }, 404),
+    );
+    renderRoute("/dossier", { auth });
+
+    await userEvent.click(await screen.findByRole("checkbox"));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Build dossier" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("link", {
+        name: "Download (link valid for 5 minutes)",
+      }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No such dossier.",
+    );
+  });
+});
+
 describe("[NFR-009] accessibility", () => {
   it("has no axe violations with records chosen and the warning shown", async () => {
     answers(listed(LEASE, WALL, HALLWAY));
