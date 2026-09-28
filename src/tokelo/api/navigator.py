@@ -14,16 +14,21 @@ put a word outside the curated law in front of a tenant:
 - a pattern that doesn't compile, or one with nested repetition, which could run for a long
   time on a crafted question (§Threats)
 
-Matching a question to a topic, and the endpoint, are T046's.
+Below the loading: matching a question to a topic (§4), and the endpoint (T046).
 """
 
+import json
 import re
 import tomllib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from typing import Any
 
+from tokelo.api import views
+from tokelo.api.auth import tenant_of
+from tokelo.api.responses import Response, error, json_response
 from tokelo.core import sources
 
 FRONT_MATTER = "+++"
@@ -181,3 +186,105 @@ def load(folder: Path) -> list[Topic]:
 def catalogue() -> list[Topic]:
     """The topics this image holds, loaded once per container."""
     return load(root())
+
+
+# ------------------------------------------------------------------ matching ---
+# navigator.md §4: patterns and word overlap, deterministic. A pattern that matches is strong
+# evidence (2 each); the overlap with the topic's closest example question, a share from 0 to 1,
+# breaks ties and carries phrasings no pattern names. The best topic answers only if it reaches
+# THRESHOLD and beats the next by MARGIN; otherwise the question is outside. Both numbers are the
+# ones tests/api/test_navigator.py needs to put every example on its topic, the held-out
+# phrasings on theirs, and the out-of-scope set outside.
+# Measured on the examples, the held-out phrasings and the out-of-scope set (T046): the weakest
+# in-scope question scores 1.0 and wins by at least 1.0; no out-of-scope question scores above 0.
+# Each number sits midway, and a test keeps it there as topics are added.
+THRESHOLD = 0.5
+MARGIN = 0.5
+PATTERN_WEIGHT = 2.0
+
+# Words that say nothing about which topic a question is about. "landlord", "lease", "flat" and
+# the like are in nearly every tenant's question, so they are here too.
+STOP_WORDS = frozenset(
+    """a an the and or but if of to in on at for with from by about as into it its is are was were
+    be been being do does did done have has had i me my mine we us our you your he him his she her
+    they them their this that these those what which who whom when where why how can could may
+    might must shall should will would not no yes so than then there here just also very too any
+    all some there's i'm it's can't won't don't doesn't didn't isn't is'nt allowed legal landlord
+    landlords owner tenant tenants lease flat house home place property rent renting""".split()
+)
+
+
+def words(text: str) -> set[str]:
+    """The question's words that could tell topics apart: lower-cased, punctuation gone."""
+    cleaned = re.sub(r"[^\w\s']", " ", text.lower())
+    return {w.strip("'") for w in cleaned.split()} - STOP_WORDS - {""}
+
+
+def score(topic: Topic, question: str) -> float:
+    matched = sum(1 for p in topic.any_of if p.search(question))
+    asked = words(question)
+    overlap = (
+        max(
+            (len(asked & words(example)) / len(asked) for example in topic.questions),
+            default=0.0,
+        )
+        if asked
+        else 0.0
+    )
+    return PATTERN_WEIGHT * matched + overlap
+
+
+def match(question: str) -> str | None:
+    """The topic that answers `question`, or None when none clearly does."""
+    ranked = sorted(
+        ((score(t, question), t.id) for t in catalogue()), key=lambda s: s[0], reverse=True
+    )
+    if not ranked:
+        return None
+    best = ranked[0]
+    runner_up = ranked[1][0] if len(ranked) > 1 else 0.0
+    if best[0] >= THRESHOLD and best[0] - runner_up >= MARGIN:
+        return best[1]
+    return None
+
+
+def topic(topic_id: str) -> Topic:
+    return next(t for t in catalogue() if t.id == topic_id)
+
+
+# ------------------------------------------------------------------ the endpoint ---
+QUESTION_MIN, QUESTION_MAX = 3, 500  # navigator.md §4
+
+# What a tenant is told when no topic answers them (api.md §6, `Outside`). It says what the
+# Tribunal does, in the curated Act's own terms (section 13(1)), and no more: Tokelo doesn't know
+# whether this particular question is one the Tribunal will hear.
+REFER_TO = "the Rental Housing Tribunal"
+OUTSIDE_MESSAGE = (
+    "Tokelo has no written answer for this question, so it won't guess at one. The Rental "
+    "Housing Tribunal hears complaints from tenants and landlords about unfair practices."
+)
+
+
+def ask(event: Mapping[str, Any]) -> Response:
+    """POST /api/navigator {question} → Answer or Outside (api.md §6).
+
+    The question is never stored or logged: it may be personal, and nothing here needs it once
+    it has been matched (navigator.md § Threats)."""
+    tenant_of(event)  # behind the authorizer like every /api/ route; this is the lock behind it
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except json.JSONDecodeError:
+        body = None
+    question = body.get("question") if isinstance(body, dict) else None
+    if not isinstance(question, str) or not (QUESTION_MIN <= len(question.strip()) <= QUESTION_MAX):
+        return error(
+            422,
+            "refused",
+            f"Ask a question of {QUESTION_MIN} to {QUESTION_MAX} characters.",
+        )
+
+    found = match(question)
+    if found is None:
+        return json_response(200, views.outside(OUTSIDE_MESSAGE, REFER_TO))
+    chosen = topic(found)
+    return json_response(200, views.answer(chosen.title, chosen.answer, chosen.sections()))

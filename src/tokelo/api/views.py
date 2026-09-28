@@ -127,3 +127,14 @@ def dossier_view(
         "download_url": download_url,
         "expires_at": expires_at,
     }
+
+
+def answer(title: str, text: str, sections: list[dict[str, str]]) -> dict[str, Any]:
+    """api.md §6's `Answer`: the topic's title, its written answer, the curated sections it rests
+    on, and the notice, in the same words as everywhere else."""
+    return {"topic": title, "answer": text, "sections": sections, "notice": NOTICE}
+
+
+def outside(message: str, refer_to: str) -> dict[str, Any]:
+    """api.md §6's `Outside`: no topic answers this, said plainly, and where to go instead."""
+    return {"outside": True, "message": message, "refer_to": refer_to}

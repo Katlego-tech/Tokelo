@@ -10,7 +10,7 @@ import os
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from tokelo.api import documents, dossiers, evidence, leases, static, uploads
+from tokelo.api import documents, dossiers, evidence, leases, navigator, static, uploads
 from tokelo.api.auth import Unauthenticated
 from tokelo.api.responses import Response, error, json_response
 
@@ -51,6 +51,8 @@ def api(event: Event) -> Response:
             return dossiers.request_dossier(event)
         case "GET", ["dossiers", dossier_id]:
             return dossiers.get_dossier(event, dossier_id)
+        case "POST", ["navigator"]:
+            return navigator.ask(event)
     return error(404, "not_found", "No such route.")
 
 

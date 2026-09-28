@@ -612,14 +612,22 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                section, fewer than 3 questions, a duplicate ID, an answer over 2,000 characters,
                any case law, a section number the topic doesn't cite, and a nested-repetition
                pattern. Each rule has a test that fails without it
-- [ ] T046 [US4] Answer a question, or say it's outside the topics
+- [x] T046 [US4] Answer a question, or say it's outside the topics
       Req:     REQ-014
       Design:  docs/design/navigator.md, docs/design/api.md
-      Files:   src/tokelo/api/navigator.py, tests/api/test_navigator.py
+      Files:   src/tokelo/api/navigator.py, src/tokelo/api/views.py, src/tokelo/api/handler.py,
+               services/api/Dockerfile, .dockerignore, tests/api/test_navigator.py,
+               tests/unit/test_images.py
       Contract:POST /api/navigator {question} → {topic, answer, sections} or {outside: true, refer_to}
       Verify:  the tests are written first and fail; then curated questions get their topic, and
                others are told plainly and pointed to the Rental Housing Tribunal
-      Done:    no answer cites case law
+      Done:    no answer cites case law. Every example question finds its own topic, so do five
+               phrasings no topic lists, and the out-of-scope set (subletting, pets, neighbours,
+               rates, a business, a subsidy) is told so and pointed to the Tribunal. A near tie
+               is outside. The threshold and margin (0.5, 0.5) sit midway between what they
+               separate, and a test keeps them there. The api image now carries the curated
+               sections and the topics; the image test checks it loads all eight. The question
+               is never stored or logged
 - [ ] T047 [US4] Web: ask a question
       Req:     REQ-014, NFR-009
       Design:  docs/design/web.md, docs/design/web/navigator.svg

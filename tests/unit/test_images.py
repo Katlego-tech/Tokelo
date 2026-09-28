@@ -118,6 +118,8 @@ def run_in(code_root: Path, script: str) -> subprocess.CompletedProcess[str]:
 CITES_THE_LAW = {
     # The rule catalogue checks every section a rule cites when it loads (T032), at analysis.
     "ocr": "from tokelo.ocr import rules; rules.catalogue()",
+    # The navigator loads its topics, and checks every section they cite, on first use (T046).
+    "api": "from tokelo.api import navigator; assert len(navigator.catalogue()) == 8",
     # Part 7 of a dossier reproduces each cited section's text (T043).
     "dossier": "from tokelo.core import sources; [sources.section(i).text for i in sources.ids()]",
 }
