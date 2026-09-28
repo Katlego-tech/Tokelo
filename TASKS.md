@@ -575,12 +575,21 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                uv.lock and the curated law; built locally, it makes a 13-page dossier from the
                fixtures. Measured: a 5 MB export (43,385 messages, 4,504 pages) builds in 41 s and
                380 MB here, so a dossier takes at most 5 MB of chat, refused with its reason
-- [ ] T044 [US3] Web: build and download a dossier
+- [x] T044 [US3] Web: build and download a dossier
       Req:     REQ-013, NFR-009
-      Design:  docs/design/web.md, docs/design/web/dossier.svg
-      Files:   web/src/…
+      Design:  docs/design/web.md §6 (the dossier screen), docs/design/web/dossier.svg
+      Files:   web/src/routes/Dossier.tsx, web/src/routes/Dossier.test.tsx,
+               web/src/components/RecordPicker.tsx, web/src/components/LocationWarning.tsx,
+               web/src/lib/evidence.ts, web/src/components/EvidenceCard.tsx,
+               web/src/api/client.ts, web/src/api/types.ts, web/src/App.tsx,
+               web/src/index.css, web/src/test/render.tsx
       Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
-      Done:    matches the reference, with live data from staging
+      Done:    `/dossier` matches the reference, checked by eye at phone width. It offers the
+               finished records, warns how many chosen photos include their location, builds,
+               waits on the dossier, and offers the ready PDF with its pages, size, digest and a
+               5-minute link, fetched fresh if it has run out. An empty choice shows the API's
+               reason; a failed dossier shows why. 8 screen tests, axe clean. Live data from
+               staging waits on a release
 
 **Checkpoint:** US3 is independently demoable on staging.
 

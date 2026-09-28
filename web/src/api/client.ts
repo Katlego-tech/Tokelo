@@ -13,6 +13,7 @@ import type {
   ApiError,
   Config,
   DocumentView,
+  DossierView,
   LeaseFlags,
   UploadTicket,
   Verification,
@@ -157,6 +158,32 @@ export function verifyEvidence(
     token,
     waking,
   });
+}
+
+/** Ask for a dossier of the chosen records (api.md §6). The API refuses an empty or oversized
+ *  selection with its reason (422), which the screen shows as it is. */
+export async function requestDossier(
+  documentIds: string[],
+  token: () => Promise<string>,
+  waking?: Waking,
+): Promise<string> {
+  const answer = await call<{ dossier_id: string }>({
+    path: "/api/dossiers",
+    method: "POST",
+    body: { document_ids: documentIds },
+    token,
+    waking,
+  });
+  return answer.dossier_id;
+}
+
+/** A dossier as it stands, with a fresh download link once it is ready. */
+export function getDossier(
+  id: string,
+  token: () => Promise<string>,
+  waking?: Waking,
+): Promise<DossierView> {
+  return call<DossierView>({ path: `/api/dossiers/${id}`, token, waking });
 }
 
 /** A lease's flags. While the workers are still reading it the API answers 409 `still_reading`

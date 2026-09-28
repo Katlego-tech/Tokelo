@@ -165,6 +165,16 @@ stateDiagram-v2
   digest."** The two answers to "Verify this file" (REQ-010). A change is an alert, with both
   digests in full.
 
+### The dossier screen (T044)
+
+[dossier.svg](web/dossier.svg) draws each record as "Lease · 12 pages" or "WhatsApp export · 214
+messages". `DocumentView` carries neither count, and a record has no name, so records are named
+as on the evidence screen: "Lease · stored 2026-08-30 09:30 SAST". Only finished records are
+offered, since the API refuses the rest ([api.md](api.md) §6). "Build dossier" stays pressable
+with nothing chosen, and the API's own reason is shown (SPEC.md US3, "nothing selected"). The
+location warning's amber is its own token, `--color-caution` (`#b45309`, 5:1 on white): a
+caution, not a refusal. A tap on an expired download link fetches a fresh one first.
+
 ### The evidence screen (T040)
 
 [evidence.svg](web/evidence.svg) leaves three things to settle:

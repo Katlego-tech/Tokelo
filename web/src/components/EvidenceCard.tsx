@@ -13,14 +13,7 @@ import { NotRecorded } from "@/components/NotRecorded";
 import { Notice } from "@/components/Notice";
 import { VerifyButton } from "@/components/VerifyButton";
 import { Card, CardContent } from "@/components/ui/card";
-import { KIND_NAMES, NOT_RECORDED, sast, short } from "@/lib/evidence";
-
-export function title(document: DocumentView): string {
-  const kind = KIND_NAMES[document.kind];
-  return document.stored_at
-    ? `${kind} · stored ${sast(document.stored_at)}`
-    : `${kind} · not stored yet`;
-}
+import { NOT_RECORDED, recordName, sast, short } from "@/lib/evidence";
 
 export function EvidenceCard({
   document,
@@ -29,7 +22,7 @@ export function EvidenceCard({
   document: DocumentView;
   waking?: (b: boolean) => void;
 }) {
-  const named = title(document);
+  const named = recordName(document);
   const capture = document.capture;
   return (
     <article aria-label={named}>
