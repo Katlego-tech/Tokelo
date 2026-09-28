@@ -24,6 +24,15 @@ export type DocumentView = {
   capture?: Capture;
 };
 
+// A verification (api.md §6, `Verification`): both digests, not only the verdict, so what was
+// compared is on the screen (REQ-010).
+export type Verification = {
+  matches: boolean;
+  recorded_sha256: string;
+  computed_sha256: string;
+  verified_at: string;
+};
+
 export type UploadTicket = {
   document_id: string;
   url: string;

@@ -148,6 +148,22 @@ describe("[REQ-002] the file goes straight to storage", () => {
   });
 });
 
+describe("[REQ-008] where evidence goes once it is in", () => {
+  it("points to the evidence list, where the file's fingerprint will be", async () => {
+    answers(
+      json(TICKET, 201),
+      json({ id: TICKET.document_id, status: "stored" }),
+    );
+    renderRoute("/evidence/new", { auth });
+
+    await userEvent.click(screen.getByRole("button", { name: "A notice" }));
+    await choose(/choose a pdf/i, PDF());
+
+    const link = await screen.findByRole("link", { name: "See your evidence" });
+    expect(link.getAttribute("href")).toBe("/evidence");
+  });
+});
+
 describe("[REQ-003] what a tenant is told before spending their data", () => {
   it("refuses a Word document by name, without asking the API", async () => {
     const fetch = answers();

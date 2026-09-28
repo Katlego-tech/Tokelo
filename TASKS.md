@@ -495,12 +495,22 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                both workers find the tenant and file the upload. Until now nothing called
                `create_tenant`, and every upload's audit entry was silently skipped. Uploads made
                before this fix stay unaudited: their events are gone
-- [ ] T040 [US2] Web: upload evidence, see its metadata, and verify it
+- [x] T040 [US2] Web: upload evidence, see its metadata, and verify it
       Req:     REQ-008, REQ-009, REQ-010, NFR-009
-      Design:  docs/design/web.md, docs/design/web/evidence.svg
-      Files:   web/src/…
+      Design:  docs/design/web.md §6 (the evidence screen), docs/design/web/evidence.svg
+      Files:   web/src/routes/Evidence.tsx, web/src/routes/Evidence.test.tsx,
+               web/src/components/EvidenceCard.tsx, web/src/components/NotRecorded.tsx,
+               web/src/components/VerifyButton.tsx, web/src/lib/evidence.ts,
+               web/src/api/client.ts, web/src/api/types.ts, web/src/App.tsx,
+               web/src/index.css, web/src/components/Uploader.tsx, web/src/test/render.tsx
       Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
-      Done:    matches the reference, with live data from staging
+      Done:    `/evidence` matches the reference, checked by eye in a headless browser at phone
+               width. Each photo, notice and export shows its capture details ("not recorded"
+               where the photo carries none, and never the coordinates), its digest and when it
+               was stored. "Verify this file" asks the API and says "Unchanged", or raises an
+               alert with both digests. 14 screen tests, axe clean listed and verified. A
+               finished evidence upload links here. Live data from staging waits on a release,
+               as T035's did
 
 **Checkpoint:** US2 is independently demoable on staging.
 
