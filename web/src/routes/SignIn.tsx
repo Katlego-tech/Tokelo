@@ -1,8 +1,9 @@
 // Signing in (docs/design/web/sign-up.svg, the second panel; REQ-001).
 import { type FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 import { useAuth } from "@/auth/AuthContext";
+import { Notice } from "@/components/Notice";
 import { ScreenTitle } from "@/components/ScreenTitle";
 import { TextField } from "@/components/TextField";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,9 @@ import { Refusal } from "./SignUp";
 export function SignIn() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  // Arriving here straight after deleting an account (DeleteAccount.tsx).
+  const deleted =
+    (useLocation().state as { deleted?: boolean } | null)?.deleted === true;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [failure, setFailure] = useState<string | null>(null);
@@ -35,6 +39,12 @@ export function SignIn() {
       }}
     >
       <ScreenTitle title="Sign in">Welcome back.</ScreenTitle>
+      {deleted ? (
+        <Notice title="Your account is deleted" role="status">
+          Your files and records are gone. The audit log keeps its entries,
+          without your identity.
+        </Notice>
+      ) : null}
       <TextField
         label="Email"
         type="email"

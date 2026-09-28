@@ -21,6 +21,7 @@ const auth: Auth = {
   confirm: vi.fn(async () => {}),
   signIn: vi.fn(async () => {}),
   signOut: vi.fn(async () => {}),
+  deleteAccount: vi.fn(async () => {}),
   token: vi.fn(async () => "a-token"),
 };
 

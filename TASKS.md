@@ -648,13 +648,24 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
 
 ## Phase 7 — Hardening and release
 
-- [ ] T048 [POL] Delete an account and everything in it
+- [x] T048 [POL] Delete an account and everything in it
       Req:     REQ-016
-      Design:  docs/design/api.md, docs/design/web.md, docs/design/web/account.svg
-      Files:   src/tokelo/api/account.py, tests/api/test_delete_account.py, web/src/…
+      Design:  docs/design/api.md §4 (deleting an account), docs/design/web.md,
+               docs/design/web/account.svg
+      Files:   src/tokelo/api/account.py, src/tokelo/api/handler.py, tests/api/test_delete_account.py,
+               tests/fakes.py, web/src/routes/Account.tsx, web/src/routes/Account.test.tsx,
+               web/src/components/DeleteAccount.tsx, web/src/components/PrivacyNotice.tsx,
+               web/src/auth/, web/src/api/client.ts, web/src/routes/SignIn.tsx,
+               web/src/routes/SignUp.tsx, web/src/App.tsx
       Verify:  the tests are written first and fail; then the tenant's files and records are gone,
                and the audit log keeps its entries without the tenant's identity
-      Done:    the web app deletes the Cognito user with the tenant's own token
+      Done:    the web app deletes the Cognito user with the tenant's own token. `DELETE
+               /api/account` reads the audit pseudonym first, then deletes every version and delete
+               marker of the tenant's files, then their whole partition. It then appends a
+               `delete_account` entry that maps to nobody (api.md §4 now draws the sequence). Files
+               go before records, and a refusal inside DeleteObjects' 200 stops it. A second call
+               is a 202 that finds nothing. `/account` matches account.svg, the button waits for
+               DELETE typed exactly, and each failure says what did and didn't go
 - [ ] T049 [POL] Measure the API's speed in the release pipeline
       Req:     NFR-001, NFR-002
       Files:   perf/upload-url.js, perf/first-request.js
