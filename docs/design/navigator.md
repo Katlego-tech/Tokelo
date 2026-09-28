@@ -114,6 +114,10 @@ written from T022's curated sources.
 - a duplicate ID
 - an answer over 2,000 characters
 - any mention of case law: the curated sources have none (ADR-0006)
+- a section or regulation number in the answer that the topic doesn't cite (T045): an answer
+  can't quote a number its citations don't back
+- a pattern with nested repetition, like `(a+)+`, which could run for a long time on a crafted
+  question (§ Threats)
 
 ### What the topics cover (T045)
 
@@ -126,7 +130,7 @@ far as the curated sections support it.
 | Path | New? | Responsibility |
 | --- | --- | --- |
 | `docs/legal/topics/*.md` | new | the topics (T045); copied into the `api` image at build |
-| `src/tokelo/api/navigator.py` | new | loading and checking the catalogue; scoring; the two replies (T046) |
+| `src/tokelo/api/navigator.py` | new | loading and checking the catalogue (T045); scoring; the two replies (T046) |
 | `tests/unit/test_topics.py` | new | every topic cites only curated sections; the catalogue's own checks (T045) |
 | `tests/api/test_navigator.py` | new | every example question finds its topic; the out-of-scope set gets "outside" (T046) |
 

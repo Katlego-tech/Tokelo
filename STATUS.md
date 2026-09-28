@@ -53,6 +53,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `dossier` (T043: compile the dossier PDF) | Katlego | Claude Code | ✅ Done |
 | `web` (T040: the evidence screen, with verify) | Katlego | Claude Code | ✅ Done |
 | `web` (T044: build and download a dossier) | Katlego | Claude Code | 🔵 In review |
+| `legal` + `api` (T045: the navigator's curated topics) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -174,6 +175,11 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T045: eight curated topics, written from the
+  15 curated sections alone, and a loader that refuses anything uncurated, any case law, and any
+  section number an answer names without citing. Katlego: these answers are legal information a
+  tenant may act on, so they deserve your read before T047 puts them on a screen. Next: T046.
+  Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — T044: `/dossier`. Choose finished records, see
   how many chosen photos include their location, build, wait, download (a fresh link if the
   5 minutes have run out). Matches dossier.svg by eye; 8 tests, axe clean. Phase 5 is done in
