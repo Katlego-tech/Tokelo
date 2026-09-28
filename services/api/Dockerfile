@@ -16,6 +16,11 @@ RUN npm run build
 FROM public.ecr.aws/lambda/python:3.14@sha256:3f0bbbb2fd963ec4bdb2ec30e587464c91b0775ce7712167efdf17d5a12a7705
 
 COPY src/tokelo ${LAMBDA_TASK_ROOT}/tokelo
+# The curated law and the navigator's topics, where `sources.root()` and `navigator.root()` look
+# for them beside the package: the navigator answers only from the topics, and checks every
+# section they cite when it loads (T046; tests/unit/test_images.py).
+COPY docs/legal/sections ${LAMBDA_TASK_ROOT}/legal/sections
+COPY docs/legal/topics ${LAMBDA_TASK_ROOT}/legal/topics
 COPY --from=web /web/dist ${LAMBDA_TASK_ROOT}/web
 
 # No USER: Lambda runs a container image as its own least-privileged user, whatever the image

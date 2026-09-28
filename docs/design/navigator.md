@@ -74,7 +74,11 @@ sequenceDiagram
    question's words, after stop words are dropped, that appear in its best-matching example
    question.
 3. The best topic wins only if its score reaches the **threshold** and beats the second by the
-   **margin**. Both are fixed by T045's tests (§9), not guessed.
+   **margin**. Both are fixed by T046's tests (§9), not guessed: **0.5 and 0.5**. Measured on
+   the examples, some held-out phrasings and the out-of-scope set, the weakest in-scope question
+   scores 1.0 and wins by at least 1.0, and no out-of-scope question scores above 0. So each
+   number sits midway, and a test keeps a quarter point of room on both sides.
+   "Landlord", "lease", "flat" and the like are stop words: nearly every question has them.
 4. A near tie is "outside": it's better to refer the tenant on than to answer the wrong question.
 
 **Failure paths:** there's nothing to fail except a malformed question (422). A catalogue that
@@ -132,7 +136,7 @@ far as the curated sections support it.
 
 | Path | New? | Responsibility |
 | --- | --- | --- |
-| `docs/legal/topics/*.md` | new | the topics (T045); copied into the `api` image at build |
+| `docs/legal/topics/*.md` | new | the topics (T045); copied into the `api` image at build, with the curated sections they cite (T046) |
 | `src/tokelo/api/navigator.py` | new | loading and checking the catalogue (T045); scoring; the two replies (T046) |
 | `tests/unit/test_topics.py` | new | every topic cites only curated sections; the catalogue's own checks (T045) |
 | `tests/api/test_navigator.py` | new | every example question finds its topic; the out-of-scope set gets "outside" (T046) |

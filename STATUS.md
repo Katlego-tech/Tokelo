@@ -54,6 +54,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `web` (T040: the evidence screen, with verify) | Katlego | Claude Code | ✅ Done |
 | `web` (T044: build and download a dossier) | Katlego | Claude Code | 🔵 In review |
 | `legal` + `api` (T045: the navigator's curated topics) | Katlego | Claude Code | 🔵 In review |
+| `api` (T046: answer a question, or say it's outside the topics) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -175,6 +176,10 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-28 — Katlego (via Claude Code) — T046: `POST /api/navigator`. Deterministic
+  matching (patterns, then word overlap), with the threshold and margin measured and kept
+  midway by a test. The out-of-scope set is referred to the Tribunal, and so is a near tie. The
+  api image carries the law and the topics. Next: T047, the navigator screen. Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — T045: eight curated topics, written from the
   15 curated sections alone, and a loader that refuses anything uncurated, any case law, and any
   section number an answer names without citing. Katlego: these answers are legal information a

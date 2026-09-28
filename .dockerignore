@@ -8,6 +8,8 @@
 # The curated law, which the ocr worker's rule catalogue cites (services/ocr/Dockerfile). The
 # sections alone: docs/legal/source holds the gazettes they were taken from.
 !docs/legal/sections/
+# The navigator's topics, which the api answers from (services/api/Dockerfile).
+!docs/legal/topics/
 # The api image builds the web app (services/api/Dockerfile, ADR-0010), from its lock.
 !web/
 web/node_modules
