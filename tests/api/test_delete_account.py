@@ -222,3 +222,55 @@ def test_an_unauthenticated_request_deletes_nothing(api, store, bucket):
 
     assert api(delete(tenant=None))["statusCode"] == 401
     assert items_of(store, TENANT)
+
+
+class Paging(Bucket):
+    """A bucket that lists one version per page, as a real one does past 1,000, and that also
+    holds a delete marker: what a plain DELETE of the current version leaves behind."""
+
+    markers: list[tuple[str, str]]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.markers = []
+
+    def list_object_versions(self, Bucket: str, Prefix: str = "", **marker: Any) -> dict[str, Any]:  # noqa: N803
+        everything = sorted(
+            [(k, v, "v") for (k, v) in self.history if k.startswith(Prefix)]
+            + [(k, v, "m") for (k, v) in self.markers if k.startswith(Prefix)]
+        )
+        # As S3 does: the page starts after the marker, whether or not that version still exists.
+        after = (marker.get("KeyMarker", ""), marker.get("VersionIdMarker", ""))
+        remaining = [e for e in everything if (e[0], e[1]) > after] if marker else everything
+        page = remaining[:1]
+        more = len(remaining) > 1
+        answer: dict[str, Any] = {
+            "Versions": [{"Key": k, "VersionId": v} for (k, v, t) in page if t == "v"],
+            "DeleteMarkers": [{"Key": k, "VersionId": v} for (k, v, t) in page if t == "m"],
+            "IsTruncated": more,
+        }
+        if more:
+            answer["NextKeyMarker"], answer["NextVersionIdMarker"] = page[-1][0], page[-1][1]
+        return answer
+
+    def delete_objects(self, Bucket: str, Delete: dict[str, Any]) -> dict[str, Any]:  # noqa: N803
+        for target in Delete["Objects"]:
+            self.markers = [m for m in self.markers if m != (target["Key"], target["VersionId"])]
+        return super().delete_objects(Bucket=Bucket, Delete=Delete)
+
+
+@pytest.mark.req("REQ-016")
+def test_every_page_of_versions_and_every_delete_marker_goes(api, store, monkeypatch):
+    """A real listing pages at 1,000 versions, and a file deleted the ordinary way leaves a
+    delete marker over versions that still hold it. Both must be followed to the end."""
+    from tokelo.api import account
+
+    paging = Paging()
+    monkeypatch.setattr(account, "s3_for", lambda: paging)
+    a_tenant_with_everything(store, paging, TENANT)
+    paging.markers.append((f"uploads/{TENANT}/photo/a{TENANT[1:]}", "marker-1"))
+
+    api(delete())
+
+    assert files_of(paging, TENANT) == []
+    assert paging.markers == []
