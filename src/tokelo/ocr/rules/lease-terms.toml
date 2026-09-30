@@ -8,16 +8,16 @@
 # `example` is a clause the rule must catch; `counter_example` one it must not. Both are checked
 # when the catalogue loads, so a rule that has drifted from its own words cannot run.
 
-catalogue_version = "2026-09-21.1"
+catalogue_version = "2026-09-30.1"
 
 # ---------------------------------------------------------------- the deposit ---
 [[rule]]
 id = "deposit-no-interest"
 section_ids = ["RHA-5"]
 any_of = [
-  'deposit[^.]{0,120}?(no|not|shall not|will not|never)\s+(bear|earn|accrue|attract)[^.]{0,40}interest',
-  '(no|not any)\s+interest[^.]{0,120}?(deposit|paid to the tenant|payable to the tenant)',
-  'deposit[^.]{0,120}?interest[^.]{0,40}(retained|kept|forfeited)\s+by\s+the\s+landlord',
+  '\bdeposit[^.]{0,120}?\b(no|not|shall not|will not|never)\s+(bear|earn|accrue|attract)s?\b[^.]{0,40}\binterest\b',
+  '\b(no|not any)\s+interest\b[^.]{0,120}?\b(deposit|paid to the tenant|payable to the tenant)\b',
+  '\bdeposit[^.]{0,120}?\binterest\b[^.]{0,40}\b(retained|kept|forfeited)\s+by\s+the\s+landlord\b',
 ]
 none_of = ['interest-bearing account', 'together with (any )?interest']
 explanation = """
@@ -33,8 +33,8 @@ counter_example = "The deposit is held in an interest-bearing account and repaid
 id = "deposit-refund-delayed"
 section_ids = ["RHA-5"]
 any_of = [
-  'deposit[^.]{0,160}?(refund|repaid|returned|paid back)[^.]{0,60}?(within|after)\s+(\d{2,3}|thirty|sixty|ninety|three months|six months)',
-  'deposit[^.]{0,160}?(refund|repaid|returned)[^.]{0,60}?(at the landlord.s discretion|when the landlord (decides|sees fit))',
+  '\bdeposit[^.]{0,160}?\b(refund(ed)?|repaid|returned|paid back)\b[^.]{0,60}?\b(within|after)\s+(\d{2,3}|thirty|sixty|ninety|three months|six months)\b',
+  '\bdeposit[^.]{0,160}?\b(refund(ed)?|repaid|returned)\b[^.]{0,60}?\b(at the landlord.s discretion|when the landlord (decides|sees fit))',
 ]
 explanation = """
 The Rental Housing Act sets the times for repaying a deposit: seven days after the lease ends \
@@ -51,7 +51,7 @@ section_ids = ["RHA-5"]
 any_of = [
   '\b(no|without)\b[^.]{0,60}?\binspections?\b[^.]{0,80}(required|conducted|necessary|take place|be held|carried out)',
   '\binspections?\b[^.]{0,60}(waived|dispensed with|not required|shall not be (conducted|held))',
-  '(tenant|lessee)[^.]{0,80}waives?[^.]{0,60}inspection',
+  '\b(tenant|lessee)\b[^.]{0,80}\bwaives?\b[^.]{0,60}\binspections?\b',
 ]
 explanation = """
 The Rental Housing Act requires the landlord and the tenant to inspect the dwelling together \
@@ -67,10 +67,11 @@ counter_example = "The parties shall jointly inspect the dwelling before occupat
 id = "lock-out-or-seizure"
 section_ids = ["RHA-4", "GT-REG-9"]
 any_of = [
-  '(change|replace|alter)[^.]{0,40}locks?[^.]{0,120}(rent|arrears|breach|default|late)',
-  'lock[- ]?(out|ed out)[^.]{0,120}(rent|arrears|breach|default)',
-  '(remove|seize|retain|attach|hold|dispose of)[^.]{0,60}(tenant.s )?(belongings|goods|furniture|possessions|property)[^.]{0,120}(rent|arrears|breach|default|security)',
-  '(disconnect|cut off|switch off|suspend)[^.]{0,60}(water|electricity|power|services)[^.]{0,120}(rent|arrears|default)',
+  '\b(change[sd]?|changing|replace[sd]?|replacing|alter(s|ed|ing)?)\b[^.]{0,40}\blocks?\b[^.]{0,120}\b(rent|rental|arrears|breach|default|late)\b',
+  '\block(ed)?[- ]?out\b[^.]{0,120}\b(rent|rental|arrears|breach|default)\b',
+  '\b(landlord|lessor|agent)\b[^.]{0,80}\b(remove|seize|retain|attach|hold|dispose of)\b[^.]{0,60}\b(belongings|goods|furniture|possessions|property)\b[^.]{0,120}\b(rent|rental|arrears|breach|default|security)\b',
+  '\b(tenant|lessee)(.s|s.)\s+(\w+\s+)?(belongings|goods|furniture|possessions|property)\b[^.]{0,60}\b(removed|seized|retained|attached|held|disposed of)\b[^.]{0,120}\b(rent|rental|arrears|breach|default|security)\b',
+  '\b(disconnect(s|ed|ing)?|cut(s|ting)? off|switch(es|ed|ing)? off|suspend(s|ed|ing)?)\b[^.]{0,60}\b(water|electricity|power|services?)\b[^.]{0,120}\b(rent|rental|arrears|default)\b',
 ]
 none_of = ['(court|tribunal) order', 'order of (a )?court', 'order of the Tribunal']
 explanation = """
@@ -87,9 +88,9 @@ counter_example = "The landlord may apply to the Tribunal or a court for an orde
 id = "eviction-without-court-order"
 section_ids = ["PIE-4", "PIE-8", "GT-REG-9"]
 any_of = [
-  'evict[^.]{0,140}(without|no need for|dispensing with)[^.]{0,60}(court|order|legal proceedings|recourse to)',
-  '(vacate|eviction|ejectment)[^.]{0,120}(without|no)\s+(court|legal)\s+(order|process|proceedings)',
-  'landlord may[^.]{0,80}(remove|eject|evict)[^.]{0,80}(tenant|occupier)[^.]{0,80}(forthwith|immediately|summarily)',
+  '\bevict[^.]{0,140}\b(without|no need for|dispensing with)\b[^.]{0,60}\b(court|order|legal proceedings|recourse to)\b',
+  '\b(vacate|eviction|ejectment)\b[^.]{0,120}\b(without|no)\s+(court|legal)\s+(order|process|proceedings)\b',
+  '\blandlord may\b[^.]{0,80}\b(remove|eject|evict)\b[^.]{0,80}\b(tenant|occupier)s?\b[^.]{0,80}\b(forthwith|immediately|summarily)\b',
 ]
 none_of = ['order of (a |the )?court', 'court order', 'in terms of the Prevention of Illegal Eviction']
 explanation = """
@@ -105,9 +106,9 @@ counter_example = "The landlord may apply for an eviction order in terms of the 
 id = "fixed-term-no-cancellation"
 section_ids = ["CPA-14"]
 any_of = [
-  '(tenant|lessee)[^.]{0,100}(may not|shall not|cannot|is not entitled to)[^.]{0,60}cancel[^.]{0,140}(fixed|period|term|expiry)',
-  'no (early )?(cancellation|termination)[^.]{0,120}(permitted|allowed|before the (end|expiry))',
-  'cancellation[^.]{0,80}(forfeits?|forfeiture of)[^.]{0,80}(all|the (whole|entire))[^.]{0,40}(deposit|rental)',
+  '\b(tenant|lessee)\b[^.]{0,100}\b(may not|shall not|cannot|is not entitled to)\b[^.]{0,60}\bcancel[^.]{0,140}\b(fixed|period|term|termination|expiry|expiration)\b',
+  '\bno (early )?(cancellation|termination)\b[^.]{0,120}\b(permitted|allowed|before the (end|expiry))\b',
+  '\bcancellation\b[^.]{0,80}\b(forfeits?|forfeiture of)\b[^.]{0,80}\b(all|the (whole|entire))\b[^.]{0,40}\b(deposit|rental)\b',
 ]
 none_of = ['20 \(twenty\) business days', 'twenty business days', '20 business days']
 explanation = """
@@ -123,9 +124,9 @@ counter_example = "The tenant may cancel on 20 business days' written notice, su
 id = "waiver-of-rights"
 section_ids = ["CPA-48", "GT-REG-3", "RHA-5"]
 any_of = [
-  '(tenant|lessee)[^.]{0,80}(waives?|renounces?|abandons?|forgoes?)[^.]{0,120}(rights?|claims?|remedies|recourse)',
-  '(no|not)[^.]{0,40}(liable|liability)[^.]{0,120}(landlord|lessor)[^.]{0,80}(any|whatsoever|howsoever)',
-  '(tenant|lessee)[^.]{0,80}(may not|shall not)[^.]{0,60}(approach|refer|complain to)[^.]{0,60}(tribunal|court)',
+  '\b(tenant|lessee)\b[^.]{0,80}\b(waives?|renounces?|abandons?|forgoes?)\b[^.]{0,120}\b(rights?|claims?|remedies|recourse)\b',
+  '\b(no|not)\b[^.]{0,40}\b(liable|liability)\b[^.]{0,120}\b(landlord|lessor)\b[^.]{0,80}\b(any|whatsoever|howsoever)\b',
+  '\b(tenant|lessee)\b[^.]{0,80}\b(may not|shall not)\b[^.]{0,60}\b(approach|refer|complain to)\b[^.]{0,60}\b(tribunal|court)s?\b',
 ]
 explanation = """
 The Consumer Protection Act deals with terms that require a consumer to waive rights, take on \
@@ -140,8 +141,8 @@ counter_example = "Nothing in this lease limits either party's rights under the 
 id = "late-payment-penalty"
 section_ids = ["GT-REG-3"]
 any_of = [
-  '(penalty|admin(istration)? (fee|charge)|fine)[^.]{0,120}(late|overdue|arrear)[^.]{0,60}(payment|rent)',
-  '(late|overdue)[^.]{0,40}(payment|rent)[^.]{0,120}(penalty|admin(istration)? (fee|charge)|fine)',
+  '\b(penalty|penalties|admin(istration)? (fee|charge)s?|fines?)\b[^.]{0,120}\b(late|overdue|arrears?)\b[^.]{0,60}\b(payments?|rent|rental)\b',
+  '\b(late|overdue)\b[^.]{0,40}\b(payments?|rent|rental)\b[^.]{0,120}\b(penalty|penalties|admin(istration)? (fee|charge)s?|fines?)\b',
 ]
 none_of = ['interest at', 'interest shall be', 'interest on']
 explanation = """
@@ -157,8 +158,8 @@ counter_example = "Interest at the prescribed rate is payable on rent that is in
 id = "entry-without-notice"
 section_ids = ["RHA-4", "GT-REG-10"]
 any_of = [
-  'landlord[^.]{0,100}(enter|access|inspect)[^.]{0,120}(at any time|without notice|without prior notice|unannounced)',
-  '(enter|access)[^.]{0,60}(the )?(dwelling|premises|property)[^.]{0,100}(without|no)[^.]{0,30}notice',
+  '\blandlord\b[^.]{0,100}\b(enter|access|inspect)\w*[^.]{0,120}\b(at any time|without notice|without prior notice|unannounced)\b',
+  '\b(enter|access)\w*[^.]{0,60}\b(the )?(dwelling|premises|property)\b[^.]{0,100}\b(without|no)\b[^.]{0,30}\bnotice\b',
 ]
 none_of = ['reasonable notice', 'notice to the tenant']
 explanation = """
@@ -174,8 +175,8 @@ counter_example = "The landlord may enter on reasonable notice to inspect the dw
 id = "no-receipt-for-payment"
 section_ids = ["GT-REG-12"]
 any_of = [
-  '(no|not)[^.]{0,40}receipts?[^.]{0,100}(issued|furnished|provided|given)',
-  'receipts?[^.]{0,80}(only|solely)[^.]{0,60}(on|upon) (written )?request',
+  '\b(no|not)\b[^.]{0,40}\breceipts?\b[^.]{0,100}\b(issued|furnished|provided|given)\b',
+  '\breceipts?\b[^.]{0,80}\b(only|solely)\b[^.]{0,60}\b(on|upon) (written )?request\b',
 ]
 explanation = """
 Gauteng's Unfair Practices Regulations require a landlord to furnish a tenant with a written, \

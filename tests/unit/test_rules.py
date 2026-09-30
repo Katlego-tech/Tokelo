@@ -161,3 +161,35 @@ def test_an_ordinary_clause_is_left_alone():
     ):
         flagged = {rule.id for rule in rules.catalogue().rules if rule.matches(ordinary)}
         assert not flagged, f"{ordinary!r} was flagged by {flagged}"
+
+
+@pytest.mark.req("REQ-005", "REQ-007")
+@pytest.mark.parametrize(
+    "ordinary",
+    [
+        # "attached" is not "attach", and renting furniture is not rent arrears
+        "An inventory is attached to this lease listing each item of furniture the tenant will "
+        "rent with the room.",
+        # the tenant moving the landlord's furniture is not the landlord seizing the tenant's
+        "The tenant shall not remove the landlord's furniture from the room without the building "
+        "manager's permission, as a security measure.",
+        # "later" is not "late"
+        "The landlord will change the locks when a new tenant moves in, and give the new keys to "
+        "the tenant no later than the first day of occupation.",
+        # "current" is not "rent"
+        "The landlord may switch off the electricity to do maintenance, after giving notice to "
+        "the current tenants of the building.",
+        # "notice" is not "no", and the tenant's own liability is not the landlord's exclusion
+        "The tenant must give notice of any damage, and is liable for damage caused by the "
+        "tenant's visitors to the landlord's furniture or to any part of the building.",
+        # "defined" is not "fine"
+        "The tenant must pay the cleaning fee defined in Schedule A no later than the first day "
+        "of the month, together with the rent.",
+    ],
+)
+def test_a_clause_that_only_shares_a_rules_words_is_left_alone(ordinary):
+    """Student-accommodation leases (T060). Each of these was flagged when a pattern matched a
+    word inside another word, or a noun without the person it belongs to. A tenant shown a flag
+    on a furniture inventory learns to ignore the flags, including the ones that matter."""
+    flagged = {rule.id for rule in rules.catalogue().rules if rule.matches(ordinary)}
+    assert not flagged, f"{ordinary!r} was flagged by {flagged}"
