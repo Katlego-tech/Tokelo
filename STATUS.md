@@ -3,7 +3,7 @@
 > Source of truth for "what's going on right now." Read first, update last. Treat updating it as
 > part of "done."
 
-_Last updated: 2026-09-28 — by Katlego (via Claude Code)_
+_Last updated: 2026-09-30 — by Katlego (via Claude Code)_
 
 ---
 
@@ -52,6 +52,7 @@ _Last updated: 2026-09-28 — by Katlego (via Claude Code)_
 | `api` + `dossier` (T042: request a dossier, follow it to its download; the T025 upload-signing fix) | Katlego | Claude Code | ✅ Done |
 | `dossier` (T043: compile the dossier PDF) | Katlego | Claude Code | ✅ Done |
 | `web` (T040: the evidence screen, with verify) | Katlego | Claude Code | ✅ Done |
+| `ocr` (T060: the rules stop flagging clauses that only share their words) | Katlego | Claude Code | 🔵 In review |
 
 ## ⏭️ Next action
 
@@ -173,6 +174,13 @@ release.
 > This is the standup. Every session ends with a line here: **done / next / blocked.** Two or three
 > lines — if it needs more, it's a handoff document. Name blockers, don't solve them here.
 
+- 2026-09-30 — Katlego (via Claude Code) — T060–T063 written: a real student-accommodation
+  lease template got one flag in 171 clauses, and that one wrong (a furniture inventory read as a
+  seizure clause), while its liability, services, deposit and penalty terms went unflagged; the
+  navigator matched none of seven questions about being moved out of a room. T060: every rule's
+  words now match whole, and the seizure pattern needs the landlord or the tenant's possessions;
+  catalogue 2026-09-30.1. brace-expansion 5.0.12 (T000) for three new advisories that failed the
+  gate. Next: T061. Blocked: nothing.
 - 2026-09-28 — Katlego (via Claude Code) — PRs #55–#59 merged; their branches and
   `docs/readme` deleted. #51 (configure-aws-credentials 6.3.0, pin checked against the tag)
   merged. Release records #47 (v0.2.1: fails UAT) and #26 (v0.1.2: superseded) closed without
