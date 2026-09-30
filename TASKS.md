@@ -440,6 +440,48 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Verify:  a 10-page digital lease's flags arrive in under 2 minutes, p95, and a scanned page takes under 30 s
       Done:    it runs against staging in the release pipeline
 
+- [ ] T060 [US1] Stop the rules flagging clauses that only share their words
+      Req:     REQ-005, REQ-007
+      Design:  docs/design/ocr.md §6 (a rule file)
+      Files:   src/tokelo/ocr/rules/lease-terms.toml, tests/unit/test_rules.py
+      Verify:  the tests are written first and fail; then every rule still catches its example and
+               the tenant-signs clauses, and a set of ordinary student-accommodation clauses, such
+               as "an inventory is attached to this lease listing each item of furniture the tenant
+               will rent with the room", is flagged by nothing
+      Done:    a pattern's verbs and nouns match as whole words, so "attached" is not "attach" and
+               renting furniture is not rent arrears. The catalogue's version moves on, so a flag
+               stored under the old patterns still says which catalogue made it
+      Note:    found by running the catalogue over a real student-accommodation lease template:
+               171 clauses, one flag, and that one a furniture list read as a seizure clause
+- [ ] T061 [US1] Catch the liability, services, deposit and cancellation-penalty terms real leases use
+      Req:     REQ-005, REQ-006
+      Design:  docs/design/ocr.md §6 (a rule file)
+      Files:   src/tokelo/ocr/rules/lease-terms.toml, tests/unit/test_rules.py
+      Verify:  the tests are written first and fail; then each clause below is flagged by its rule,
+               and T060's ordinary clauses are still flagged by nothing
+      Done:    `waiver-of-rights` also catches "shall not be (held) responsible for … howsoever
+               caused" and "shall have no claim against the landlord" (CPA-48, GT-REG-3). A new
+               `services-cut-no-recourse` rule catches a term that leaves the tenant no claim when
+               water, electricity or gas is cut (GT-REG-13, GT-REG-3). `deposit-refund-delayed`
+               also catches a refund made conditional on completing the lease or a number of months
+               (RHA-5). A new rule catches a charge on a tenant who cancels, stated as a whole month's
+               rent or more, and its explanation says only what CPA-14(3)(b) says: a *reasonable*
+               cancellation penalty. Every clause in the tests is written for them, in the style of
+               student-accommodation leases, not copied from any real tenant's lease
+- [ ] T062 [US1] Split scheduled leases into unambiguous clauses, without the page furniture
+      Req:     REQ-005
+      Design:  docs/design/ocr.md §6 (splitting into clauses) — amend it first, in its own PR: a
+               clause under a "Schedule X" heading is labelled with its schedule, and a line that
+               repeats on most pages (a page number, "Tenant Initial") is dropped before splitting
+      Files:   src/tokelo/ocr/clauses.py, tests/ocr/test_clauses.py, tests/ocr/ (a synthetic
+               scheduled lease)
+      Contract:Clause.label for a clause in a schedule reads like "Schedule B 4.1"; elsewhere it is
+               unchanged, so T028's samples split exactly as they do now
+      Verify:  the tests are written first and fail; then a synthetic lease with Schedules A, B and
+               C, each numbered from 1 and each page footed "Page n of N · Tenant Initial", splits
+               into clauses whose labels are unique and whose text contains no footer line
+      Done:    a flag, the lease screen and a dossier name a clause a tenant can find in their
+               lease, and no clause's text ends in the page's initials boxes
 **Checkpoint:** US1 is independently demoable on staging.
 
 ---
@@ -609,6 +651,25 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
       Files:   web/src/…
       Verify:  the tests are written first and fail; then axe reports 0 violations on the screen
       Done:    matches the reference, with live data from staging
+
+- [ ] T063 [US4] Answer being moved to another room, and complaining to the Tribunal
+      Req:     REQ-014, REQ-006
+      Design:  docs/design/navigator.md §6 (a topic file; what the topics cover — add the two)
+      Files:   docs/legal/topics/moving-rooms.md, docs/legal/topics/the-tribunal.md,
+               docs/legal/topics/eviction.md, docs/legal/topics/landlord-entry.md,
+               tests/api/test_navigator.py, tests/unit/test_topics.py
+      Verify:  the tests are written first and fail; then these match a topic: "Management says I
+               must move to another room because of renovations", "Can the landlord move me to a
+               different room?", "They want me out by tomorrow", "Can the caretaker use the spare
+               key to open my room?", "What happens if I complain to the Rental Housing Tribunal?";
+               and T046's out-of-scope set is still outside
+      Done:    `moving-rooms` is written from RHA-4(5)(c) and (d)(ii), GT-REG-9(1) and GT-REG-10
+               alone; it says what the law requires and never that a move is lawful or not.
+               `the-tribunal` is written from RHA-13 alone: who may complain, mediation and a
+               hearing, and s 13(7) exactly — until a ruling or three months, whichever is
+               earlier, no eviction, rent still paid, maintenance still done. The eviction and
+               entry topics catch "must move to", "out by" and "spare key". Katlego reads both
+               answers before they reach a screen, as with T045
 
 **Checkpoint:** US4 is independently demoable on staging.
 
