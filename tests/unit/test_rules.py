@@ -185,6 +185,11 @@ def test_an_ordinary_clause_is_left_alone():
         # "defined" is not "fine"
         "The tenant must pay the cleaning fee defined in Schedule A no later than the first day "
         "of the month, together with the rent.",
+        # the deposit is not the tenant's possessions, and "property" here is the premises
+        "The landlord may retain the deposit to make good damage to the property caused by any "
+        "breach of this lease.",
+        "The landlord shall hold the deposit as security against damage to the property and "
+        "arrears of rent.",
     ],
 )
 def test_a_clause_that_only_shares_a_rules_words_is_left_alone(ordinary):
@@ -193,3 +198,30 @@ def test_a_clause_that_only_shares_a_rules_words_is_left_alone(ordinary):
     on a furniture inventory learns to ignore the flags, including the ones that matter."""
     flagged = {rule.id for rule in rules.catalogue().rules if rule.matches(ordinary)}
     assert not flagged, f"{ordinary!r} was flagged by {flagged}"
+
+
+@pytest.mark.req("REQ-005")
+@pytest.mark.parametrize(
+    ("clause", "expected"),
+    [
+        ("The Owner may remove the Tenant's goods if rent is in arrears.", "lock-out-or-seizure"),
+        ("The Landlord removes the tenant's goods on default.", "lock-out-or-seizure"),
+        ("The tenant’s goods may be removed on default of rent.", "lock-out-or-seizure"),
+        ("The landlord changed the locks because rent was late.", "lock-out-or-seizure"),
+        (
+            "The landlord suspended the electricity supply for arrears of rent.",
+            "lock-out-or-seizure",
+        ),
+        ("The deposit shall be refunded within 30days of vacating.", "deposit-refund-delayed"),
+        (
+            "The deposit shall be refunded within 60 days of the tenant vacating the premises.",
+            "deposit-refund-delayed",
+        ),
+    ],
+)
+def test_whole_words_still_catch_what_the_rules_caught_before(clause, expected):
+    """T060 made every rule's words match whole. The risk of that is silent: a clause the old
+    patterns caught, now missed because of an inflection, a curly apostrophe, another word for
+    the landlord, or a number run into its unit. These were each caught before T060."""
+    flagged = {rule.id for rule in rules.catalogue().rules if rule.matches(clause)}
+    assert expected in flagged, f"{clause!r} was not flagged by {expected}; flagged {flagged}"

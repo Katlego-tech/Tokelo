@@ -467,7 +467,10 @@ Each user-story phase is ordered **Design → Tests FIRST (must FAIL) → Implem
                (RHA-5). A new rule catches a charge on a tenant who cancels, stated as a whole month's
                rent or more, and its explanation says only what CPA-14(3)(b) says: a *reasonable*
                cancellation penalty. Every clause in the tests is written for them, in the style of
-               student-accommodation leases, not copied from any real tenant's lease
+               student-accommodation leases, not copied from any real tenant's lease. Also caught,
+               from PR #67's review: "may lock the tenant out", "the tenant's personal movable
+               property may be removed" (more than one word before the noun), and "the deposit
+               will bear no interest"
 - [ ] T062 [US1] Split scheduled leases into unambiguous clauses, without the page furniture
       Req:     REQ-005
       Design:  docs/design/ocr.md §6 (splitting into clauses) — amend it first, in its own PR: a

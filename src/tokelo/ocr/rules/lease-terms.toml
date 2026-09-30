@@ -33,7 +33,7 @@ counter_example = "The deposit is held in an interest-bearing account and repaid
 id = "deposit-refund-delayed"
 section_ids = ["RHA-5"]
 any_of = [
-  '\bdeposit[^.]{0,160}?\b(refund(ed)?|repaid|returned|paid back)\b[^.]{0,60}?\b(within|after)\s+(\d{2,3}|thirty|sixty|ninety|three months|six months)\b',
+  '\bdeposit[^.]{0,160}?\b(refund(ed)?|repaid|returned|paid back)\b[^.]{0,60}?\b(within|after)\s+(\d{2,3}(?!\d)|(thirty|sixty|ninety|three months|six months)\b)',
   '\bdeposit[^.]{0,160}?\b(refund(ed)?|repaid|returned)\b[^.]{0,60}?\b(at the landlord.s discretion|when the landlord (decides|sees fit))',
 ]
 explanation = """
@@ -69,7 +69,7 @@ section_ids = ["RHA-4", "GT-REG-9"]
 any_of = [
   '\b(change[sd]?|changing|replace[sd]?|replacing|alter(s|ed|ing)?)\b[^.]{0,40}\blocks?\b[^.]{0,120}\b(rent|rental|arrears|breach|default|late)\b',
   '\block(ed)?[- ]?out\b[^.]{0,120}\b(rent|rental|arrears|breach|default)\b',
-  '\b(landlord|lessor|agent)\b[^.]{0,80}\b(remove|seize|retain|attach|hold|dispose of)\b[^.]{0,60}\b(belongings|goods|furniture|possessions|property)\b[^.]{0,120}\b(rent|rental|arrears|breach|default|security)\b',
+  '\b(landlords?|lessors?|owners?|agents?|management)\b[^.]{0,80}\b(remove[sd]?|removing|seize[sd]?|seizing|retains?|retaining|attach(es)?|holds?|dispose[sd]? of|disposing of)\b(?:(?!\bdeposit\b)[^.]){0,60}\b(belongings|goods|furniture|possessions|property)\b[^.]{0,120}\b(rent|rental|arrears|breach|default|security)\b',
   '\b(tenant|lessee)(.s|s.)\s+(\w+\s+)?(belongings|goods|furniture|possessions|property)\b[^.]{0,60}\b(removed|seized|retained|attached|held|disposed of)\b[^.]{0,120}\b(rent|rental|arrears|breach|default|security)\b',
   '\b(disconnect(s|ed|ing)?|cut(s|ting)? off|switch(es|ed|ing)? off|suspend(s|ed|ing)?)\b[^.]{0,60}\b(water|electricity|power|services?)\b[^.]{0,120}\b(rent|rental|arrears|default)\b',
 ]
