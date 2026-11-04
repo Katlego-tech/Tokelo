@@ -688,3 +688,13 @@ task, and an approved requirement that no task or test names.
       Req:     none — preventive and adaptive maintenance (ISO/IEC 14764)
       Verify:  the weekly realm-scheduled run is green
       Done:    never: it stays open for the life of the project
+
+- [ ] T060 [MNT] Clear the dependency advisories the gate found
+      Req:     none — dependency maintenance
+      Found:   2026-11-04: 118 advisories on `main`, 6 critical. This task bumps what can move now.
+      Left:    pypdf 6.21.4, once it clears the 7-day cooldown (exemptions expire 2026-11-12: run
+               `uv lock --upgrade-package pypdf`). zod 3.x, minimatch 10.x and deepmerge, all through the
+               shadcn CLI (exemptions expire 2027-02-04): move shadcn out of `dependencies`, or upgrade it
+               when it takes the fixed versions.
+      Verify:  `bash scripts/gate.sh` passes with `osv-scanner.toml` removed
+      Done:    `osv-scanner.toml` holds no entry for this task

@@ -1,0 +1,35 @@
+# Accepted advisories, each against the task that closes it. The gate prints these on every run,
+# and ignoreUntil makes an exemption run out on its own.
+
+# pypdf's fix is newer than this project's 7-day dependency cooldown ([tool.uv] exclude-newer), which
+# stays in force. Short on purpose: when these expire, the gate fails until pypdf is upgraded.
+[[IgnoredVulns]]
+id = "GHSA-5849-834g-hvw5"
+ignoreUntil = 2026-11-12T00:00:00Z
+reason = "T060: fixed in pypdf 6.21.4, still inside the dependency cooldown"
+
+[[IgnoredVulns]]
+id = "GHSA-cggf-277g-3q54"
+ignoreUntil = 2026-11-12T00:00:00Z
+reason = "T060: fixed in pypdf 6.21.4, still inside the dependency cooldown"
+
+[[IgnoredVulns]]
+id = "GHSA-mfr5-77xh-9j7h"
+ignoreUntil = 2026-11-12T00:00:00Z
+reason = "T060: fixed in pypdf 6.21.4, still inside the dependency cooldown"
+
+# All three come through the shadcn CLI, which the web app runs at development time.
+[[IgnoredVulns]]
+id = "GHSA-mrhx-c7xc-m3w5"
+ignoreUntil = 2027-02-04T00:00:00Z
+reason = "T060: zod 3.x through shadcn and the MCP SDK; the fix is only in zod 4"
+
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2027-02-04T00:00:00Z
+reason = "T060: minimatch 10.x through shadcn; the fix is only in 11.x"
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-02-04T00:00:00Z
+reason = "T060: deepmerge through shadcn; no fixed version exists"
