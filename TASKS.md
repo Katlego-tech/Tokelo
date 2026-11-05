@@ -698,3 +698,8 @@ task, and an approved requirement that no task or test names.
                when it takes the fixed versions.
       Verify:  `bash scripts/gate.sh` passes with `osv-scanner.toml` removed
       Done:    `osv-scanner.toml` holds no entry for this task
+
+- [x] T061 [MNT] Sync the kit's gate, hook and CI
+      Req:     none — kit maintenance
+      Verify:  `bash scripts/gate.sh` passes; a change touching only `.claude/` reports a green `gate`
+      Done:    `scripts/gate.sh` ends with the kit commit it came from
