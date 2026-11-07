@@ -9,7 +9,9 @@
 #
 # Secrets: COSIGN_PRIVATE_KEY and COSIGN_PASSWORD (the project's signing key; cosign.pub is
 # committed), RAILWAY_API_TOKEN on the railway platform, and optionally PERF_ENV (KEY=value lines
-# for the performance tests, docs/release/README.md). On the aws platform there's no secret: the
+# for the performance tests, docs/release/README.md). On the cpanel platform, CPANEL_SSH_KEY and
+# CPANEL_KNOWN_HOSTS, with the variables CPANEL_SSH_HOSTNAME, _PORT and _USER (keys.sh cpanel,
+# DESIGN.md §15.4); its archives are kept on this tag's GitHub release. On the aws platform there's no secret: the
 # job signs in by OIDC as the release role, from the repository variables AWS_REGION and
 # AWS_RELEASE_ROLE (DESIGN.md §14.4). Every step calls
 # scripts/realm/release.sh or realm: this file only orders them, so it can't drift from them.
@@ -55,6 +57,16 @@ jobs:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: bash scripts/realm/release.sh build "$VERSION"
 
+      - name: Set up SSH to the host (the cpanel platform only)
+        if: vars.CPANEL_SSH_HOSTNAME != ''
+        env:
+          CPANEL_SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          CPANEL_KNOWN_HOSTS: ${{ secrets.CPANEL_KNOWN_HOSTS }}
+          CPANEL_SSH_HOSTNAME: ${{ vars.CPANEL_SSH_HOSTNAME }}
+          CPANEL_SSH_PORT: ${{ vars.CPANEL_SSH_PORT }}
+          CPANEL_SSH_USER: ${{ vars.CPANEL_SSH_USER }}
+        run: scripts/realm/realm cpanel setup-ssh
+
       - name: Sign in to AWS (the aws platform only)
         if: vars.AWS_REGION != ''
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
@@ -63,12 +75,15 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-duration-seconds: 5400   # the job can run past an hour; the role allows two
 
-      - name: Archive the images (by digest)
+      - name: Archive the release (by digest)
         env:
           REGISTRY_USER: ${{ github.actor }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # the cpanel platform: the tag's GitHub release
         run: |
-          if [ -n "$(scripts/realm/realm release config deploy.registry)" ]; then
+          registry="$(scripts/realm/realm release config deploy.registry)" || registry=""
+          archive="$(scripts/realm/realm release config deploy.archive)" || archive=""
+          if [ -n "$registry" ] || [ -n "$archive" ]; then
             bash scripts/realm/release.sh publish "$VERSION"
           else
             echo "[deploy] registry is empty: the images stay in the workflow's artifacts only"
@@ -80,6 +95,7 @@ jobs:
         env:
           RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
           PERF_ENV: ${{ secrets.PERF_ENV }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # the drill may fetch an earlier archive
         run: bash scripts/realm/release.sh stage "$VERSION"
 
       - name: Traceability matrix
@@ -105,7 +121,13 @@ jobs:
           [ -f docs/rtm.md ] && files+=(docs/rtm.md)
           notes="docs/releases/$VERSION.md"
           [ -f "$notes" ] || { echo "The release didn't get as far as its record." > /tmp/notes.md; notes=/tmp/notes.md; }
-          gh release create "$VERSION" --draft --title "$VERSION" --notes-file "$notes" "${files[@]}"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            # publish made the draft already: the cpanel platform keeps its archives on it.
+            gh release upload "$VERSION" --clobber "${files[@]}"
+            gh release edit "$VERSION" --notes-file "$notes"
+          else
+            gh release create "$VERSION" --draft --title "$VERSION" --notes-file "$notes" "${files[@]}"
+          fi
 
       - name: Open the release record's PR (UAT signs off there)
         if: always() && env.VERSION != 'v0.0.0'

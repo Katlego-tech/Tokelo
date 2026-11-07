@@ -8,6 +8,8 @@
 #
 # Each environment is a Docker Compose project, realm-<name>-<env>, published on 127.0.0.1:
 # staging from port 18000 and production from 19000, by each [[service]]'s place in the list.
+# A host that runs a second project gives it other ports: [deploy] staging_port and
+# production_port in realm.toml.
 # Workers (kind = "worker") publish no port: a web service is healthy when its health path
 # answers, a worker when its container keeps running. It's how the kit's own tests run a whole
 # release, and what one self-hosted box would use. The deploy adapter contract is in DESIGN.md
@@ -22,10 +24,10 @@ die() { printf '!! compose: %s\n' "$*" >&2; exit 1; }
 [ $# -ge 3 ] || die "usage: compose.sh deploy|live|url|health <env> <service> [image]"
 action="$1" env="$2" service="$3" image="${4:-}"
 case "$env" in
-  staging)    base=18000 ;;
-  production) base=19000 ;;
+  staging|production) ;;
   *) die "environment '$env': staging or production" ;;
 esac
+base="$("$realm" release compose-port "$env")" || die "${base#*!! release: }"
 
 name="$("$realm" release config realm.name)"
 project="realm-$name-$env"
@@ -83,8 +85,11 @@ case "$action" in
     mkdir -p "$state"
     printf '%s\n' "$image" > "$state/$service.image"
     write_compose
-    docker compose -p "$project" -f "$state/compose.yml" up -d --no-deps "$service" >/dev/null 2>&1 \
-      || die "docker compose couldn't start $service in $env"
+    if ! said="$(docker compose -p "$project" -f "$state/compose.yml" up -d --no-deps "$service" 2>&1)"; then
+      hint=""  # two projects on one host would both publish the default ports
+      [ "$kind" != web ] || hint=" (if port $port is taken, give this project its own: [deploy] ${env}_port in realm.toml)"
+      die "docker compose couldn't start $service in $env: $(printf '%s\n' "$said" | tail -1)$hint"
+    fi
     if [ "$kind" = worker ]; then  # running at 3 checks in a row, a second apart: a crash at start-up fails
       steady=0
       for _ in $(seq 1 60); do

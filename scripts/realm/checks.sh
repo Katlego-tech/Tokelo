@@ -1,3 +1,5 @@
+# shellcheck shell=bash
+# shellcheck disable=SC2154,SC2034  # root, fail and ran belong to the gate that sources this file
 # scripts/realm/checks.sh -- Secret Realm's checks, run by scripts/gate.sh (one line there).
 #
 # Sourced, not executed: it uses the gate's own step/say/bad helpers and its fail and ran
@@ -156,4 +158,27 @@ realm_infra() {
   [ "$ok" -eq 1 ] || fail=1
 }
 
+# The kit's own tools and templates, which setup-realm.sh copies into every project, aren't
+# that project's source: the kit's test suite checks them. Without this, the first push of a
+# new branch in a project that has no manifest yet (CI then lists the whole tree as changed)
+# failed with "Source files are being pushed, but this repo has no project manifest", naming
+# scripts/realm/*.py and docs/release/perf.template.js.
+#
+# It narrows only what the gate reads after this file: that one manifest check. The
+# placeholder and secret sweeps have already read the full list, kit files included.
+#
+# The narrowed list is a temporary file, and the gate reads it after this file returns, so it's
+# removed when the gate exits, however it exits. A trap the gate set itself still runs.
+realm_scope_changes() {
+  [ -f "$root/realm.toml" ] || return 0
+  [ -n "$changed_files_list" ] && [ -f "$changed_files_list" ] || return 0
+  realm_scoped_list="$(mktemp)"
+  grep -Ev '^(scripts/realm/|docs/release/[^/]*\.template\.)' "$changed_files_list" > "$realm_scoped_list" || true
+  changed_files_list="$realm_scoped_list"
+  eval "set -- $(trap -p EXIT)"   # trap -- '<the gate's own, if it has one>' EXIT
+  realm_exit_before="${3:-}"
+  trap 'rm -f "$realm_scoped_list"; eval "$realm_exit_before"' EXIT
+}
+
 realm_checks
+realm_scope_changes

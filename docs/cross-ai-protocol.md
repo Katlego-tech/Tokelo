@@ -5,8 +5,8 @@ implementation AI plus a faster "accelerator" assistant, or simply different peo
 tools). This protocol keeps them from colliding.
 
 > 📝 **Customize:** list the actual tools/pairings in play, e.g.:
-> - `<Person A>` = `<primary AI>` (entry point [CLAUDE.md](../CLAUDE.md))
-> - `<Person B>` = `<primary AI>` + `<Gemini/other>` (entry point [GEMINI.md](../GEMINI.md))
+> - `<Person A>` = `<primary AI>` (entry point `CLAUDE.md`)
+> - `<Person B>` = `<primary AI>` + `<Gemini/other>` (entry point `GEMINI.md`)
 >
 > The rules below are identical **no matter how many tools are in play or which ones** — that's the
 > point of routing everything through AGENTS.md instead of writing per-tool rules.
@@ -23,7 +23,7 @@ No other channel is authoritative. If it's not in these files, it didn't happen.
 
 > **Using an assistant that doesn't auto-read repo files?** At the start of a session, paste
 > `AGENTS.md` + the current `STATUS.md` into it. That's all any assistant needs to participate
-> correctly — see [AI_ENTRYPOINT.template.md](../AI_ENTRYPOINT.template.md).
+> correctly — see `AI_ENTRYPOINT.template.md` in the kit.
 
 ## Session start handshake (every AI, every session)
 

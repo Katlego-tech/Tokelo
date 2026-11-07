@@ -24,6 +24,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: main
+          # The gate's traceability check reads every commit since the scaffold, as in ci.yml.
+          fetch-depth: 0
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
@@ -42,11 +44,26 @@ jobs:
           ln -sf "$(bash scripts/realm/tools.sh osv-scanner)" "$HOME/.local/bin/osv-scanner"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: The gate, again (new advisories against the pinned dependencies)
+      - name: Install dependencies
         run: |
           corepack enable
           bash scripts/gate.sh --install-deps
-          bash scripts/gate.sh
+
+      # Setup, not a check: a package's test script can run a Playwright suite, which needs a
+      # browser. Chromium only, with its system libraries, and only where a package uses it.
+      # The folders are the ones --install-deps just installed (project_dirs() in gate.sh).
+      - name: Install Playwright's Chromium, where a package uses it
+        run: |
+          git ls-files \
+            | grep -E '^((services|apps|packages)/[^/]+/|(backend|frontend|web|api)/)?package\.json$' \
+            | while IFS= read -r manifest; do
+            if grep -q '"@playwright/test"' "$manifest"; then
+              ( cd "$(dirname "$manifest")" && npx --no-install playwright install --with-deps chromium )
+            fi
+          done
+
+      - name: The gate, again (new advisories against the pinned dependencies)
+        run: bash scripts/gate.sh
 
       - name: Runtimes' end of life
         if: always()

@@ -106,14 +106,24 @@ TEST_DIRS = {
     "integration",
 }
 TEST_NAME = re.compile(r"(^test_.*\.py$|_test\.(py|go)$|\.(test|spec)\.[cm]?[jt]sx?$)")
-PY_MARK = re.compile(r"pytest\.mark\.req\(([^)]*)\)")
+# The req marker's opening parenthesis, as pytest.mark.req or an imported mark.req; call_args
+# reads on to the parenthesis that closes it.
+PY_MARK = re.compile(r"\bmark\.req\(")
 PY_DEF = re.compile(r"^\s*(?:async\s+)?(?:def|class)\s+(\w+)", re.M)
-JS_TITLE = re.compile(
-    r"\b(?:it|test|describe)(?:\.\w+)*\(\s*(['\"`])\s*((?:\[" + ID + r"\]\s*)+)([^'\"`]*)"
-)
+# A JS/TS test's whole title, up to the quote that opened it; [REQ-012] may sit anywhere in it.
+# Inside the quotes: an escaped character, or any character but a backslash, a newline or the
+# closing quote. A backslash can match only one branch, so a long run of them can't backtrack.
+JS_TITLE = re.compile(r"\b(?:it|test|describe)(?:\.\w+)*\(\s*(['\"`])((?:\\.|(?!\1)[^\\\n])*)\1")
+JS_REQ = re.compile(r"\[(" + ID + r")\]")
 COMMENT_REQ = re.compile(
     r"^\s*(?:#|//|--|;|/\*|\*)\s*req:\s*(" + ID + r"(?:\s*,\s*" + ID + r")*)", re.I | re.M
 )
+# A commit that serves no requirement says so in its message, as a task does in TASKS.md:
+# "Req: none — <reason>". Only these commit types may (DESIGN.md §7.4).
+NO_REQ = r"none\b\s*[—–:-]\s*\S"
+COMMIT_NO_REQ = re.compile(rf"^Req:\s*{NO_REQ}", re.I | re.M)
+OPT_OUT_TYPES = ("docs", "chore")
+COMMIT_TYPE = re.compile(r"^(\w+)(?:\([^)]*\))?!?:")
 
 
 class RealmError(Exception):
@@ -166,6 +176,24 @@ class Task:
 class TestRef:
     where: str
     reqs: list[str]
+
+
+@dataclass
+class Commit:
+    sha: str
+    merge: bool
+    subject: str
+    body: str = ""
+
+    @property
+    def no_req(self) -> bool:
+        """Its message carries 'Req: none — <reason>'."""
+        return bool(COMMIT_NO_REQ.search(self.body))
+
+    @property
+    def may_opt_out(self) -> bool:
+        m = COMMIT_TYPE.match(self.subject)
+        return bool(m) and m.group(1) in OPT_OUT_TYPES
 
 
 # ------------------------------------------------------------------ reading ---
@@ -289,6 +317,37 @@ def is_test_file(path: str) -> bool:
     return bool(TEST_DIRS & set(p.parts[:-1])) or bool(TEST_NAME.search(p.name))
 
 
+def call_args(text: str, start: int) -> str:
+    """A call's arguments, from just after its opening parenthesis at `start` to the one that
+    closes it. Parentheses in strings and comments don't count, and a comment's text is left
+    out. A call that never closes gives the rest of its line."""
+    depth, quote, kept, i = 1, "", [], start
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == "\\":
+                kept.append(text[i : i + 2])
+                i += 2
+                continue
+            if c == quote:
+                quote = ""
+        elif c in "'\"":
+            quote = c
+        elif c == "#":
+            end = text.find("\n", i)
+            i = len(text) if end < 0 else end
+            continue
+        elif c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                return "".join(kept)
+        kept.append(c)
+        i += 1
+    return text[start:].split("\n", 1)[0]
+
+
 def find_tests(root: Path) -> list[TestRef]:
     refs: list[TestRef] = []
     for path in tracked_files(root):
@@ -304,15 +363,12 @@ def find_tests(root: Path) -> list[TestRef]:
             for m in PY_MARK.finditer(text):
                 name = PY_DEF.search(text, m.end())
                 where = f"{path}::{name.group(1)}" if name else path
-                refs.append(TestRef(where, re.findall(ID, m.group(1))))
+                refs.append(TestRef(where, re.findall(ID, call_args(text, m.end()))))
         if is_test_file(path):
             for m in JS_TITLE.finditer(text):
-                refs.append(
-                    TestRef(
-                        f'{path} "{m.group(2).strip()} {m.group(3).strip()}"',
-                        re.findall(ID, m.group(2)),
-                    )
-                )
+                named = JS_REQ.findall(m.group(2))
+                if named:
+                    refs.append(TestRef(f'{path} "{m.group(2).strip()}"', named))
             for m in COMMENT_REQ.finditer(text):
                 refs.append(TestRef(path, re.findall(ID, m.group(1))))
     return refs
@@ -322,8 +378,8 @@ def git(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=False)
 
 
-def commits(root: Path, since: str) -> list[tuple[str, bool, str]]:
-    """(sha, is_merge, subject) for every commit after `since` on the current branch."""
+def commits(root: Path, since: str) -> list[Commit]:
+    """Every commit after `since` on the current branch, newest first."""
     if since and git(root, "merge-base", "--is-ancestor", since, "HEAD").returncode != 0:
         raise RealmError(
             f"realm.toml [trace] since = {since!r} is not a commit this branch "
@@ -332,11 +388,13 @@ def commits(root: Path, since: str) -> list[tuple[str, bool, str]]:
     if git(root, "rev-parse", "--verify", "-q", "HEAD").returncode != 0:
         return []
     rng = f"{since}..HEAD" if since else "HEAD"
-    out = git(root, "log", "--format=%H%x09%P%x09%s", rng).stdout
+    out = git(root, "log", "-z", "--format=%H%x1f%P%x1f%s%x1f%b", rng).stdout
     rows = []
-    for line in out.splitlines():
-        sha, parents, subject = line.split("\t", 2)
-        rows.append((sha, len(parents.split()) > 1, subject))
+    for record in out.split("\0"):
+        if not record.strip():
+            continue
+        sha, parents, subject, body = record.strip("\n").split("\x1f", 3)
+        rows.append(Commit(sha, len(parents.split()) > 1, subject, body))
     return rows
 
 
@@ -479,7 +537,7 @@ class Trace:
     reqs: list[Requirement]
     tasks: list[Task]
     tests: list[TestRef]
-    history: list[tuple[str, bool, str]]
+    history: list[Commit]
     shipped: dict[str, list[str]]
     problems: list[Problem] = field(default_factory=list)
 
@@ -491,9 +549,19 @@ class Trace:
 
     def commits_for(self, task: str) -> list[str]:
         return [
-            sha[:7]
-            for sha, merge, subject in self.history
-            if not merge and re.search(rf"\b{task}\b", subject)
+            c.sha[:7] for c in self.history if not c.merge and re.search(rf"\b{task}\b", c.subject)
+        ]
+
+    def work(self) -> list[Commit]:
+        """The commits the chain is checked for: every one that isn't a merge."""
+        return [c for c in self.history if not c.merge]
+
+    def opted_out(self) -> list[Commit]:
+        """Docs and chore commits that name no task and say 'Req: none — <reason>' instead."""
+        return [
+            c
+            for c in self.work()
+            if c.may_opt_out and c.no_req and not re.search(rf"\b{TASK_ID}\b", c.subject)
         ]
 
 
@@ -521,7 +589,7 @@ def trace(root: Path, config: dict) -> Trace:
                     "Req: none — <why: tooling, refactor, docs>)",
                 )
             )
-        elif not task.reqs and not re.match(r"none\b\s*[—–:-]\s*\S", task.req_field, re.I):
+        elif not task.reqs and not re.match(NO_REQ, task.req_field, re.I):
             t.problems.append(
                 Problem(
                     where,
@@ -580,23 +648,34 @@ def trace(root: Path, config: dict) -> Trace:
                     where, f"{r.id} is released but no release record in docs/releases/ lists it"
                 )
             )
-    for sha, merge, subject in t.history:
-        if merge:
+    for c in t.work():
+        where = f"commit {c.sha[:7]}"
+        named = re.findall(rf"\b{TASK_ID}\b", c.subject)
+        if not named and pipeline_record(root, c.sha):
             continue
-        named = re.findall(rf"\b{TASK_ID}\b", subject)
-        if not named and pipeline_record(root, sha):
+        if not named and c.may_opt_out and c.no_req:
             continue
-        if not named:
+        if not named and c.no_req:
             t.problems.append(
                 Problem(
-                    f"commit {sha[:7]}", f"{subject!r} names no task (e.g. 'feat(api): T031 …')"
+                    where,
+                    f"{c.subject!r} names no task: only a docs or chore commit may say "
+                    "Req: none; a change to what the project does names its task",
+                )
+            )
+        elif not named:
+            t.problems.append(
+                Problem(
+                    where,
+                    f"{c.subject!r} names no task (e.g. 'feat(api): T031 …'; a docs or chore "
+                    "commit that serves no requirement may say why instead, on a line of its "
+                    "message after a blank line: 'Req: none — <reason>'. With no blank line "
+                    "git reads that line as part of the subject)",
                 )
             )
         for task_id in named:
             if task_id not in task_ids:
-                t.problems.append(
-                    Problem(f"commit {sha[:7]}", f"names {task_id}, which isn't in TASKS.md")
-                )
+                t.problems.append(Problem(where, f"names {task_id}, which isn't in TASKS.md"))
     return t
 
 
@@ -606,7 +685,10 @@ RECORD_PATHS = ("docs/releases/", "docs/ops/incidents/", "docs/ops/metrics.md")
 
 def pipeline_record(root: Path, sha: str) -> bool:
     """True when a commit only changes release records and incident files."""
-    paths = git(root, "show", "--name-only", "--format=", sha).stdout.split()
+    # -z: one name per NUL, as it is on disk. A name with a space in it used to be read as two,
+    # and git quotes one with an accent unless asked not to.
+    out = git(root, "show", "--name-only", "-z", "--format=", sha).stdout
+    paths = [p for p in out.split("\0") if p]
     return bool(paths) and all(p.startswith(RECORD_PATHS) for p in paths)
 
 
@@ -647,10 +729,12 @@ def cmd_trace(root: Path, config: dict, write: bool) -> int:
         out.write_text(matrix(t, head), encoding="utf-8")
         print(f"   wrote {out.relative_to(root)}")
     active = sum(r.state in ACTIVE for r in t.reqs)
+    no_req = len(t.opted_out())
     print(
         f"   trace: {len(t.reqs)} requirement(s) ({active} approved or later), "
-        f"{len(t.tasks)} task(s), {len([c for c in t.history if not c[1]])} commit(s), "
-        f"{len(t.tests)} test reference(s); {len(t.problems)} broken link(s)"
+        f"{len(t.tasks)} task(s), {len(t.work())} commit(s)"
+        + (f", {no_req} of them Req: none" if no_req else "")
+        + f", {len(t.tests)} test reference(s); {len(t.problems)} broken link(s)"
     )
     return 1 if t.problems else 0
 
@@ -1200,7 +1284,7 @@ def main(argv: list[str] | None = None) -> int:
         except (RealmError, ops.OpsError) as e:
             print(f"!! realm: {e}")
             return 1
-    if argv[:1] in (["release"], ["railway"], ["aws"]):
+    if argv[:1] in (["release"], ["railway"], ["aws"], ["cpanel"]):
         try:
             root = repo_root()
             config = load_config(root)
@@ -1210,6 +1294,10 @@ def main(argv: list[str] | None = None) -> int:
         if argv[0] == "release":
             return cmd_release(root, config, argv[1:])
         sys.path.insert(0, str(Path(__file__).resolve().parent))
+        if argv[0] == "cpanel":
+            import cpanel  # imported here: only the cpanel adapter needs it
+
+            return cpanel.cli(root, config, argv[1:])
         if argv[0] == "aws":
             import aws  # imported here: only the aws adapter needs it
 

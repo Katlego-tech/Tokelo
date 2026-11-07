@@ -2,7 +2,8 @@
 # release.sh -- build, stage, promote and roll back a release (DESIGN.md §5.2).
 #
 #   bash scripts/realm/release.sh build    <version>   images, SBOMs, a signed provenance
-#   bash scripts/realm/release.sh publish  <version>   archive the images in [deploy] registry
+#   bash scripts/realm/release.sh publish  <version>   archive the images in [deploy] registry,
+#                                                      and file archives on the tag's GitHub release
 #   bash scripts/realm/release.sh stage    <version>   staging, the release checks, the record
 #   bash scripts/realm/release.sh promote  <version> [--emergency "<reason>"]
 #                                                      production, then the watch window
@@ -12,13 +13,16 @@
 # each service from it, but never staged or promoted (DESIGN.md §14.3).
 # Everything goes to dist/<version>/ (ignored by git; the release workflow keeps it):
 #   <service>.tar          the image, exactly as built (docker archive with an OCI index)
+#   <service>.tar.gz       a files service's tree instead (DESIGN.md §15): a deterministic
+#                          archive whose sha256 is its digest, signed in <service>.tar.gz.bundle
 #   <service>.cdx.json     its SBOM (CycloneDX, by syft)
 #   <service>.vulns.json   known vulnerabilities in it (osv-scanner): recorded, not blocking
 #   release.json           the provenance: version, commit, digests, reproducibility, SBOM hashes
 #   release.bundle         release.json's signature (cosign, the project key; no public log)
 #
 # Each image is built twice from scratch, for linux/amd64, with the commit's time as
-# SOURCE_DATE_EPOCH and file times rewritten to it. Identical digests mean the build is
+# SOURCE_DATE_EPOCH and file times rewritten to it; a files service's tree is built twice too,
+# each time after removing its output folder, and archived. Identical digests mean the build is
 # reproducible. In the assured tier a difference stops the release; in the standard tier it's
 # recorded in release.json. Only a commit on main is built: a tag can point anywhere.
 #
@@ -80,15 +84,18 @@ build() {
   elif [ -n "${COSIGN_KEY:-}" ]; then key="$COSIGN_KEY"
   else die "set COSIGN_PRIVATE_KEY (or COSIGN_KEY, a path) and COSIGN_PASSWORD: releases are signed"
   fi
-  { read -r syft; read -r osv; read -r cosign; } < <(bash scripts/realm/tools.sh syft osv-scanner cosign)
-  command -v docker >/dev/null || die "docker isn't on PATH: images are built with docker buildx"
-  ensure_builder
-
   local services
   services="$("$realm" release services)" || die "realm.toml's [[service]] entries need fixing"
+  { read -r syft; read -r osv; read -r cosign; } < <(bash scripts/realm/tools.sh syft osv-scanner cosign)
+  if cut -f7 <<<"$services" | grep -qvx files; then  # only images need Docker
+    command -v docker >/dev/null || die "docker isn't on PATH: images are built with docker buildx"
+    ensure_builder
+  fi
+
   rm -rf "$out"; mkdir -p "$out"
   say "== build $version at ${commit:0:7} (tier: $tier) =="
-  while IFS=$'\t' read -r svc context dockerfile _port _health _ui _k; do
+  while IFS=$'\t' read -r svc context dockerfile _port _health _ui kind; do
+    if [ "$kind" = files ]; then build_files "$svc"; continue; fi
     local image="realm-$name-$svc:$version" first second reproducible
     step "$svc: two builds from scratch"
     for i in 1 2; do
@@ -120,15 +127,56 @@ build() {
 
   step "provenance and signature"
   "$realm" release provenance "$version" >/dev/null || die "couldn't write release.json"
-  "$cosign" sign-blob --yes --key "$key" --use-signing-config=false --tlog-upload=false \
-    --bundle "$out/release.bundle" "$out/release.json" >/dev/null 2>&1 \
-    || die "cosign couldn't sign release.json (is COSIGN_PASSWORD right for the key?)"
-  "$cosign" verify-blob --key cosign.pub --bundle "$out/release.bundle" \
-    --insecure-ignore-tlog=true "$out/release.json" >/dev/null 2>&1 \
-    || die "release.json's signature doesn't verify against cosign.pub: the key pair doesn't match"
+  sign "$out/release.json" "$out/release.bundle"
   say "   release.json signed; it verifies against cosign.pub"
   say ""
-  say "== built $version: $(wc -l < "$out/build.tsv") image(s) in $out =="
+  say "== built $version: $(wc -l < "$out/build.tsv") artefact(s) in $out =="
+}
+
+sign() {  # sign <blob> <bundle>: with the project key, then checked against cosign.pub
+  # (build's $cosign and $key; no public log, as the key is the project's own)
+  "$cosign" sign-blob --yes --key "$key" --use-signing-config=false --tlog-upload=false \
+    --bundle "$2" "$1" >/dev/null 2>&1 \
+    || die "cosign couldn't sign ${1##*/} (is COSIGN_PASSWORD right for the key?)"
+  "$cosign" verify-blob --key cosign.pub --bundle "$2" --insecure-ignore-tlog=true "$1" \
+    >/dev/null 2>&1 \
+    || die "${1##*/}'s signature doesn't verify against cosign.pub: the key pair doesn't match"
+}
+
+build_files() {  # build_files <service>: a files service's tree, as build does an image (§15.1)
+  local svc="$1" first second reproducible tree rc=0       # (build's $out, $version, $tier)
+  step "$svc: two builds of its file tree, each from scratch"
+  first="$("$realm" release files-build "$version" "$svc" 1)" || die "${first#*!! release: }"
+  second="$("$realm" release files-build "$version" "$svc" 2)" || die "${second#*!! release: }"
+  if [ "$first" = "$second" ]; then
+    reproducible=yes; say "   reproducible: both archives are $first"
+  else
+    reproducible=no; say "   NOT reproducible: $first, then $second"
+    [ "$tier" = assured ] && die "$svc: the assured tier needs a reproducible build (pin the build's tools and dependencies, embed no build times)"
+  fi
+  mv "$out/$svc.1.tar.gz" "$out/$svc.tar.gz"; rm -f "$out/$svc.2.tar.gz"
+
+  step "$svc: SBOM (syft) and known vulnerabilities (osv-scanner)"
+  tree="$(mktemp -d)"
+  tar -xzf "$out/$svc.tar.gz" -C "$tree" || { rm -rf "$tree"; die "$svc: couldn't unpack its archive"; }
+  # The directory catalogers find lock files; the image ones, what's installed (a vendor/ folder).
+  SYFT_FILE_METADATA_SELECTION=none "$syft" scan -q "dir:$tree" \
+    --override-default-catalogers directory,image -o "cyclonedx-json=$out/$svc.cdx.json" \
+    || { rm -rf "$tree"; die "$svc: syft couldn't read the tree"; }
+  rm -rf "$tree"
+  "$osv" scan source -L "$out/$svc.cdx.json" --format json \
+    --output-file "$out/$svc.vulns.json" >/dev/null 2>&1 || rc=$?
+  case "$rc" in
+    0|1) ;;
+    128) printf '{"results": []}\n' > "$out/$svc.vulns.json" ;;  # no packages: nothing to look up
+    *) die "$svc: osv-scanner couldn't scan the SBOM (exit $rc)" ;;
+  esac
+
+  step "$svc: signature"
+  sign "$out/$svc.tar.gz" "$out/$svc.tar.gz.bundle"
+  say "   $svc.tar.gz signed; it verifies against cosign.pub"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$svc" "$svc.tar.gz" "$first" "$reproducible" "$svc.cdx.json" \
+    >> "$out/build.tsv"
 }
 
 # ------------------------------------------------------------ the release checks ---
@@ -187,7 +235,7 @@ smoke_all() {  # smoke_all <env> [label]: every web service's health path answer
 base_urls() {  # -e BASE_URL_<SERVICE>=<url> for every web service in <env>, for k6
   local svc kind
   while IFS=$'\t' read -r svc _c _d _p _h _u kind; do
-    [ "$kind" = web ] || continue
+    [ "$kind" != worker ] || continue
     printf -- '-e\nBASE_URL_%s=%s\n' "$(printf '%s' "$svc" | tr 'a-z-' 'A-Z_')" "$(adapter url "$1" "$svc")"
   done <<<"$services"
 }
@@ -226,11 +274,16 @@ archived() {  # archived <image>: the digest the registry holds under that tag (
     --creds "$user:$token" --format '{{.Digest}}' "docker://$1" 2>/dev/null
 }
 
-publish() {  # push each image archive to the registry, keeping its digest (skopeo)
+publish() {  # push each image archive to the registry, keeping its digest (skopeo); keep each
+  # files service's archive on the tag's GitHub release (DESIGN.md §15.9, decision 1).
   # The seed is archived before anything serves it, so no URL is asked for here (§14.3);
   # nothing below uses one.
   setup_release "$1" --urls none
   [ -f "$out/release.json" ] || die "no dist/$version/release.json: build $version first"
+  if cut -f7 <<<"$services" | grep -qx files; then
+    "$realm" release publish-files "$version" || die "the file archives aren't kept yet (see above)"
+  fi
+  cut -f7 <<<"$services" | grep -qvx files || return 0
   local registry svc image digest pushed
   registry="$("$realm" release config deploy.registry)"
   [ -n "$registry" ] || die "[deploy] registry is empty: nowhere to archive the images"
@@ -246,7 +299,8 @@ publish() {  # push each image archive to the registry, keeping its digest (skop
     || die "set REGISTRY_USER and REGISTRY_TOKEN (in CI: the actor and GITHUB_TOKEN)"
   local tls=true
   [ "${REALM_REGISTRY_INSECURE:-}" = 1 ] && tls=false   # a plain-HTTP registry, e.g. on localhost
-  while IFS=$'\t' read -r svc _c _d _p _h _u _k; do
+  while IFS=$'\t' read -r svc _c _d _p _h _u kind; do
+    [ "$kind" != files ] || continue
     image="$registry/$svc:$version"
     digest="$(digest_of "$out/$svc.tar")"
     step "$svc -> $image"
@@ -301,18 +355,51 @@ stage() {
   step "accessibility (pa11y with axe, on web services with ui = true)"
   local svc ui kind any_ui=0 url
   printf '{"runners": ["axe"], "chromeLaunchConfig": {"args": ["--no-sandbox"]}}\n' > "$out/pa11y.json"
+  # pa11y drives Chrome through puppeteer, which downloads its own copy when it is installed.
+  # That download doesn't always land (a new CI runner image, a slow network), and pa11y then
+  # fails with "Could not find Chrome". A Chrome already on the machine is used instead.
+  if [ -z "${PUPPETEER_EXECUTABLE_PATH:-}" ]; then
+    local browser
+    for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+      if command -v "$browser" >/dev/null 2>&1; then
+        export PUPPETEER_EXECUTABLE_PATH; PUPPETEER_EXECUTABLE_PATH="$(command -v "$browser")"
+        break
+      fi
+    done
+  fi
   while IFS=$'\t' read -r svc _c _d _p _h ui kind; do
-    [ "$ui" = true ] && [ "$kind" = web ] || continue
+    [ "$ui" = true ] && [ "$kind" != worker ] || continue
     any_ui=1; url="$(adapter url staging "$svc")"
     if ! command -v npx >/dev/null 2>&1; then
       check accessibility "$svc" fail "npx (Node) isn't on PATH, so pa11y can't run"
     elif npx --yes "$PA11Y" --config "$out/pa11y.json" --reporter cli "$url/" > "$out/pa11y-$svc.log" 2>&1; then
       check accessibility "$svc" pass "no axe issues on /"
     else
-      check accessibility "$svc" fail "axe found issues: dist/$version/pa11y-$svc.log"
+      # Any non-zero exit lands here: issues axe found, or pa11y or its Chrome failing to start.
+      # The log's last lines say which, here and in CI, where the file itself is gone afterwards.
+      check accessibility "$svc" fail "pa11y failed (axe issues, or pa11y couldn't run): dist/$version/pa11y-$svc.log"
+      tail -n 20 "$out/pa11y-$svc.log" | sed 's/^/     | /'
     fi
   done <<<"$services"
   [ "$any_ui" -eq 1 ] || check accessibility "-" "not applicable" "no service has ui = true"
+
+  # A port for ZAP below the ephemeral range, with nothing listening on it now; nothing at all
+  # when none is found, and ZAP chooses. A connect that isn't refused at once (a filtered port)
+  # is given up on after a second and counted as taken.
+  zap_port() {
+    local p
+    for _ in $(seq 1 50); do
+      p=$((20000 + RANDOM % 10000))
+      if command -v timeout >/dev/null 2>&1; then
+        timeout 1 bash -c "exec 3<>/dev/tcp/127.0.0.1/$p" 2>/dev/null && continue
+        [ $? -eq 124 ] && continue
+      else
+        (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null && continue
+      fi
+      printf '%s\n' "$p"; return 0
+    done
+    return 0
+  }
 
   step "DAST (the OWASP ZAP baseline scan, on web services)"
   mkdir -p "$out/zap"; chmod 777 "$out/zap"
@@ -320,20 +407,41 @@ stage() {
   local rules=() rc
   [ -s "$out/zap/rules.tsv" ] && rules=(-c rules.tsv)
   while IFS=$'\t' read -r svc _c _d _p _h _u kind; do
-    [ "$kind" = web ] || continue
+    [ "$kind" != worker ] || continue
     url="$(adapter url staging "$svc")"
     local attempt
     for attempt in 1 2; do  # exit 3 is ZAP failing to run, not a finding: one more try
       rc=0
-      docker run --rm --network host -v "$out/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
-        zap-baseline.py -t "$url/" "${rules[@]}" -J "zap-$svc.json" > "$out/zap-$svc.log" 2>&1 || rc=$?
+      # -P: ZAP's own port, chosen here. Left to itself, zap-baseline takes a random free port,
+      # often in the range Linux hands out for outgoing connections (32768-60999), and on the
+      # host network one of the stack's connections can take it before ZAP binds: "Address
+      # already in use", and ZAP exits without scanning.
+      # -T 10: the passive scan waits at most ten minutes for its results.
+      # ZAP installs its beta passive rules at start-up, over the network; on a slow or filtered
+      # network that can wait for good. So the whole run has 20 minutes: past that the container
+      # is stopped and the attempt counts as ZAP failing to run (exit 3), not as a pass. --init:
+      # zap-baseline would otherwise be the container's PID 1, which ignores the SIGTERM that
+      # timeout sends, so the run would never end; -k 30 kills it if that still isn't enough.
+      # Where timeout isn't installed (macOS without coreutils) the run has no time limit.
+      local port_args=() zap_name="realm-zap-$$-$svc-$attempt" port
+      port="$(zap_port)"; [ -z "$port" ] || port_args=(-P "$port")
+      local -a limit=()
+      command -v timeout >/dev/null 2>&1 && limit=(timeout -k 30 1200)
+      "${limit[@]}" docker run --rm --init --name "$zap_name" --network host -v "$out/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+        zap-baseline.py -t "$url/" "${rules[@]}" -J "zap-$svc.json" "${port_args[@]}" -T 10 \
+        > "$out/zap-$svc.log" 2>&1 || rc=$?
+      if [ "$rc" -eq 124 ] || { [ "$rc" -eq 137 ] && [ "${#limit[@]}" -gt 0 ]; }; then
+        docker rm -f "$zap_name" >/dev/null 2>&1 || true
+        say "   ZAP ran past 20 minutes and was stopped"
+        rc=3
+      fi
       [ "$rc" -eq 3 ] || break
       [ "$attempt" -eq 1 ] && say "   ZAP didn't run cleanly (exit 3); trying once more"
     done
     case "$rc" in
       0) check DAST "$svc" pass "no warnings or failures" ;;
       3) check DAST "$svc" fail "ZAP couldn't run, twice: dist/$version/zap-$svc.log" ;;
-      *) check DAST "$svc" fail "$(grep -E '^FAIL-NEW' "$out/zap-$svc.log" | tr -s '\t' ' ' || echo "zap exited $rc"): dist/$version/zap-$svc.log" ;;
+      *) check DAST "$svc" fail "$("$realm" release zap-detail "$out/zap-$svc.log" "$rc"): dist/$version/zap-$svc.log" ;;
     esac
   done <<<"$services"
 
@@ -373,7 +481,7 @@ promote() {
     step "watch window (k6 against docs/ops/slo.toml)"
     local urls=() svc kind
     while IFS=$'\t' read -r svc _c _d _p _h _u kind; do
-      [ "$kind" = web ] || continue
+      [ "$kind" != worker ] || continue
       urls+=("$svc=$(adapter url production "$svc")")
     done <<<"$services"
     if [ "${#urls[@]}" -eq 0 ]; then
@@ -425,7 +533,7 @@ rollback() {
   "$realm" release record-rollback "$version"
 }
 
-[ $# -ge 2 ] || { sed -n '2,29p' "$0"; exit 2; }
+[ $# -ge 2 ] || { sed -n '2,34p' "$0"; exit 2; }
 command="$1" version_arg="$2"
 [[ "$version_arg" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "a version looks like v1.4.0"
 case "$command" in

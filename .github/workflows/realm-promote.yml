@@ -3,7 +3,8 @@
 # level objectives, and rolls back by itself (opening an incident) if one breaks. Either way it
 # opens a PR with the updated record.
 #
-# Secrets: RAILWAY_API_TOKEN on the railway platform. On the aws platform the job signs in by
+# Secrets: RAILWAY_API_TOKEN on the railway platform; on the cpanel platform, CPANEL_SSH_KEY and
+# CPANEL_KNOWN_HOSTS, with the variables CPANEL_SSH_HOSTNAME, _PORT and _USER (DESIGN.md §15.4). On the aws platform the job signs in by
 # OIDC as the promote role, from the repository variables AWS_REGION and AWS_PROMOTE_ROLE
 # (DESIGN.md §14.4). The logic is in scripts/realm/release.sh.
 name: realm-promote
@@ -53,9 +54,20 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-duration-seconds: 3600   # the job's own limit is an hour
 
+      - name: Set up SSH to the host (the cpanel platform only)
+        if: vars.CPANEL_SSH_HOSTNAME != ''
+        env:
+          CPANEL_SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          CPANEL_KNOWN_HOSTS: ${{ secrets.CPANEL_KNOWN_HOSTS }}
+          CPANEL_SSH_HOSTNAME: ${{ vars.CPANEL_SSH_HOSTNAME }}
+          CPANEL_SSH_PORT: ${{ vars.CPANEL_SSH_PORT }}
+          CPANEL_SSH_USER: ${{ vars.CPANEL_SSH_USER }}
+        run: scripts/realm/realm cpanel setup-ssh
+
       - name: Promote, then watch
         env:
           RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # the cpanel platform may fetch an archive
         run: |
           if [ -n "$EMERGENCY" ]; then
             bash scripts/realm/release.sh promote "$VERSION" --emergency "$EMERGENCY"
