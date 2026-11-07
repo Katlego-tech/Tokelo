@@ -7,6 +7,16 @@
     realm release names                 the [[service]] names, one a line (nothing else checked)
     realm release provenance <version>  write dist/<version>/release.json from the build's results
     realm release perf-env              the secret PERF_ENV's KEY=value lines, checked, for k6
+    realm release files-build <version> <service> <n>
+                                        build a files service's tree into dist/<version>/
+                                        <service>.<n>.tar.gz; print its digest (DESIGN.md §15)
+    realm release publish-files <version>
+                                        keep each files service's archive and its signature as
+                                        assets of the GitHub release on the version's tag
+    realm release compose-port <env>    the compose platform: the first local port <env> is
+                                        published on ([deploy] staging_port / production_port)
+    realm release zap-detail <log> <exit code>
+                                        a failed ZAP scan's findings, as one line for the record
 
 The bash script runs the tools; this file holds the rules, so they can be tested (DESIGN.md §5.2,
 §7.7). Standard library only.
@@ -16,18 +26,27 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import gzip
 import hashlib
 import json
 import os
+import posixpath
 import re
+import shutil
+import stat
 import subprocess
+import tarfile
+import tempfile
 import tomllib
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from typing import Any
 
 VERSION = re.compile(r"v\d+\.\d+\.\d+")
 NAME = re.compile(r"[a-z0-9][a-z0-9-]*")
-KINDS = ("web", "worker")  # a worker has no URL: the adapter's health verb checks it (§14.1)
+# A worker has no URL: the adapter's health verb checks it (§14.1). A files service is a built
+# file tree, not an image: the host serves it, so it has a URL but no container (§15.1).
+KINDS = ("web", "worker", "files")
 ENV_KEY = re.compile(r"[A-Z_][A-Z0-9_]*")
 
 
@@ -44,6 +63,9 @@ class Service:
     health: str
     ui: bool
     kind: str = "web"
+    build: str = ""  # a files service: the command that makes the tree,
+    output: str = ""  # the folder it makes,
+    include: tuple[str, ...] = ()  # and source:destination paths added to it
 
     def row(self) -> str:
         # Never an empty cell: bash's read with IFS=$'\t' would merge it with the next one.
@@ -65,6 +87,51 @@ def check_version(version: str) -> str:
     return version
 
 
+def inside(path: str) -> bool:
+    """Whether `path` is a relative path that stays inside the repo, and isn't the repo itself."""
+    p = PurePosixPath(path)
+    return bool(path) and not p.is_absolute() and ".." not in p.parts and p != PurePosixPath(".")
+
+
+def files_service(s: dict, name: str) -> Service:
+    """A kind = "files" service (DESIGN.md §15.2): what builds its tree, and what the tree holds."""
+    if "port" in s:
+        raise ReleaseError(f"service {name}: a files service has no port; the host serves it")
+    if "context" in s or "dockerfile" in s:
+        raise ReleaseError(
+            f"service {name}: a files service has no context or dockerfile; it's built by "
+            "its build command"
+        )
+    build = str(s.get("build", "")).strip()
+    if not build:
+        raise ReleaseError(f"service {name}: needs build, the command that makes its tree")
+    output = str(s.get("output", "")).strip().rstrip("/")
+    if not output:
+        raise ReleaseError(f"service {name}: needs output, the folder its build makes")
+    if not inside(output):
+        raise ReleaseError(f"service {name}: output must be a folder inside the repo, like out")
+    include = s.get("include", [])
+    if not isinstance(include, list):
+        raise ReleaseError(f'service {name}: include is a list, like ["php/api:api"]')
+    for entry in include:
+        source, sep, dest = str(entry).partition(":")
+        if not sep:
+            raise ReleaseError(f"service {name}: include {entry!r}: write it as source:destination")
+        if not (inside(source) and inside(dest)):
+            raise ReleaseError(
+                f"service {name}: include {entry!r}: both paths stay inside the repo and the "
+                "tree, and neither is the top"
+            )
+    health = str(s.get("health", ""))
+    if not health.startswith("/"):
+        raise ReleaseError(f"service {name}: health must be a path, like /health")
+    ui = bool(s.get("ui", False))
+    # No context or dockerfile: "-", since bash's read with IFS=$'\t' would merge an empty cell.
+    return Service(
+        name, "-", "-", None, health, ui, "files", build, output, tuple(map(str, include))
+    )
+
+
 def services(config: dict, root: Path) -> list[Service]:
     found = []
     raw = config.get("service", [])
@@ -74,13 +141,16 @@ def services(config: dict, root: Path) -> list[Service]:
         name = str(s.get("name", ""))
         if not NAME.fullmatch(name):
             raise ReleaseError(f"[[service]] {n}: name must be lowercase letters, digits and -")
+        kind = str(s.get("kind", "web"))
+        if kind not in KINDS:
+            raise ReleaseError(f"service {name}: kind is {kind!r}: use web, worker or files")
+        if kind == "files":
+            found.append(files_service(s, name))
+            continue
         context = str(s.get("context", ""))
         dockerfile = str(s.get("dockerfile", "Dockerfile"))
         if not (root / context / dockerfile).is_file():
             raise ReleaseError(f"service {name}: no {Path(context) / dockerfile}")
-        kind = str(s.get("kind", "web"))
-        if kind not in KINDS:
-            raise ReleaseError(f"service {name}: kind is {kind!r}: use web or worker")
         port = s.get("port")
         if (kind == "web" or port is not None) and (
             not isinstance(port, int) or not 0 < port < 65536
@@ -130,11 +200,14 @@ def vulnerabilities(report: Path) -> int:
 def provenance(version: str, out: Path, commit: str, epoch: int, config: dict) -> dict:
     """release.json: what was built, from what, how, and whether it was reproducible."""
     rows = [line.split("\t") for line in (out / "build.tsv").read_text().splitlines() if line]
+    kinds = {str(s.get("name")): s.get("kind", "web") for s in config.get("service", [])}
     built = []
     for name, image, digest, reproducible, sbom in rows:
         built.append(
             {
                 "name": name,
+                # A files service's artefact is its archive; "image" names the file (§15.1).
+                "artefact": "files" if kinds.get(name) == "files" else "image",
                 "image": image,
                 "digest": digest,
                 "reproducible": reproducible == "yes",
@@ -159,6 +232,281 @@ def provenance(version: str, out: Path, commit: str, epoch: int, config: dict) -
         "tier": config["realm"]["tier"],
         "services": built,
     }
+
+
+# -------------------------------------------------------------------- files ---
+# A files service's artefact (DESIGN.md §15.1): its build's output plus the included paths, as a
+# .tar.gz that's the same bytes whenever the same tree is archived at the same commit time.
+def archive(tree: Path, dest: Path, epoch: int) -> str:
+    """Write `tree` to `dest` deterministically; return its digest, sha256:<hex>.
+
+    Entries in path order, owned by uid and gid 0 with no names, timed at `epoch` (the commit's
+    time), mode 0755 for folders and executables and 0644 for the rest; the gzip header has no
+    name and no time (gzip -n). Only files and folders: a symlink could point anywhere on the
+    host it's unpacked on."""
+    entries = []
+    for folder, dirs, files in os.walk(tree):
+        dirs.sort()
+        for name in dirs + sorted(files):
+            path = Path(folder) / name
+            rel = path.relative_to(tree).as_posix()
+            mode = path.lstat().st_mode
+            if stat.S_ISLNK(mode):
+                raise ReleaseError(
+                    f"{rel} is a symlink: the archive holds files and folders only; copy what it "
+                    "points to instead"
+                )
+            if not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
+                raise ReleaseError(f"{rel} is neither a file nor a folder")
+            entries.append((rel, path, stat.S_ISDIR(mode), bool(mode & stat.S_IXUSR)))
+    entries.sort(key=lambda e: e[0])
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with (
+        dest.open("wb") as raw,
+        gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as zipped,
+        tarfile.open(fileobj=zipped, mode="w", format=tarfile.PAX_FORMAT) as tar,
+    ):
+        for rel, path, is_dir, executable in entries:
+            info = tarfile.TarInfo(rel)
+            info.mtime = epoch
+            info.uid = info.gid = 0
+            info.uname = info.gname = ""
+            if is_dir:
+                info.type, info.mode = tarfile.DIRTYPE, 0o755
+                tar.addfile(info)
+            else:
+                info.mode = 0o755 if executable else 0o644
+                info.size = path.stat().st_size
+                with path.open("rb") as f:
+                    tar.addfile(info, f)
+    return "sha256:" + sha256(dest)
+
+
+def files_build(root: Path, service: Service, out: Path, n: str, epoch: int) -> str:
+    """Build `service`'s tree from scratch and archive it as out/<name>.<n>.tar.gz; its digest.
+
+    The output folder is removed first, so nothing an earlier build left reaches the archive;
+    that's why git mustn't track anything in it. The build runs at the repo's top, with
+    SOURCE_DATE_EPOCH set to the commit's time, and its output goes to out/<name>.build-<n>.log.
+    Then the output and each included path are copied into a fresh tree, and archived."""
+    output = root / service.output
+    if not output.resolve().is_relative_to(root.resolve()) or output.resolve() == root.resolve():
+        raise ReleaseError(f"{service.name}: output {service.output}/ leads outside the repo")
+    tracked = subprocess.run(
+        ["git", "ls-files", "--", service.output],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout.strip()
+    if tracked:
+        raise ReleaseError(
+            f"{service.name}: git tracks files in {service.output}/; output must be a folder "
+            "only the build makes, since it's removed before each build"
+        )
+    if output.is_symlink() or output.is_file():
+        output.unlink()
+    elif output.exists():
+        shutil.rmtree(output)
+    out.mkdir(parents=True, exist_ok=True)
+    log = out / f"{service.name}.build-{n}.log"
+    with log.open("wb") as f:
+        code = subprocess.run(
+            ["bash", "-c", service.build],
+            cwd=root,
+            env={**os.environ, "SOURCE_DATE_EPOCH": str(epoch)},
+            stdout=f,
+            stderr=subprocess.STDOUT,
+            check=False,
+        ).returncode
+    if code != 0:
+        said = log.read_text(errors="replace").strip().splitlines()[-15:]
+        raise ReleaseError(
+            f"{service.name}: the build ({service.build}) failed with exit {code}; "
+            f"{log.relative_to(root)} ends:\n" + "\n".join(f"     {line}" for line in said)
+        )
+    if not output.is_dir():
+        raise ReleaseError(f"{service.name}: the build made no {service.output}/")
+    with tempfile.TemporaryDirectory(prefix="realm-tree-") as tmp:
+        tree = Path(tmp) / "tree"
+        shutil.copytree(output, tree, symlinks=True)
+        for entry in service.include:
+            source, _, dest = entry.partition(":")
+            src = root / source
+            if not src.exists() or not src.resolve().is_relative_to(root.resolve()):
+                raise ReleaseError(f"{service.name}: include {entry!r}: no {source} in the repo")
+            target = tree / dest
+            if target.exists() or target.is_symlink():
+                raise ReleaseError(
+                    f"{service.name}: include {entry!r}: the build's output already has {dest}; "
+                    "an include never overwrites it"
+                )
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if src.is_dir():
+                shutil.copytree(src, target, symlinks=True)
+            else:
+                shutil.copy2(src, target, follow_symlinks=False)
+        return archive(tree, out / f"{service.name}.{n}.tar.gz", epoch)
+
+
+# ----------------------------------------------------- archives on GitHub ---
+# Decision 1 of DESIGN.md §15.9: a files release's archives are assets of the GitHub release on
+# its tag (a draft until the release workflow fills it in). The repo is private, so are they.
+def github_repo_from(url: str) -> str:
+    """owner/name from a github.com remote URL ('' for any other host)."""
+    m = re.fullmatch(
+        r"(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)"
+        r"([\w.-]+/[\w.-]+?)(?:\.git)?/?",
+        url.strip(),
+    )
+    return m.group(1) if m else ""
+
+
+def github_repo(root: Path) -> str:
+    """The GitHub repo releases belong to: $GITHUB_REPOSITORY in CI, else origin's."""
+    if os.environ.get("GITHUB_REPOSITORY"):
+        return os.environ["GITHUB_REPOSITORY"]
+    url = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout
+    repo = github_repo_from(url)
+    if not repo:
+        raise ReleaseError(
+            "no GitHub repo to keep the archives in: set GITHUB_REPOSITORY=owner/name, or an "
+            "origin remote on github.com"
+        )
+    return repo
+
+
+def gh(*args: str, binary: bool = False) -> subprocess.CompletedProcess:
+    return subprocess.run(["gh", *args], capture_output=True, text=not binary, check=False)
+
+
+def gh_api(path: str, *args: str) -> Any:
+    done = gh("api", path, *args)
+    if done.returncode != 0:
+        raise ReleaseError(f"gh api {path}: {done.stderr.strip() or 'failed'}")
+    return json.loads(done.stdout)
+
+
+def gh_pages(path: str) -> list:
+    """Every item of a paged GitHub list (100 a page)."""
+    items, page = [], 1
+    while True:
+        batch = gh_api(f"{path}?per_page=100&page={page}")
+        items += batch
+        if len(batch) < 100:
+            return items
+        page += 1
+
+
+def tag_on_github(repo: str, version: str) -> None:
+    done = gh("api", f"repos/{repo}/git/ref/tags/{version}")
+    if done.returncode == 0:
+        return
+    if "HTTP 404" in done.stderr:
+        raise ReleaseError(
+            f"the tag {version} isn't on GitHub ({repo}): push it first; the release's "
+            "archives are kept on it"
+        )
+    raise ReleaseError(f"couldn't ask GitHub for the tag {version}: {done.stderr.strip()}")
+
+
+def github_release_id(repo: str, version: str) -> int:
+    """The id of the GitHub release on `version`'s tag, drafts included (0 if there's none)."""
+    for r in gh_pages(f"repos/{repo}/releases"):
+        if r.get("tag_name") == version:
+            return int(r["id"])
+    return 0
+
+
+def github_release(repo: str, version: str) -> int:
+    """The id of the GitHub release on `version`'s tag, drafts included; made as a draft if none."""
+    found = github_release_id(repo, version)
+    if found:
+        return found
+    made = gh_api(
+        f"repos/{repo}/releases",
+        "-X",
+        "POST",
+        "-f",
+        f"tag_name={version}",
+        "-f",
+        f"name={version}",
+        "-F",
+        "draft=true",
+        "-f",
+        "body=Release in progress: the pipeline fills this in after staging.",
+    )
+    return int(made["id"])
+
+
+def download_asset(repo: str, asset_id: int) -> bytes:
+    done = gh(
+        "api",
+        "-H",
+        "Accept: application/octet-stream",
+        f"repos/{repo}/releases/assets/{asset_id}",
+        binary=True,
+    )
+    if done.returncode != 0:
+        raise ReleaseError(f"couldn't download asset {asset_id}: {done.stderr.decode().strip()}")
+    return done.stdout
+
+
+def asset_digest(repo: str, asset_id: int) -> str:
+    return "sha256:" + hashlib.sha256(download_asset(repo, asset_id)).hexdigest()
+
+
+def publish_files(root: Path, declared: list[Service], version: str) -> None:
+    """Keep each files service's archive and its signature on the tag's GitHub release. An
+    archive already there with the same digest is left as it is; a different one is refused."""
+    out = root / "dist" / version
+    repo = github_repo(root)
+    tag_on_github(repo, version)
+    release_id = github_release(repo, version)
+    for s in (s for s in declared if s.kind == "files"):
+        archived, bundle = out / f"{s.name}.tar.gz", out / f"{s.name}.tar.gz.bundle"
+        for path in (archived, bundle):
+            if not path.exists():
+                raise ReleaseError(f"no {path.relative_to(root)}: build {version} first")
+        digest = "sha256:" + sha256(archived)
+        print(f"\n-> {s.name} -> {repo}, release {version}: {archived.name}")
+        assets = {
+            a["name"]: int(a["id"]) for a in gh_pages(f"repos/{repo}/releases/{release_id}/assets")
+        }
+        if archived.name in assets:
+            held = asset_digest(repo, assets[archived.name])
+            if held != digest:
+                raise ReleaseError(
+                    f"{version}'s GitHub release already holds a different {archived.name} "
+                    f"({held}, not the built {digest}); a release's archive is never replaced"
+                )
+            missing = [] if bundle.name in assets else [str(bundle)]
+            print(f"   already archived with its digest: {digest}")
+        else:
+            missing = [str(archived), str(bundle)]
+        if missing:
+            done = gh("release", "upload", version, "--repo", repo, *missing)
+            if done.returncode != 0:
+                raise ReleaseError(
+                    f"{s.name}: couldn't upload to {version}'s release: {done.stderr.strip()}"
+                )
+        if archived.name not in assets:
+            assets = {
+                a["name"]: int(a["id"])
+                for a in gh_pages(f"repos/{repo}/releases/{release_id}/assets")
+            }
+            held = asset_digest(repo, assets[archived.name]) if archived.name in assets else ""
+            if held != digest:
+                raise ReleaseError(
+                    f"{s.name}: the release holds {held or 'nothing'}, not the built {digest}"
+                )
+            print(f"   archived with its digest: {digest}")
 
 
 # ------------------------------------------------------------------ records ---
@@ -309,12 +657,22 @@ def render(
         for s in build.get("services", [])
     )
     rows = "\n".join(f"| {c[0]} | {c[1]} | {c[2]} | {c[3]} |" for c in checks)
+    builder = build.get("builder") or {}
+    # Where it was built: a release run from a developer's machine (a host that firewalls
+    # GitHub's runners, DESIGN.md §15.4) says so in its record.
+    built_by = (
+        ""
+        if not builder
+        else f"- Built by: GitHub Actions, {builder.get('run')}\n"
+        if builder.get("ci") == "github-actions"
+        else "- Built by: this machine, not CI (DESIGN.md §15.4)\n"
+    )
     return f"""# Release {version}
 
 - State: {state}
 - Commit: {commit}
 - Tier: {config["realm"]["tier"]} · Platform: {platform}{mode}
-- Previous: {previous or "none (the first release)"}
+{built_by}- Previous: {previous or "none (the first release)"}
 - Requirements: {", ".join(reqs) or "none"}
 - Tasks: {", ".join(tasks) or "none"}
 
@@ -502,6 +860,15 @@ def ref(root: Path, config: dict, version: str, service: str) -> str:
     text = path.read_text(encoding="utf-8") if path.exists() else ""
     if platform == "compose":
         return f"realm-{config['realm']['name']}-{service}:{version}"
+    if platform == "cpanel":  # the archive, by the release it belongs to and its digest (§15.3)
+        digests = (
+            image_digests(text)
+            if text
+            else {s["name"]: s["digest"] for s in load_build(root, version)["services"]}
+        )
+        if service not in digests:
+            raise ReleaseError(f"{version} has no archive for {service} on record")
+        return f"{version}/{service}.tar.gz@{digests[service]}"
     if platform == "railway" and mode == "source":
         commit = field(text, "Commit") if text else load_build(root, version)["commit"]
         if not re.fullmatch(r"[0-9a-f]{40}", commit):
@@ -523,7 +890,7 @@ def ref(root: Path, config: dict, version: str, service: str) -> str:
             raise ReleaseError(f"{version} has no image for {service} on record")
         return f"{registry}/{service}@{digests[service]}"
     raise ReleaseError(
-        f"[deploy] platform {platform!r} / mode {mode!r}: use compose, aws, or railway "
+        f"[deploy] platform {platform!r} / mode {mode!r}: use compose, aws, cpanel, or railway "
         "with source or image"
     )
 
@@ -543,13 +910,21 @@ def deploy_problems(config: dict, urls: tuple[str, ...] = ENVIRONMENTS) -> list[
     later, from the release it stages."""
     deploy = config.get("deploy", {})
     platform, mode = deploy.get("platform"), deploy.get("mode", "source")
+    if platform == "cpanel":
+        return cpanel_problems(config, urls)
+    files = [
+        f'service {s.get("name")} is kind = "files": only the cpanel platform deploys a file '
+        "tree (DESIGN.md §15)"
+        for s in config.get("service", [])
+        if s.get("kind") == "files"
+    ]
     if platform == "compose":
-        return []
+        return files + compose_problems(config)
     if platform == "aws":
-        return aws_problems(config, urls)
+        return files + aws_problems(config, urls)
     if platform != "railway":
-        return [f"[deploy] platform is {platform!r}: use railway, aws or compose"]
-    problems = []
+        return [f"[deploy] platform is {platform!r}: use railway, aws, cpanel or compose"]
+    problems = files
     if mode not in ("source", "image"):
         problems.append(f"[deploy] mode is {mode!r}: use source or image")
     if config["realm"]["tier"] == "assured" and mode != "image":
@@ -570,6 +945,44 @@ def deploy_problems(config: dict, urls: tuple[str, ...] = ENVIRONMENTS) -> list[
         for env in urls:
             if not str(s.get(f"{env}_url", "")).startswith("https://"):
                 problems.append(f"[[service]] {s.get('name')} needs {env}_url (https://…)")
+    return problems
+
+
+# The compose platform publishes each environment's services on 127.0.0.1, one port a service,
+# counting up from a base. A second project on the same Docker host moves its bases.
+COMPOSE_PORTS = {"staging": 18000, "production": 19000}
+
+
+def compose_port(config: dict, env: str) -> int:
+    """The first local port the compose platform publishes `env` on: [deploy] staging_port or
+    production_port, else 18000 or 19000. Each [[service]] takes the next one, by its place in
+    the list."""
+    key = f"{env}_port"
+    port = config.get("deploy", {}).get(key, COMPOSE_PORTS[env])
+    last = 65536 - max(len(config.get("service", [])), 1)
+    if isinstance(port, bool) or not isinstance(port, int) or not 1024 <= port <= last:
+        raise ReleaseError(
+            f"[deploy] {key} must be a port number from 1024 to {last}, leaving one port for "
+            f"each [[service]]: {port!r}"
+        )
+    return port
+
+
+def compose_problems(config: dict) -> list[str]:
+    """The compose platform's settings: a usable base port for each environment, and two
+    ranges that don't share a port."""
+    problems, bases = [], []
+    for env in ENVIRONMENTS:
+        try:
+            bases.append(compose_port(config, env))
+        except ReleaseError as e:
+            problems.append(str(e))
+    count = max(len(config.get("service", [])), 1)
+    if len(bases) == 2 and abs(bases[0] - bases[1]) < count:
+        problems.append(
+            f"[deploy] staging_port and production_port overlap: each environment takes "
+            f"{count} port(s) from its own, one for each [[service]]"
+        )
     return problems
 
 
@@ -606,6 +1019,88 @@ def aws_problems(config: dict, urls: tuple[str, ...] = ENVIRONMENTS) -> list[str
     return problems
 
 
+def cpanel_problems(config: dict, urls: tuple[str, ...] = ENVIRONMENTS) -> list[str]:
+    """The cpanel platform's settings (DESIGN.md §15.2): the SSH host, where the archives are
+    kept, every service a files service with its two document roots, and each one's URL in each
+    of the `urls` environments."""
+    deploy = config.get("deploy", {})
+    problems = []
+    if not str(deploy.get("ssh_host", "")).strip():
+        problems.append(
+            "[deploy] ssh_host needs the Host in ~/.ssh/config that reaches the server (the "
+            "release workflows write the same entry)"
+        )
+    if deploy.get("archive") != "github-release":
+        problems.append(
+            '[deploy] archive = "github-release": the release archives are kept on the '
+            "tag's GitHub release (DESIGN.md §15.9)"
+        )
+    for s in config.get("service", []):
+        if s.get("kind") != "files":
+            problems.append(
+                f'service {s.get("name")}: the cpanel platform deploys kind = "files" services '
+                "only; it runs no containers"
+            )
+            continue
+        for env in urls:
+            if not str(s.get(f"{env}_url", "")).startswith("https://"):
+                problems.append(f"[[service]] {s.get('name')} needs {env}_url (https://…)")
+    return problems + root_problems(config)
+
+
+def root_problems(config: dict) -> list[str]:
+    """Each files service's staging_root and production_root: absolute, written plainly, deep
+    enough, and never the same as or inside another root. The adapter's rsync --delete empties
+    whatever the root holds that the release doesn't, so a root inside another would be wiped by
+    the outer one's deploy (DESIGN.md §15.3)."""
+    problems, roots = [], []
+    for s in config.get("service", []):
+        if s.get("kind") != "files":
+            continue
+        name = s.get("name")
+        for env in ENVIRONMENTS:
+            key = f"{env}_root"
+            value = str(s.get(key, ""))
+            if not value:
+                problems.append(
+                    f"{name} needs {key}, the document root's absolute path on the host"
+                )
+            elif not value.startswith("/") or posixpath.normpath(value) != value:
+                problems.append(
+                    f"{name}: {key} must be an absolute path, written plainly (no .., no "
+                    f"trailing /): {value!r}"
+                )
+            elif len(PurePosixPath(value).parts) < 4:
+                problems.append(
+                    f"{name}: {key} {value} is too near the top: a deploy empties the root of "
+                    "everything the release doesn't have"
+                )
+            else:
+                roots.append((name, key, env, PurePosixPath(value)))
+    for i, (n1, k1, e1, r1) in enumerate(roots):
+        for n2, k2, e2, r2 in roots[i + 1 :]:
+            same = n1 == n2
+            if r1 == r2:
+                problems.append(
+                    f"{n1}: {k1} and {k2} are the same folder"
+                    if same
+                    else f"{n1}'s {k1} and {n2}'s {k2} are the same folder"
+                )
+                continue
+            for (na, ka), (nb, kb, eb), inner, outer in (
+                ((n1, k1), (n2, k2, e2), r1, r2),
+                ((n2, k2), (n1, k1, e1), r2, r1),
+            ):
+                if inner.is_relative_to(outer):
+                    problems.append(
+                        f"{na}: {ka} is inside {kb}: {eb}'s --delete would remove it"
+                        if same
+                        else f"{na}'s {ka} is inside {nb}'s {kb}: {nb}'s deploy to {eb} would "
+                        "remove it"
+                    )
+    return problems
+
+
 # The ZAP baseline scan: a warning blocks the release unless the project has decided about that
 # rule, with a reason, in docs/release/zap-rules.tsv (id, action, name, reason).
 ZAP_ACTIONS = ("IGNORE", "WARN", "FAIL", "INFO")
@@ -632,6 +1127,21 @@ def zap_rules(root: Path) -> str:
             )
         lines.append(f"{cells[0]}\t{cells[1]}\t({cells[2]})")
     return "\n".join(lines) + "\n"
+
+
+def zap_detail(log: str, code: int) -> str:
+    """A failed baseline scan, as one cell of the release record: each rule ZAP failed or
+    warned on, then its totals. A run that printed neither is named by its exit code.
+
+    It's one line with no tab or bar, because it becomes a row of checks.tsv and of the
+    record's table: several failed rules used to break both."""
+    found = [
+        " ".join(line.replace("|", "/").split())
+        for line in log.splitlines()
+        if line.startswith(("FAIL-NEW:", "WARN-NEW:"))
+    ]
+    text = "; ".join(found) or f"zap exited {code}"
+    return text if len(text) <= 400 else text[:399] + "…"
 
 
 # ------------------------------------------------------- performance secrets ---
@@ -682,8 +1192,19 @@ def cli(root: Path, config: dict, args: list[str], tasks: dict[str, list[str]], 
         help="whose web-service URLs must be set: all (the default), one environment's, or none",
     )
     sub.add_parser("perf-env")
+    fb = sub.add_parser("files-build")
+    fb.add_argument("version")
+    fb.add_argument("service")
+    fb.add_argument("n", choices=("1", "2"), help="which of the two builds")
+    pf = sub.add_parser("publish-files")
+    pf.add_argument("version")
     z = sub.add_parser("zap-rules")
     z.add_argument("out")
+    zd = sub.add_parser("zap-detail")
+    zd.add_argument("log")
+    zd.add_argument("code", type=int)
+    cp = sub.add_parser("compose-port")
+    cp.add_argument("env", choices=ENVIRONMENTS)
     for name in ("provenance", "previous", "promotable", "slo-check"):
         p = sub.add_parser(name)
         if name != "slo-check":
@@ -714,8 +1235,9 @@ def cli(root: Path, config: dict, args: list[str], tasks: dict[str, list[str]], 
     i.add_argument("--detail-file", required=True)
     a = parser.parse_args(args)
 
-    declared = services(config, root) if a.command not in ("config", "perf-env", "names") else []
-    names = [s.name for s in declared if s.kind == "web"]
+    unchecked = ("config", "perf-env", "names", "zap-detail")  # these read no [[service]]
+    declared = services(config, root) if a.command not in unchecked else []
+    names = [s.name for s in declared if s.kind != "worker"]  # every service with a URL
     workers = [s.name for s in declared if s.kind == "worker"]
     if a.command == "services":
         print("\n".join(s.row() for s in services(config, root)))
@@ -736,6 +1258,15 @@ def cli(root: Path, config: dict, args: list[str], tasks: dict[str, list[str]], 
         data = provenance(version, out, commit, epoch, config)
         (out / "release.json").write_text(json.dumps(data, indent=2) + "\n")
         print(f"   wrote {(out / 'release.json').relative_to(root)}")
+    elif a.command == "files-build":
+        version = check_version(a.version)
+        service = next((s for s in declared if s.name == a.service and s.kind == "files"), None)
+        if service is None:
+            raise ReleaseError(f"no files service called {a.service!r} in realm.toml")
+        epoch = int(git(root, "log", "-1", "--format=%ct", "HEAD").stdout.strip())
+        print(files_build(root, service, root / "dist" / version, a.n, epoch))
+    elif a.command == "publish-files":
+        publish_files(root, declared, check_version(a.version))
     elif a.command == "deploy-check":
         wanted = {"all": ENVIRONMENTS, "none": ()}.get(a.urls, (a.urls,))
         problems = deploy_problems(config, urls=wanted)
@@ -746,6 +1277,14 @@ def cli(root: Path, config: dict, args: list[str], tasks: dict[str, list[str]], 
         rules = zap_rules(root)
         Path(a.out).write_text(rules)
         print("   zap rules: " + (f"{len(rules.splitlines())} decided" if rules else "none"))
+    elif a.command == "zap-detail":
+        log = Path(a.log)
+        print(zap_detail(log.read_text(errors="replace") if log.exists() else "", a.code))
+    elif a.command == "compose-port":
+        problems = compose_problems(config)
+        if problems:
+            raise ReleaseError("; ".join(problems))
+        print(compose_port(config, a.env))
     elif a.command == "previous":
         print(live_version(root, other_than=check_version(a.version)))
     elif a.command == "ref":

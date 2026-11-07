@@ -3,7 +3,7 @@
 This is the single contract every contributor follows — **human or AI, whichever tool**.
 Read it before you touch anything. If a rule here conflicts with a habit, the rule wins.
 
-Entry points funnel here: every per-tool file (e.g. [CLAUDE.md](CLAUDE.md), [GEMINI.md](GEMINI.md))
+Entry points funnel here: every per-tool file (e.g. `CLAUDE.md`, `GEMINI.md`)
 says "read AGENTS.md first." This file is the source of truth for *how we work*; the
 **Non-negotiables** in [PLAN.md](PLAN.md) are the source of truth for *what cannot be compromised*.
 
