@@ -183,7 +183,7 @@ Two tables per environment, on-demand, with the keys [domain-model.md](domain-mo
 |---|---|
 | Cognito user pool | sign-in by email; self sign-up with email verification (Cognito's own sender); MFA optional (TOTP); passwords of at least 12 characters; the Lite feature plan |
 | Its app client | the web app's: public, no secret, SRP sign-in; access tokens last 1 hour, refresh tokens 30 days |
-| HTTP API | [api.md](api.md) §6's routes: `/api/*` behind a JWT authorizer (the pool as issuer, the app client as audience); `/health`, `/config.json` and the web app's files open (ADR-0010). Lambda proxy integration, payload 2.0; the default route throttled to 10 requests a second, bursting to 20; no CORS, because the app and the API share an origin; access logs kept 30 days |
+| HTTP API | [api.md](api.md) §6's routes: `/api/*` behind a JWT authorizer (the pool as issuer, the app client as audience); `/health`, `/config.json` and the web app's files open (ADR-0010). Lambda proxy integration, payload 2.0; the default route throttled to 1 request a second for the whole stage, bursting to 10 (one page load); no CORS, because the app and the API share an origin; access logs kept 30 days |
 
 ### The web app
 

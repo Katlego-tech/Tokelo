@@ -64,10 +64,13 @@ resource "aws_apigatewayv2_stage" "default" {
   name        = "$default"
   auto_deploy = true
 
-  # A flood of requests can't run up the bill (§Threats).
+  # A flood of requests can't run up the bill (§Threats). The limit is the whole stage's, shared
+  # by every caller: at 1 a second, a month of nonstop flooding is about 2.6 million requests, a
+  # few dollars. The burst of 10 is one page load: the page, its script, style, fonts and
+  # config.json arrive together.
   default_route_settings {
-    throttling_rate_limit  = 10
-    throttling_burst_limit = 20
+    throttling_rate_limit  = 1
+    throttling_burst_limit = 10
   }
 
   access_log_settings {
